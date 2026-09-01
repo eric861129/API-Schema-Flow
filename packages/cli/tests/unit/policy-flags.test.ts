@@ -179,7 +179,11 @@ describe('schema-flow validate retrieval policy flags', () => {
       setup.dependencies,
       output.io,
     )
-    const report = JSON.parse(output.stdout.join(''))
+    const rawOutput = output.stdout.join('')
+
+    expect(rawOutput).not.toBe('')
+    if (rawOutput.length === 0) return
+    const report = JSON.parse(rawOutput)
 
     expect(exitCode).toBe(0)
     expect(report).toMatchObject({
