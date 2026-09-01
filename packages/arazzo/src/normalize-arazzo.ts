@@ -90,10 +90,7 @@ function normalizeValueMap(
   return values
 }
 
-function normalizeInfo(
-  input: unknown,
-  source: SourcePointer,
-): NormalizedArazzoInfo {
+function normalizeInfo(input: unknown, source: SourcePointer): NormalizedArazzoInfo {
   const value = isRecord(input) ? input : {}
   const summary = stringValue(value.summary)
   const description = stringValue(value.description)
@@ -103,10 +100,7 @@ function normalizeInfo(
     ...(summary === undefined ? {} : { summary }),
     ...(description === undefined ? {} : { description }),
     source,
-    ...splitPreservedFields(
-      value,
-      new Set(['title', 'version', 'summary', 'description']),
-    ),
+    ...splitPreservedFields(value, new Set(['title', 'version', 'summary', 'description'])),
   }
 }
 
@@ -143,10 +137,7 @@ function normalizeParameter(
     value: normalizeValue(input.value, arazzoChildSource(source, 'value'), context),
     ...(description === undefined ? {} : { description }),
     source,
-    ...splitPreservedFields(
-      input,
-      new Set(['name', 'in', 'location', 'value', 'description']),
-    ),
+    ...splitPreservedFields(input, new Set(['name', 'in', 'location', 'value', 'description'])),
   }
 }
 
@@ -157,11 +148,7 @@ function normalizeParameters(
 ): readonly NormalizedArazzoParameter[] {
   if (!Array.isArray(input)) return []
   return input.flatMap((entry, index) => {
-    const normalized = normalizeParameter(
-      entry,
-      arazzoChildSource(source, String(index)),
-      context,
-    )
+    const normalized = normalizeParameter(entry, arazzoChildSource(source, String(index)), context)
     return normalized ? [normalized] : []
   })
 }
@@ -175,11 +162,7 @@ function normalizeRequestBody(
   const contentType = stringValue(input.contentType)
   return {
     ...(contentType === undefined ? {} : { contentType }),
-    payload: normalizeValue(
-      input.payload,
-      arazzoChildSource(source, 'payload'),
-      context,
-    ),
+    payload: normalizeValue(input.payload, arazzoChildSource(source, 'payload'), context),
     source,
     ...splitPreservedFields(input, new Set(['contentType', 'payload'])),
   }
@@ -194,12 +177,9 @@ function normalizeCriterion(
   const type = stringValue(input.type)
   const criterionContext = stringValue(input.context)
   return {
-    condition: normalizeValue(
-      input.condition,
-      arazzoChildSource(source, 'condition'),
-      context,
-      { parseRuntimeExpressions: false },
-    ),
+    condition: normalizeValue(input.condition, arazzoChildSource(source, 'condition'), context, {
+      parseRuntimeExpressions: false,
+    }),
     ...(type === undefined ? {} : { type }),
     ...(criterionContext === undefined ? {} : { context: criterionContext }),
     source,
@@ -214,11 +194,7 @@ function normalizeCriteria(
 ): readonly NormalizedArazzoCriterion[] {
   if (!Array.isArray(input)) return []
   return input.flatMap((entry, index) => {
-    const normalized = normalizeCriterion(
-      entry,
-      arazzoChildSource(source, String(index)),
-      context,
-    )
+    const normalized = normalizeCriterion(entry, arazzoChildSource(source, String(index)), context)
     return normalized ? [normalized] : []
   })
 }
@@ -240,11 +216,7 @@ function normalizeAction(
     ...(stepId === undefined ? {} : { stepId }),
     ...(workflowId === undefined ? {} : { workflowId }),
     ...(retry === undefined ? {} : { retry }),
-    criteria: normalizeCriteria(
-      input.criteria,
-      arazzoChildSource(source, 'criteria'),
-      context,
-    ),
+    criteria: normalizeCriteria(input.criteria, arazzoChildSource(source, 'criteria'), context),
     source,
     ...splitPreservedFields(
       input,
@@ -260,11 +232,7 @@ function normalizeActions(
 ): readonly NormalizedArazzoAction[] {
   if (!Array.isArray(input)) return []
   return input.flatMap((entry, index) => {
-    const normalized = normalizeAction(
-      entry,
-      arazzoChildSource(source, String(index)),
-      context,
-    )
+    const normalized = normalizeAction(entry, arazzoChildSource(source, String(index)), context)
     return normalized ? [normalized] : []
   })
 }
@@ -310,21 +278,9 @@ function normalizeStep(
       arazzoChildSource(source, 'successCriteria'),
       context,
     ),
-    onSuccess: normalizeActions(
-      input.onSuccess,
-      arazzoChildSource(source, 'onSuccess'),
-      context,
-    ),
-    onFailure: normalizeActions(
-      input.onFailure,
-      arazzoChildSource(source, 'onFailure'),
-      context,
-    ),
-    outputs: normalizeValueMap(
-      input.outputs,
-      arazzoChildSource(source, 'outputs'),
-      context,
-    ),
+    onSuccess: normalizeActions(input.onSuccess, arazzoChildSource(source, 'onSuccess'), context),
+    onFailure: normalizeActions(input.onFailure, arazzoChildSource(source, 'onFailure'), context),
+    outputs: normalizeValueMap(input.outputs, arazzoChildSource(source, 'outputs'), context),
     dependsOn: [...new Set(stringArray(input.dependsOn))],
     ...(timeout === undefined ? {} : { timeout }),
     source,
@@ -357,11 +313,7 @@ function normalizeSteps(
 ): readonly NormalizedArazzoStep[] {
   if (!Array.isArray(input)) return []
   return input.flatMap((entry, index) => {
-    const normalized = normalizeStep(
-      entry,
-      arazzoChildSource(source, String(index)),
-      context,
-    )
+    const normalized = normalizeStep(entry, arazzoChildSource(source, String(index)), context)
     return normalized ? [normalized] : []
   })
 }
@@ -398,11 +350,7 @@ function normalizeWorkflow(
       arazzoChildSource(source, 'failureActions'),
       context,
     ),
-    outputs: normalizeValueMap(
-      input.outputs,
-      arazzoChildSource(source, 'outputs'),
-      context,
-    ),
+    outputs: normalizeValueMap(input.outputs, arazzoChildSource(source, 'outputs'), context),
     source,
     ...splitPreservedFields(
       input,
@@ -428,11 +376,7 @@ function normalizeWorkflows(
 ): readonly NormalizedArazzoWorkflow[] {
   if (!Array.isArray(input)) return []
   return input.flatMap((entry, index) => {
-    const normalized = normalizeWorkflow(
-      entry,
-      arazzoChildSource(source, String(index)),
-      context,
-    )
+    const normalized = normalizeWorkflow(entry, arazzoChildSource(source, String(index)), context)
     return normalized ? [normalized] : []
   })
 }

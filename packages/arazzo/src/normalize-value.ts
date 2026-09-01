@@ -78,11 +78,7 @@ export function normalizeArazzoValue(
     for (const [key, nested] of Object.entries(input).sort(([left], [right]) =>
       left.localeCompare(right),
     )) {
-      const normalized = normalizeArazzoValue(
-        nested,
-        appendSourcePointer(source, [key]),
-        options,
-      )
+      const normalized = normalizeArazzoValue(nested, appendSourcePointer(source, [key]), options)
       diagnostics.push(...normalized.diagnostics)
       properties[key] = normalized.value
     }

@@ -34,10 +34,7 @@ export {
   type NormalizeArazzoValueOptions,
   type NormalizeArazzoValueResult,
 } from './normalize-value.js'
-export {
-  normalizeArazzoDocument,
-  type NormalizeArazzoResult,
-} from './normalize-arazzo.js'
+export { normalizeArazzoDocument, type NormalizeArazzoResult } from './normalize-arazzo.js'
 export type {
   ArazzoOperationTarget,
   ArazzoPreservedObject,
