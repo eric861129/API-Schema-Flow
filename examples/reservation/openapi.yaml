@@ -1,0 +1,192 @@
+openapi: 3.1.0
+info:
+  title: Reservation API
+  version: 1.0.0
+  description: Synthetic API used by API Schema Flow tests and demonstrations.
+servers:
+  - url: http://localhost:4010
+    description: Local mock server
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Spaces
+  - name: Reservations
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /spaces/available:
+    get:
+      operationId: listAvailableSpaces
+      tags: [Spaces]
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Available spaces.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Space'
+  /reservations:
+    post:
+      operationId: createReservation
+      tags: [Reservations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationRequest'
+      responses:
+        '201':
+          description: Reservation created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '409':
+          description: The requested space is no longer available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /reservations/{id}:
+    get:
+      operationId: getReservation
+      tags: [Reservations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservation found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '404':
+          description: Reservation not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: developer@example.test
+        password:
+          type: string
+          format: password
+          example: synthetic-password
+    LoginResponse:
+      type: object
+      additionalProperties: false
+      required: [token, expiresIn]
+      properties:
+        token:
+          type: string
+          example: synthetic-jwt-token
+        expiresIn:
+          type: integer
+          minimum: 1
+          example: 3600
+    Space:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Main Conference Room
+    ReservationRequest:
+      type: object
+      additionalProperties: false
+      required: [spaceId, startTime, endTime]
+      properties:
+        spaceId:
+          type: string
+          format: uuid
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        attendees:
+          type: integer
+          minimum: 1
+          example: 6
+    Reservation:
+      allOf:
+        - $ref: '#/components/schemas/ReservationRequest'
+        - type: object
+          additionalProperties: false
+          required: [id, status, createdAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [pending, confirmed, cancelled]
+            createdAt:
+              type: string
+              format: date-time
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "title": "Reservation API",
+  "openapiVersion": "3.1.0",
+  "operationCount": 4,
+  "operations": [
+    {
+      "id": "operation:post:/auth/login",
+      "operationId": "login",
+      "method": "post",
+      "path": "/auth/login",
+      "responseCodes": ["200"],
+      "securitySchemes": []
+    },
+    {
+      "id": "operation:post:/reservations",
+      "operationId": "createReservation",
+      "method": "post",
+      "path": "/reservations",
+      "responseCodes": ["201", "409"],
+      "securitySchemes": ["bearerAuth"]
+    },
+    {
+      "id": "operation:get:/reservations/{id}",
+      "operationId": "getReservation",
+      "method": "get",
+      "path": "/reservations/{id}",
+      "responseCodes": ["200", "404"],
+      "securitySchemes": ["bearerAuth"]
+    },
+    {
+      "id": "operation:get:/spaces/available",
+      "operationId": "listAvailableSpaces",
+      "method": "get",
+      "path": "/spaces/available",
+      "responseCodes": ["200"],
+      "securitySchemes": ["bearerAuth"]
+    }
+  ],
+  "componentSchemas": [
+    "ApiError",
+    "LoginRequest",
+    "LoginResponse",
+    "Reservation",
+    "ReservationRequest",
+    "Space"
+  ]
+}
