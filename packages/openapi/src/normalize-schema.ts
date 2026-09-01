@@ -48,9 +48,7 @@ export function redactSchemaProjection(value: unknown, sensitive = false): unkno
 
   const redacted: Record<string, unknown> = {}
   for (const [key, nestedValue] of Object.entries(value)) {
-    redacted[key] = isSecretSchemaKey(key)
-      ? REDACTED_VALUE
-      : redactSchemaProjection(nestedValue)
+    redacted[key] = isSecretSchemaKey(key) ? REDACTED_VALUE : redactSchemaProjection(nestedValue)
   }
   return redacted
 }
