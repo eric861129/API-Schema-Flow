@@ -2,7 +2,7 @@ import type { HttpMethod } from './http-method.js'
 import type { NormalizedSchema } from './schema.js'
 import type { SourcePointer } from './source-pointer.js'
 
-export type ParameterLocation = 'path' | 'query' | 'header' | 'cookie'
+export type ParameterLocation = 'path' | 'query' | 'querystring' | 'header' | 'cookie'
 
 export interface NormalizedParameter {
   readonly name: string
@@ -36,6 +36,7 @@ export interface NormalizedResponse {
 }
 
 export interface NormalizedSecurityRequirement {
+  readonly requirementIndex: number
   readonly scheme: string
   readonly scopes: readonly string[]
 }

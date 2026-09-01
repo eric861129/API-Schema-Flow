@@ -12,9 +12,47 @@ import {
   stringValue,
 } from './openapi-like.js'
 
+const REDACTED_VALUE = '[REDACTED]'
+const SECRET_SCHEMA_KEYS = new Set([
+  'accesstoken',
+  'apikey',
+  'authorization',
+  'clientsecret',
+  'cookie',
+  'idtoken',
+  'password',
+  'refreshtoken',
+  'secret',
+  'setcookie',
+  'token',
+  'xapikey',
+])
+
 function normalizeTypes(value: unknown): string[] {
   if (typeof value === 'string') return [value]
   return stringArray(value).sort()
+}
+
+function normalizeSecretKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function isSecretSchemaKey(key: string | undefined): boolean {
+  return key !== undefined && SECRET_SCHEMA_KEYS.has(normalizeSecretKey(key))
+}
+
+export function redactSchemaProjection(value: unknown, sensitive = false): unknown {
+  if (sensitive) return REDACTED_VALUE
+  if (Array.isArray(value)) return value.map((entry) => redactSchemaProjection(entry))
+  if (!isRecord(value)) return value
+
+  const redacted: Record<string, unknown> = {}
+  for (const [key, nestedValue] of Object.entries(value)) {
+    redacted[key] = isSecretSchemaKey(key)
+      ? REDACTED_VALUE
+      : redactSchemaProjection(nestedValue)
+  }
+  return redacted
 }
 
 function emptySchema(source: SourcePointer, ref?: string): NormalizedSchema {
@@ -39,6 +77,7 @@ export function normalizeSchema(
   value: unknown,
   source: SourcePointer,
   ancestors: WeakSet<object> = new WeakSet(),
+  propertyName?: string,
 ): NormalizedSchema | undefined {
   if (!isRecord(value)) return undefined
 
@@ -54,6 +93,7 @@ export function normalizeSchema(
         property,
         appendSourcePointer(source, ['properties', name]),
         ancestors,
+        name,
       )
       if (normalized) properties[name] = normalized
     }
@@ -65,12 +105,18 @@ export function normalizeSchema(
           entry,
           appendSourcePointer(source, [key, String(index)]),
           ancestors,
+          propertyName,
         )
         return normalized ? [normalized] : []
       })
     }
 
-    const items = normalizeSchema(value.items, appendSourcePointer(source, ['items']), ancestors)
+    const items = normalizeSchema(
+      value.items,
+      appendSourcePointer(source, ['items']),
+      ancestors,
+      propertyName,
+    )
     const additionalProperties =
       typeof value.additionalProperties === 'boolean'
         ? value.additionalProperties
@@ -78,12 +124,14 @@ export function normalizeSchema(
             value.additionalProperties,
             appendSourcePointer(source, ['additionalProperties']),
             ancestors,
+            propertyName,
           )
 
     const ref = stringValue(value.$ref)
     const format = stringValue(value.format)
     const title = stringValue(value.title)
     const description = stringValue(value.description)
+    const sensitive = isSecretSchemaKey(propertyName) || format === 'password'
 
     return {
       source,
@@ -95,9 +143,15 @@ export function normalizeSchema(
       required: [...new Set(stringArray(value.required))].sort(),
       properties,
       ...(items === undefined ? {} : { items }),
-      enumValues: Array.isArray(value.enum) ? [...value.enum] : [],
-      ...(!Object.hasOwn(value, 'example') ? {} : { example: value.example }),
-      ...(!Object.hasOwn(value, 'default') ? {} : { defaultValue: value.default }),
+      enumValues: Array.isArray(value.enum)
+        ? value.enum.map((entry) => redactSchemaProjection(entry, sensitive))
+        : [],
+      ...(!Object.hasOwn(value, 'example')
+        ? {}
+        : { example: redactSchemaProjection(value.example, sensitive) }),
+      ...(!Object.hasOwn(value, 'default')
+        ? {}
+        : { defaultValue: redactSchemaProjection(value.default, sensitive) }),
       allOf: normalizeCollection('allOf'),
       anyOf: normalizeCollection('anyOf'),
       oneOf: normalizeCollection('oneOf'),

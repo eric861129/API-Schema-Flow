@@ -23,9 +23,15 @@ import {
   stringValue,
   type UnknownRecord,
 } from './openapi-like.js'
-import { normalizeSchema } from './normalize-schema.js'
+import { normalizeSchema, redactSchemaProjection } from './normalize-schema.js'
 
-const PARAMETER_LOCATIONS = new Set<ParameterLocation>(['path', 'query', 'header', 'cookie'])
+const PARAMETER_LOCATIONS = new Set<ParameterLocation>([
+  'path',
+  'query',
+  'querystring',
+  'header',
+  'cookie',
+])
 
 function normalizeContent(value: unknown, source: SourcePointer): NormalizedMediaType[] {
   return sortedRecordEntries(value).map(([mediaType, mediaValue]) => {
@@ -36,7 +42,9 @@ function normalizeContent(value: unknown, source: SourcePointer): NormalizedMedi
       mediaType,
       source: mediaSource,
       ...(schema === undefined ? {} : { schema }),
-      ...(!Object.hasOwn(media, 'example') ? {} : { example: media.example }),
+      ...(!Object.hasOwn(media, 'example')
+        ? {}
+        : { example: redactSchemaProjection(media.example) }),
     }
   })
 }
@@ -125,15 +133,14 @@ function normalizeResponses(value: unknown, source: SourcePointer): NormalizedRe
 export function normalizeSecurity(value: unknown): NormalizedSecurityRequirement[] {
   if (!Array.isArray(value)) return []
 
-  return value
-    .flatMap((requirement) => {
-      if (!isRecord(requirement)) return []
-      return sortedRecordEntries(requirement).map(([scheme, scopes]) => ({
-        scheme,
-        scopes: [...new Set(stringArray(scopes))].sort(),
-      }))
-    })
-    .sort((left, right) => left.scheme.localeCompare(right.scheme))
+  return value.flatMap((requirement, requirementIndex) => {
+    if (!isRecord(requirement)) return []
+    return sortedRecordEntries(requirement).map(([scheme, scopes]) => ({
+      requirementIndex,
+      scheme,
+      scopes: [...new Set(stringArray(scopes))].sort(),
+    }))
+  })
 }
 
 export function normalizeServers(value: unknown, source: SourcePointer): NormalizedServer[] {
@@ -171,11 +178,20 @@ export function normalizeOperation(input: NormalizeOperationInput): NormalizedOp
   const securityValue = Object.hasOwn(input.operation, 'security')
     ? input.operation.security
     : input.rootSecurity
-  const serverValue = Object.hasOwn(input.operation, 'servers')
-    ? input.operation.servers
-    : Object.hasOwn(input.pathItem, 'servers')
-      ? input.pathItem.servers
-      : input.rootServers
+
+  let serverValue: unknown
+  let serverSource: SourcePointer
+  if (Object.hasOwn(input.operation, 'servers')) {
+    serverValue = input.operation.servers
+    serverSource = appendSourcePointer(operationSource, ['servers'])
+  } else if (Object.hasOwn(input.pathItem, 'servers')) {
+    serverValue = input.pathItem.servers
+    serverSource = appendSourcePointer(pathSource, ['servers'])
+  } else {
+    serverValue = input.rootServers
+    serverSource = createSourcePointer(input.sourceUri, ['servers'])
+  }
+
   const requestBody = normalizeRequestBody(
     input.operation.requestBody,
     appendSourcePointer(operationSource, ['requestBody']),
@@ -205,7 +221,7 @@ export function normalizeOperation(input: NormalizeOperationInput): NormalizedOp
       appendSourcePointer(operationSource, ['responses']),
     ),
     security: normalizeSecurity(securityValue),
-    servers: normalizeServers(serverValue, appendSourcePointer(operationSource, ['servers'])),
+    servers: normalizeServers(serverValue, serverSource),
     source: operationSource,
   }
 }

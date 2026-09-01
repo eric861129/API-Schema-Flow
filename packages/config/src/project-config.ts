@@ -26,7 +26,7 @@ const fileSourceSchema = z
   })
   .strict()
 
-export const projectConfigSchema = z
+const projectConfigSchema = z
   .object({
     schemaVersion: z.literal('1.0'),
     project: z

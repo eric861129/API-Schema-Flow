@@ -1,6 +1,5 @@
 export {
   parseProjectConfig,
-  projectConfigSchema,
   type FileProjectSource,
   type ParseProjectConfigResult,
   type ProjectConfigV1,
