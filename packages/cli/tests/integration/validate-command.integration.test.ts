@@ -32,7 +32,7 @@ describe('validate command integration', () => {
       schemaCount: 6,
       sourceCount: 1,
     })
-    expect(report.fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/)
+    expect(report.fingerprint).toMatch(/^[a-f0-9]{64}$/)
     expect(report.referenceCount).toEqual(expect.any(Number))
   })
 })
