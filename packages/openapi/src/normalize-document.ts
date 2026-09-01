@@ -68,16 +68,12 @@ function collectOperationConformanceDiagnostics(
 
   for (const operation of operations) {
     const queryNames = new Set(
-      operation.parameters
-        .filter(({ location }) => location === 'query')
-        .map(({ name }) => name),
+      operation.parameters.filter(({ location }) => location === 'query').map(({ name }) => name),
     )
     const conflicts = [
       ...new Set(
         operation.parameters
-          .filter(
-            ({ location, name }) => location === 'querystring' && queryNames.has(name),
-          )
+          .filter(({ location, name }) => location === 'querystring' && queryNames.has(name))
           .map(({ name }) => name),
       ),
     ].sort()
@@ -111,9 +107,7 @@ function operationRefPointer(operationRef: string, sourceUri: string): string | 
 }
 
 function linkTargetLabel(link: NormalizedLink): string {
-  return link.target.type === 'operationRef'
-    ? link.target.operationRef
-    : link.target.operationId
+  return link.target.type === 'operationRef' ? link.target.operationRef : link.target.operationId
 }
 
 function resolveOperationLinks(

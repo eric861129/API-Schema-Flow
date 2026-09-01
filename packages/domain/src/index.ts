@@ -13,11 +13,7 @@ export {
   type SourcePointer,
 } from './source-pointer.js'
 export type { NormalizedComponentSchema, NormalizedSchema } from './schema.js'
-export type {
-  NormalizedLink,
-  NormalizedLinkMapping,
-  NormalizedLinkTarget,
-} from './link.js'
+export type { NormalizedLink, NormalizedLinkMapping, NormalizedLinkTarget } from './link.js'
 export type {
   NormalizedMediaType,
   NormalizedOperation,
