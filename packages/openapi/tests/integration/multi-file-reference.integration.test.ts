@@ -8,7 +8,10 @@ import { describe, expect, test } from 'vitest'
 import * as openApi from '../../src/index.js'
 
 const processOpenApiLocation = Reflect.get(openApi, 'processOpenApiLocation') as
-  | ((location: unknown, options: unknown) => Promise<{
+  | ((
+      location: unknown,
+      options: unknown,
+    ) => Promise<{
       document?: {
         fingerprint?: string
         sourceCount?: number
