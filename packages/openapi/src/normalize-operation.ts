@@ -23,7 +23,11 @@ import {
   stringValue,
   type UnknownRecord,
 } from './openapi-like.js'
-import { normalizeSchema, redactSchemaProjection } from './normalize-schema.js'
+import {
+  normalizeSchema,
+  redactSchemaProjection,
+  type SchemaReferenceResolver,
+} from './normalize-schema.js'
 
 const PARAMETER_LOCATIONS = new Set<ParameterLocation>([
   'path',
@@ -33,11 +37,27 @@ const PARAMETER_LOCATIONS = new Set<ParameterLocation>([
   'cookie',
 ])
 
-function normalizeContent(value: unknown, source: SourcePointer): NormalizedMediaType[] {
+function normalizeSchemaAt(
+  value: unknown,
+  source: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
+) {
+  return normalizeSchema(value, source, new WeakSet(), undefined, referenceResolver)
+}
+
+function normalizeContent(
+  value: unknown,
+  source: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
+): NormalizedMediaType[] {
   return sortedRecordEntries(value).map(([mediaType, mediaValue]) => {
     const mediaSource = appendSourcePointer(source, [mediaType])
     const media = isRecord(mediaValue) ? mediaValue : {}
-    const schema = normalizeSchema(media.schema, appendSourcePointer(mediaSource, ['schema']))
+    const schema = normalizeSchemaAt(
+      media.schema,
+      appendSourcePointer(mediaSource, ['schema']),
+      referenceResolver,
+    )
     return {
       mediaType,
       source: mediaSource,
@@ -52,6 +72,7 @@ function normalizeContent(value: unknown, source: SourcePointer): NormalizedMedi
 function normalizeParameter(
   value: unknown,
   source: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
 ): NormalizedParameter | undefined {
   if (!isRecord(value)) return undefined
   const name = stringValue(value.name)
@@ -60,7 +81,11 @@ function normalizeParameter(
     return undefined
   }
 
-  const schema = normalizeSchema(value.schema, appendSourcePointer(source, ['schema']))
+  const schema = normalizeSchemaAt(
+    value.schema,
+    appendSourcePointer(source, ['schema']),
+    referenceResolver,
+  )
   const description = stringValue(value.description)
   return {
     name,
@@ -78,11 +103,12 @@ function normalizeParameters(
   operationParameters: unknown,
   pathSource: SourcePointer,
   operationSource: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
 ): NormalizedParameter[] {
   const merged = new Map<string, NormalizedParameter>()
 
   const add = (value: unknown, source: SourcePointer) => {
-    const parameter = normalizeParameter(value, source)
+    const parameter = normalizeParameter(value, source, referenceResolver)
     if (parameter) merged.set(`${parameter.location}:${parameter.name}`, parameter)
   }
 
@@ -106,25 +132,38 @@ function normalizeParameters(
 function normalizeRequestBody(
   value: unknown,
   source: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
 ): NormalizedRequestBody | undefined {
   if (!isRecord(value)) return undefined
   const description = stringValue(value.description)
   return {
     required: booleanValue(value.required),
     ...(description === undefined ? {} : { description }),
-    content: normalizeContent(value.content, appendSourcePointer(source, ['content'])),
+    content: normalizeContent(
+      value.content,
+      appendSourcePointer(source, ['content']),
+      referenceResolver,
+    ),
     source,
   }
 }
 
-function normalizeResponses(value: unknown, source: SourcePointer): NormalizedResponse[] {
+function normalizeResponses(
+  value: unknown,
+  source: SourcePointer,
+  referenceResolver?: SchemaReferenceResolver,
+): NormalizedResponse[] {
   return sortedRecordEntries(value).map(([statusCode, responseValue]) => {
     const responseSource = appendSourcePointer(source, [statusCode])
     const response = isRecord(responseValue) ? responseValue : {}
     return {
       statusCode,
       description: stringValue(response.description) ?? '',
-      content: normalizeContent(response.content, appendSourcePointer(responseSource, ['content'])),
+      content: normalizeContent(
+        response.content,
+        appendSourcePointer(responseSource, ['content']),
+        referenceResolver,
+      ),
       source: responseSource,
     }
   })
@@ -170,6 +209,7 @@ export interface NormalizeOperationInput {
   readonly operation: UnknownRecord
   readonly rootSecurity: unknown
   readonly rootServers: unknown
+  readonly referenceResolver?: SchemaReferenceResolver
 }
 
 export function normalizeOperation(input: NormalizeOperationInput): NormalizedOperation {
@@ -195,6 +235,7 @@ export function normalizeOperation(input: NormalizeOperationInput): NormalizedOp
   const requestBody = normalizeRequestBody(
     input.operation.requestBody,
     appendSourcePointer(operationSource, ['requestBody']),
+    input.referenceResolver,
   )
   const operationId = stringValue(input.operation.operationId)
   const summary = stringValue(input.operation.summary)
@@ -214,11 +255,13 @@ export function normalizeOperation(input: NormalizeOperationInput): NormalizedOp
       input.operation.parameters,
       pathSource,
       operationSource,
+      input.referenceResolver,
     ),
     ...(requestBody === undefined ? {} : { requestBody }),
     responses: normalizeResponses(
       input.operation.responses,
       appendSourcePointer(operationSource, ['responses']),
+      input.referenceResolver,
     ),
     security: normalizeSecurity(securityValue),
     servers: normalizeServers(serverValue, serverSource),

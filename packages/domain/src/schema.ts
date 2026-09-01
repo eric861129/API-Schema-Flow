@@ -3,6 +3,7 @@ import type { SourcePointer } from './source-pointer.js'
 export interface NormalizedSchema {
   readonly source: SourcePointer
   readonly ref?: string
+  readonly resolvedRef?: SourcePointer
   readonly types: readonly string[]
   readonly format?: string
   readonly title?: string

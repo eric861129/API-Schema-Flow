@@ -2,7 +2,7 @@ import { lookup } from 'node:dns/promises'
 import { readFile, realpath } from 'node:fs/promises'
 import { isIP } from 'node:net'
 import { extname, isAbsolute, relative, sep } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { DIAGNOSTIC_CODES, type Diagnostic } from '@api-schema-flow/diagnostics'
 
@@ -262,6 +262,13 @@ export function createNodeSourceAcquirer(
   }
 
   return {
+    resolveLocation(reference, parentUri) {
+      const resolved = new URL(reference, parentUri)
+      resolved.hash = ''
+      return resolved.protocol === 'file:'
+        ? { kind: 'file', path: fileURLToPath(resolved) }
+        : { kind: 'url', url: resolved.href }
+    },
     async acquire(location, context) {
       const depthDiagnostics = context.budget.checkReferenceDepth(
         location.kind === 'file'

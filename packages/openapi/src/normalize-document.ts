@@ -19,7 +19,7 @@ import {
   normalizeServers,
   operationMethodOrder,
 } from './normalize-operation.js'
-import { normalizeSchema } from './normalize-schema.js'
+import { normalizeSchema, type SchemaReferenceResolver } from './normalize-schema.js'
 import { detectOpenApiVersion } from './version.js'
 
 export interface NormalizeOpenApiResult {
@@ -27,9 +27,14 @@ export interface NormalizeOpenApiResult {
   readonly diagnostics: readonly Diagnostic[]
 }
 
+export interface NormalizeOpenApiOptions {
+  readonly resolveReference?: SchemaReferenceResolver
+}
+
 export function normalizeOpenApiDocument(
   input: unknown,
   source: SourceDocument,
+  options: NormalizeOpenApiOptions = {},
 ): NormalizeOpenApiResult {
   const versionResult = detectOpenApiVersion(input, source.uri)
   const diagnostics: Diagnostic[] = [...versionResult.diagnostics]
@@ -71,6 +76,9 @@ export function normalizeOpenApiDocument(
           operation: operationValue,
           rootSecurity: input.security,
           rootServers: input.servers,
+          ...(options.resolveReference === undefined
+            ? {}
+            : { referenceResolver: options.resolveReference }),
         }),
       )
     }
@@ -91,7 +99,13 @@ export function normalizeOpenApiDocument(
     components.schemas,
   ).flatMap(([name, schemaValue]) => {
     const schemaSource = createSourcePointer(source.uri, ['components', 'schemas', name])
-    const schema = normalizeSchema(schemaValue, schemaSource)
+    const schema = normalizeSchema(
+      schemaValue,
+      schemaSource,
+      new WeakSet(),
+      undefined,
+      options.resolveReference,
+    )
     return schema ? [{ name, schema, source: schemaSource }] : []
   })
 

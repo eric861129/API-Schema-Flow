@@ -17,6 +17,7 @@ export interface SourceAcquisitionResult {
 }
 
 export interface SourceAcquirer {
+  resolveLocation?(reference: string, parentUri: string): SourceLocation
   acquire(
     location: SourceLocation,
     context: SourceAcquisitionContext,
