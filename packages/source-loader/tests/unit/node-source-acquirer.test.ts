@@ -10,7 +10,9 @@ const temporaryDirectories: string[] = []
 
 afterEach(async () => {
   await Promise.all(
-    temporaryDirectories.splice(0).map((directory) => rm(directory, { force: true, recursive: true })),
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { force: true, recursive: true })),
   )
 })
 
@@ -24,7 +26,10 @@ function policyAndBudget(overrides: Record<string, unknown>) {
   const createSourceBudget = Reflect.get(sourceLoader, 'createSourceBudget')
   expect(createSourceRetrievalPolicy).toEqual(expect.any(Function))
   expect(createSourceBudget).toEqual(expect.any(Function))
-  if (typeof createSourceRetrievalPolicy !== 'function' || typeof createSourceBudget !== 'function') {
+  if (
+    typeof createSourceRetrievalPolicy !== 'function' ||
+    typeof createSourceBudget !== 'function'
+  ) {
     return undefined
   }
   const policy = createSourceRetrievalPolicy(overrides)
@@ -57,7 +62,10 @@ describe('Node source acquirer', () => {
     if (!context) return
 
     const acquirer = createNodeSourceAcquirer() as {
-      acquire(location: unknown, context: unknown): Promise<{
+      acquire(
+        location: unknown,
+        context: unknown,
+      ): Promise<{
         source?: { uri: string; contents: string }
         diagnostics: readonly { code: string }[]
       }>
@@ -73,9 +81,7 @@ describe('Node source acquirer', () => {
     if (!blockedContext) return
     const blocked = await acquirer.acquire({ kind: 'file', path: escapedLink }, blockedContext)
     expect(blocked.source).toBeUndefined()
-    expect(blocked.diagnostics).toEqual([
-      expect.objectContaining({ code: 'ASF-SRC-1004' }),
-    ])
+    expect(blocked.diagnostics).toEqual([expect.objectContaining({ code: 'ASF-SRC-1004' })])
   })
 
   test('blocks private DNS results before fetch', async () => {
@@ -92,20 +98,24 @@ describe('Node source acquirer', () => {
         return new Response('openapi: 3.1.0\n')
       },
     }) as {
-      acquire(location: unknown, context: unknown): Promise<{
+      acquire(
+        location: unknown,
+        context: unknown,
+      ): Promise<{
         source?: unknown
         diagnostics: readonly { code: string }[]
       }>
     }
     const context = policyAndBudget({})
     if (!context) return
-    const result = await acquirer.acquire({ kind: 'url', url: 'https://example.test/openapi.yaml' }, context)
+    const result = await acquirer.acquire(
+      { kind: 'url', url: 'https://example.test/openapi.yaml' },
+      context,
+    )
 
     expect(fetchCalls).toBe(0)
     expect(result.source).toBeUndefined()
-    expect(result.diagnostics).toEqual([
-      expect.objectContaining({ code: 'ASF-SRC-1005' }),
-    ])
+    expect(result.diagnostics).toEqual([expect.objectContaining({ code: 'ASF-SRC-1005' })])
   })
 
   test('loads an HTTPS document from a public address with credentials omitted', async () => {
@@ -125,14 +135,20 @@ describe('Node source acquirer', () => {
         })
       },
     }) as {
-      acquire(location: unknown, context: unknown): Promise<{
+      acquire(
+        location: unknown,
+        context: unknown,
+      ): Promise<{
         source?: { uri: string; mediaType?: string; contents: string }
         diagnostics: readonly { code: string }[]
       }>
     }
     const context = policyAndBudget({})
     if (!context) return
-    const result = await acquirer.acquire({ kind: 'url', url: 'https://example.test/openapi.yaml' }, context)
+    const result = await acquirer.acquire(
+      { kind: 'url', url: 'https://example.test/openapi.yaml' },
+      context,
+    )
 
     expect(result.diagnostics).toEqual([])
     expect(result.source).toMatchObject({

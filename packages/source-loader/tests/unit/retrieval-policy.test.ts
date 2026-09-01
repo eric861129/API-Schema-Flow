@@ -32,7 +32,10 @@ describe('source retrieval policy', () => {
 
     expect(createSourceRetrievalPolicy).toEqual(expect.any(Function))
     expect(createSourceBudget).toEqual(expect.any(Function))
-    if (typeof createSourceRetrievalPolicy !== 'function' || typeof createSourceBudget !== 'function') {
+    if (
+      typeof createSourceRetrievalPolicy !== 'function' ||
+      typeof createSourceBudget !== 'function'
+    ) {
       return
     }
 

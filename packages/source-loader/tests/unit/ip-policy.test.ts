@@ -3,8 +3,7 @@ import { describe, expect, test } from 'vitest'
 import * as sourceLoader from '../../src/index.js'
 
 const isBlockedIpAddress = Reflect.get(sourceLoader, 'isBlockedIpAddress') as
-  | ((address: string) => boolean)
-  | undefined
+  ((address: string) => boolean) | undefined
 
 describe('IP retrieval policy', () => {
   test.each([
