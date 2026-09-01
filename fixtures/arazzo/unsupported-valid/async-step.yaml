@@ -1,0 +1,16 @@
+arazzo: 1.1.0
+info:
+  title: Async workflow preservation
+  version: 0.1.0
+sourceDescriptions:
+  - name: eventsApi
+    url: ./asyncapi.yaml
+    type: asyncapi
+workflows:
+  - workflowId: publishReservation
+    steps:
+      - stepId: publish
+        channelPath: '{$sourceDescriptions.eventsApi.url}#/channels/reservations'
+        futureDirection: send
+        outputs:
+          messageId: $message.payload#/id

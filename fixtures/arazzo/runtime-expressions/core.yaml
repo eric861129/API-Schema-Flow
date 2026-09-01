@@ -1,0 +1,35 @@
+arazzo: 1.1.0
+info:
+  title: Runtime Expression fixture
+  version: 0.1.0
+sourceDescriptions:
+  - name: reservationApi
+    url: ./openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: expressions
+    inputs:
+      type: object
+      properties:
+        username:
+          type: string
+    steps:
+      - stepId: login
+        operationId: login
+        parameters:
+          - name: X-Context
+            in: header
+            value: '{$method} {$url}'
+        outputs:
+          token: $response.body#/token
+      - stepId: useToken
+        operationId: getReservation
+        dependsOn:
+          - login
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+          - name: username
+            in: query
+            value: $inputs.username

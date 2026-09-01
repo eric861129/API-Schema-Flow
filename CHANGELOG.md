@@ -19,10 +19,17 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Offline Reservation OpenAPI fixture, golden summary, unit tests, integration tests, security tests, and CLI smoke test.
 - Frozen pnpm lockfile and read-only GitHub Actions verification.
 - Apache License 2.0.
+- Policy-controlled local and HTTPS source acquisition with canonical path containment, DNS/IP protection, manual redirect validation, and bounded retrieval budgets.
+- Deterministic multi-document OpenAPI reference graphs, source fingerprints, resolved reference pointers, Link Object normalization, conformance diagnostics, fixtures, and performance gates.
+- A parser-independent Arazzo 1.1.x package with safe JSON/YAML parsing, extension and unsupported-field preservation, typed Runtime Expression and template ASTs, and deterministic normalized workflows.
+- Arazzo semantic validation, explicit and implicit dependency analysis, source URI resolution, abstract operation catalogs, deterministic operation binding, and supported/preserve-only/invalid feature reports.
+- CLI specification auto-detection and Arazzo validation reports for `schema-flow validate <file-or-url> [--json]`.
+- Canonical Reservation Arazzo workflow and synthetic valid, preserve-only, invalid, and Runtime Expression fixtures.
 
 ### Changed
 
-- Project status now distinguishes the implemented M0/M1-A slice from planned MVP capabilities.
+- Project status now distinguishes the implemented M0, M1, and M2-A slices from planned visualization, inference, execution, mock, and export capabilities.
+- OpenAPI and Arazzo packages are enforced as mutually independent parser boundaries, with CLI as their composition layer.
 - Public package declarations are checked to prevent Scalar and Zod implementation types from leaking across boundaries.
 
 ### Deprecated
@@ -31,7 +38,7 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Removed
 
-- Temporary lockfile bootstrap and formatting-preview workflows used during branch development.
+- Temporary lockfile bootstrap, formatting-preview, and development-artifact workflows used during branch development.
 
 ### Fixed
 
