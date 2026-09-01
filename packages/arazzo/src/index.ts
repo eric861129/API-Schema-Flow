@@ -55,3 +55,17 @@ export type {
   NormalizedArazzoWorkflow,
   PreservedRecord,
 } from './model.js'
+
+export {
+  analyzeWorkflowDependencies,
+  type ArazzoStepDependencySummary,
+  type ArazzoWorkflowDependencyAnalysis,
+} from './dependency-analysis.js'
+export { validateArazzoDocument } from './semantic-validation.js'
+export {
+  analyzeArazzoSupport,
+  type ArazzoFeatureSupport,
+  type ArazzoSupportLevel,
+  type ArazzoSupportReport,
+  type ArazzoWorkflowSupport,
+} from './support-analysis.js'
