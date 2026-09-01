@@ -18,11 +18,17 @@ describe('validate command integration', () => {
       stderr: (message) => stderr.push(message),
     }
 
-    const exitCode = await runCli(['validate', fixturePath, '--json'], { readFile }, io)
-    const report = JSON.parse(stdout.join(''))
+    const exitCode = await runCli(
+      ['validate', fixturePath, '--json'],
+      { readFile: (path) => readFile(path, 'utf8') },
+      io,
+    )
 
     expect(exitCode).toBe(0)
     expect(stderr).toEqual([])
+    expect(stdout).toHaveLength(1)
+
+    const report = JSON.parse(stdout.join(''))
     expect(report).toMatchObject({
       schemaVersion: '1.0',
       valid: true,
