@@ -15,10 +15,7 @@ import {
 
 import { normalizeOpenApiDocument, type NormalizeOpenApiResult } from './normalize-document.js'
 import type { OpenApiParserAdapter } from './parser-adapter.js'
-import {
-  loadOpenApiSourceGraph,
-  type OpenApiReference,
-} from './reference-graph.js'
+import { loadOpenApiSourceGraph, type OpenApiReference } from './reference-graph.js'
 import { ScalarOpenApiParserAdapter } from './scalar-parser-adapter.js'
 
 export interface ProcessOpenApiLocationOptions {

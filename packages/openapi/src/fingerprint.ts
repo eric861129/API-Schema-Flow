@@ -4,9 +4,7 @@ function bytesToHex(bytes: Uint8Array): string {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-export async function fingerprintSources(
-  sources: readonly SourceDocument[],
-): Promise<string> {
+export async function fingerprintSources(sources: readonly SourceDocument[]): Promise<string> {
   const encoder = new TextEncoder()
   const canonical = [...sources]
     .sort((left, right) => left.uri.localeCompare(right.uri))

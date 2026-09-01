@@ -198,13 +198,23 @@ export async function loadOpenApiSourceGraph(
     }
 
     if (targetDocument === undefined) {
-      references.push({ raw, source, targetUri: target.targetUri, targetPointer: target.targetPointer })
+      references.push({
+        raw,
+        source,
+        targetUri: target.targetUri,
+        targetPointer: target.targetPointer,
+      })
       return
     }
 
     const resolution = resolveJsonPointer(targetDocument.document, target.targetPointer)
     if (!resolution.found) {
-      references.push({ raw, source, targetUri: target.targetUri, targetPointer: target.targetPointer })
+      references.push({
+        raw,
+        source,
+        targetUri: target.targetUri,
+        targetPointer: target.targetPointer,
+      })
       diagnostics.push(missingReferenceDiagnostic(raw, source, resolution.reason))
       return
     }
@@ -247,10 +257,7 @@ export async function loadOpenApiSourceGraph(
     }
   }
 
-  async function walkDocument(
-    document: OpenApiSourceGraphDocument,
-    depth: number,
-  ): Promise<void> {
+  async function walkDocument(document: OpenApiSourceGraphDocument, depth: number): Promise<void> {
     await walkValue(document.document, [], document, depth)
   }
 

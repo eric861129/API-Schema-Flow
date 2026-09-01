@@ -18,9 +18,7 @@ function errorMessage(error: unknown): string {
   return String(error)
 }
 
-export function parseStructuredDocument(
-  source: SourceDocument,
-): ParseStructuredDocumentResult {
+export function parseStructuredDocument(source: SourceDocument): ParseStructuredDocumentResult {
   try {
     const parsed = normalize(source.contents)
     if (isRecord(parsed)) return { document: parsed, diagnostics: [] }
