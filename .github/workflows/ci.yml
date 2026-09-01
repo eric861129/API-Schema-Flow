@@ -13,6 +13,9 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+
 jobs:
   verify:
     name: Verify
@@ -32,18 +35,10 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Upload generated lockfile
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pnpm-lock
-          path: pnpm-lock.yaml
-          if-no-files-found: error
-          retention-days: 3
+        run: pnpm install --frozen-lockfile
 
       - name: Verify workspace
         run: pnpm ci:verify
