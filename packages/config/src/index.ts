@@ -1,1 +1,7 @@
-export {}
+export {
+  parseProjectConfig,
+  projectConfigSchema,
+  type FileProjectSource,
+  type ParseProjectConfigResult,
+  type ProjectConfigV1,
+} from './project-config.js'
