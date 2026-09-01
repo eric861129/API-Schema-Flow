@@ -83,3 +83,5 @@ export {
   type ResolveArazzoOperationsResult,
   type ResolvedArazzoOperation,
 } from './operation-resolution.js'
+
+export { processArazzoSource, type ProcessArazzoResult } from './process-arazzo.js'

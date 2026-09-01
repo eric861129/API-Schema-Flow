@@ -50,6 +50,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@api-schema-flow/arazzo':
+        specifier: workspace:*
+        version: link:../arazzo
       '@api-schema-flow/diagnostics':
         specifier: workspace:*
         version: link:../diagnostics

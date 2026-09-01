@@ -15,9 +15,15 @@ function createIo() {
 }
 
 function createDependencies(overrides: Partial<CliDependencies> = {}): CliDependencies {
+  const source = {
+    uri: 'file:///workspace/openapi.json',
+    contents: JSON.stringify({ openapi: '3.1.0', info: {}, paths: {} }),
+    byteLength: 45,
+    mediaType: 'application/json',
+  }
   const acquirer = {
     resolveLocation: vi.fn(),
-    acquire: vi.fn(),
+    acquire: vi.fn(async () => ({ source, diagnostics: [] })),
   }
   return {
     createAcquirer: () => acquirer,

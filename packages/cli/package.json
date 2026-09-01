@@ -24,6 +24,7 @@
     "schema-flow": "./bin/schema-flow.mjs"
   },
   "dependencies": {
+    "@api-schema-flow/arazzo": "workspace:*",
     "@api-schema-flow/diagnostics": "workspace:*",
     "@api-schema-flow/domain": "workspace:*",
     "@api-schema-flow/openapi": "workspace:*",
