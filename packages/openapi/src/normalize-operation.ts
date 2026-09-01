@@ -48,11 +48,7 @@ function normalizeParameter(
   if (!isRecord(value)) return undefined
   const name = stringValue(value.name)
   const location = stringValue(value.in)
-  if (
-    !name ||
-    !location ||
-    !PARAMETER_LOCATIONS.has(location as ParameterLocation)
-  ) {
+  if (!name || !location || !PARAMETER_LOCATIONS.has(location as ParameterLocation)) {
     return undefined
   }
 
