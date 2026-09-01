@@ -1,7 +1,4 @@
-export {
-  detectArazzoVersion,
-  type ArazzoVersionResult,
-} from './version.js'
+export { detectArazzoVersion, type ArazzoVersionResult } from './version.js'
 export {
   looksLikeArazzoSource,
   parseArazzoSource,
