@@ -1,0 +1,33 @@
+name: Preview M1-B Task 3 formatting
+
+on:
+  push:
+    branches:
+      - feat/m1b-ingestion-hardening
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m1b-ingestion-hardening
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Print Prettier patches
+        run: |
+          for file in packages/openapi/src/fingerprint.ts packages/openapi/src/parse-structured-document.ts packages/openapi/src/process-openapi.ts packages/openapi/src/reference-graph.ts; do
+            target="/tmp/$(basename "$file")"
+            pnpm exec prettier "$file" > "$target"
+            diff -u "$file" "$target" || true
+          done
