@@ -69,3 +69,17 @@ export {
   type ArazzoSupportReport,
   type ArazzoWorkflowSupport,
 } from './support-analysis.js'
+
+export {
+  resolveArazzoBaseUri,
+  resolveSourceDescriptionUris,
+  type ResolveArazzoBaseUriResult,
+  type ResolveArazzoSourcesResult,
+} from './source-resolution.js'
+export type { ArazzoCatalogOperation, ArazzoOperationCatalog } from './operation-catalog.js'
+export {
+  resolveArazzoOperations,
+  type ArazzoOperationResolutionStatus,
+  type ResolveArazzoOperationsResult,
+  type ResolvedArazzoOperation,
+} from './operation-resolution.js'
