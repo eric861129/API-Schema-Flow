@@ -37,9 +37,7 @@ function createMemoryAcquirer(externalDocuments: Readonly<Record<string, string>
         if (depthDiagnostics.length > 0) return { diagnostics: depthDiagnostics }
 
         const contents =
-          location.kind === 'inline'
-            ? String(location.content)
-            : externalDocuments[uri]
+          location.kind === 'inline' ? String(location.content) : externalDocuments[uri]
         if (contents === undefined) {
           return {
             diagnostics: [
@@ -56,9 +54,7 @@ function createMemoryAcquirer(externalDocuments: Readonly<Record<string, string>
         const created = createSourceDocument({ uri, contents })
         if (created.source === undefined) return created
         const budgetDiagnostics = budget.consumeDocument(uri, created.source.byteLength)
-        return budgetDiagnostics.length > 0
-          ? { diagnostics: budgetDiagnostics }
-          : created
+        return budgetDiagnostics.length > 0 ? { diagnostics: budgetDiagnostics } : created
       },
     },
   }
@@ -162,7 +158,9 @@ describe('OpenAPI source graph', () => {
 
     const externalUri = 'https://example.test/components.json'
     const memory = createMemoryAcquirer({
-      [externalUri]: JSON.stringify({ components: { schemas: { Reservation: { type: 'object' } } } }),
+      [externalUri]: JSON.stringify({
+        components: { schemas: { Reservation: { type: 'object' } } },
+      }),
     })
     const result = await loadOpenApiSourceGraph({
       location: {
@@ -175,8 +173,6 @@ describe('OpenAPI source graph', () => {
     })
 
     expect(result.graph?.documents).toHaveLength(1)
-    expect(result.diagnostics).toEqual([
-      expect.objectContaining({ code: 'ASF-SRC-1013' }),
-    ])
+    expect(result.diagnostics).toEqual([expect.objectContaining({ code: 'ASF-SRC-1013' })])
   })
 })
