@@ -9,3 +9,4 @@ docs/
 *.jpeg
 *.gif
 *.webp
+pnpm-lock.yaml

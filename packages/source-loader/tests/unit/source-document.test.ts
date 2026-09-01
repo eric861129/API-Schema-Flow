@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import {
-  DEFAULT_SOURCE_SIZE_LIMIT_BYTES,
-  createSourceDocument,
-} from '../../src/index.js'
+import { DEFAULT_SOURCE_SIZE_LIMIT_BYTES, createSourceDocument } from '../../src/index.js'
 
 describe('source documents', () => {
   test('creates a bounded UTF-8 source document', () => {

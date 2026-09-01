@@ -12,13 +12,7 @@ const nodeGlobals = {
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/dist/**',
-      '**/coverage/**',
-      '**/node_modules/**',
-      '**/.turbo/**',
-      'docs/**',
-    ],
+    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', '**/.turbo/**', 'docs/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
