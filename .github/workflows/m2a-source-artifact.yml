@@ -1,0 +1,26 @@
+name: M2-A source artifact
+
+on:
+  push:
+    branches:
+      - feat/m2a-arazzo-core
+    paths:
+      - .github/workflows/m2a-source-artifact.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create source archive
+        run: tar --exclude=.git --exclude=node_modules --exclude='**/dist' -czf /tmp/m2a-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m2a-source
+          path: /tmp/m2a-source.tar.gz
+          retention-days: 1
