@@ -159,12 +159,9 @@ export function createNodeSourceAcquirer(
     } catch (error) {
       return {
         diagnostics: [
-          diagnostic(
-            DIAGNOSTIC_CODES.SOURCE_FETCH_FAILED,
-            'Source URL is invalid.',
-            location.url,
-            { reason: errorMessage(error) },
-          ),
+          diagnostic(DIAGNOSTIC_CODES.SOURCE_FETCH_FAILED, 'Source URL is invalid.', location.url, {
+            reason: errorMessage(error),
+          }),
         ],
       }
     }
