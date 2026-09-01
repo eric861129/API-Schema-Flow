@@ -73,7 +73,10 @@ function writeReport(report: ValidationReport, json: boolean, io: CliIo): void {
   else writeHumanReport(report, io)
 }
 
-function createInputFailureReport(filePath: string, error: Error & { readonly code: string }): ValidationReport {
+function createInputFailureReport(
+  filePath: string,
+  error: Error & { readonly code: string },
+): ValidationReport {
   return {
     schemaVersion: '1.0',
     command: 'validate',
