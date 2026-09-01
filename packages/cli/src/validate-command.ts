@@ -1,10 +1,12 @@
 import {
+  DIAGNOSTIC_CODES,
   formatDiagnostic,
   hasDiagnosticErrors,
   sortDiagnostics,
   type Diagnostic,
 } from '@api-schema-flow/diagnostics'
 import { processOpenApi as defaultProcessOpenApi } from '@api-schema-flow/openapi'
+import { redactSecrets, redactText } from '@api-schema-flow/redaction'
 import { createSourceDocument } from '@api-schema-flow/source-loader'
 
 import type { CliDependencies, CliIo } from './run-cli.js'
@@ -21,10 +23,27 @@ export interface ValidationReport {
   readonly diagnostics: readonly Diagnostic[]
 }
 
+const LOCAL_INPUT_ERROR_CODES = new Set(['EACCES', 'EISDIR', 'ENOENT', 'ENOTDIR', 'EPERM'])
+
 function mediaTypeForPath(path: string): string | undefined {
   if (path.endsWith('.json')) return 'application/json'
   if (path.endsWith('.yaml') || path.endsWith('.yml')) return 'application/yaml'
   return undefined
+}
+
+function isLocalInputError(error: unknown): error is Error & { readonly code: string } {
+  if (!(error instanceof Error) || !('code' in error)) return false
+  return typeof error.code === 'string' && LOCAL_INPUT_ERROR_CODES.has(error.code)
+}
+
+function sanitizeDiagnostic(diagnostic: Diagnostic): Diagnostic {
+  return {
+    ...diagnostic,
+    message: redactText(diagnostic.message),
+    ...(diagnostic.details === undefined
+      ? {}
+      : { details: redactSecrets(diagnostic.details) }),
+  }
 }
 
 function writeHumanReport(report: ValidationReport, io: CliIo): void {
@@ -49,13 +68,49 @@ function writeHumanReport(report: ValidationReport, io: CliIo): void {
   writer(`${lines.join('\n')}\n`)
 }
 
+function writeReport(report: ValidationReport, json: boolean, io: CliIo): void {
+  if (json) io.stdout(`${JSON.stringify(report, null, 2)}\n`)
+  else writeHumanReport(report, io)
+}
+
+function createInputFailureReport(filePath: string, error: Error & { readonly code: string }): ValidationReport {
+  return {
+    schemaVersion: '1.0',
+    command: 'validate',
+    source: filePath,
+    valid: false,
+    operationCount: 0,
+    schemaCount: 0,
+    diagnostics: [
+      {
+        code: DIAGNOSTIC_CODES.CLI_INPUT,
+        severity: 'error',
+        message: `Unable to read local file "${filePath}".`,
+        source: { uri: filePath, pointer: '#' },
+        details: {
+          code: error.code,
+          reason: redactText(error.message),
+        },
+      },
+    ],
+  }
+}
+
 export async function executeValidateCommand(
   filePath: string,
   json: boolean,
   dependencies: CliDependencies,
   io: CliIo,
 ): Promise<number> {
-  const contents = await dependencies.readFile(filePath)
+  let contents: string
+  try {
+    contents = await dependencies.readFile(filePath)
+  } catch (error) {
+    if (!isLocalInputError(error)) throw error
+    writeReport(createInputFailureReport(filePath, error), json, io)
+    return 2
+  }
+
   const mediaType = mediaTypeForPath(filePath)
   const sourceResult = createSourceDocument({
     uri: filePath,
@@ -66,7 +121,7 @@ export async function executeValidateCommand(
   const processed = sourceResult.source
     ? await processor(sourceResult.source)
     : { diagnostics: sourceResult.diagnostics }
-  const diagnostics = sortDiagnostics(processed.diagnostics)
+  const diagnostics = sortDiagnostics(processed.diagnostics.map(sanitizeDiagnostic))
   const valid = Boolean(processed.document) && !hasDiagnosticErrors(diagnostics)
   const report: ValidationReport = {
     schemaVersion: '1.0',
@@ -84,8 +139,6 @@ export async function executeValidateCommand(
     diagnostics,
   }
 
-  if (json) io.stdout(`${JSON.stringify(report, null, 2)}\n`)
-  else writeHumanReport(report, io)
-
+  writeReport(report, json, io)
   return valid ? 0 : sourceResult.source ? 1 : 2
 }
