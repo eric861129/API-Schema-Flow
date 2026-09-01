@@ -1,9 +1,5 @@
 import { createSourcePointer } from '@api-schema-flow/domain'
-import {
-  DIAGNOSTIC_CODES,
-  sortDiagnostics,
-  type Diagnostic,
-} from '@api-schema-flow/diagnostics'
+import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
 import type { SourceDocument } from '@api-schema-flow/source-loader'
 import { parseDocument } from 'yaml'
 
