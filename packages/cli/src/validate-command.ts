@@ -76,9 +76,7 @@ function retrievalPolicy(
     allowHttp: options.allowHttp,
     allowPrivateNetwork: options.allowPrivateNetwork,
     ...(options.maxDocuments === undefined ? {} : { maxDocuments: options.maxDocuments }),
-    ...(options.maxTotalBytes === undefined
-      ? {}
-      : { maxTotalBytes: options.maxTotalBytes }),
+    ...(options.maxTotalBytes === undefined ? {} : { maxTotalBytes: options.maxTotalBytes }),
     ...(options.maxReferenceDepth === undefined
       ? {}
       : { maxReferenceDepth: options.maxReferenceDepth }),
@@ -131,11 +129,7 @@ function failureExitCode(diagnostics: readonly Diagnostic[]): number {
     .map(({ code }) => code)
 
   if (errorCodes.some((code) => code.startsWith('ASF-INT-'))) return 3
-  if (
-    errorCodes.some(
-      (code) => code.startsWith('ASF-SRC-') || code.startsWith('ASF-CLI-'),
-    )
-  ) {
+  if (errorCodes.some((code) => code.startsWith('ASF-SRC-') || code.startsWith('ASF-CLI-'))) {
     return 2
   }
   return 1

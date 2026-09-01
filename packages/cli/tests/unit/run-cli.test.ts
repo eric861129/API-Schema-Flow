@@ -51,9 +51,7 @@ describe('schema-flow CLI', () => {
     const exitCode = await runCli(['validate'], createDependencies(), output.io)
 
     expect(exitCode).toBe(2)
-    expect(output.stderr.join('')).toContain(
-      'Usage: schema-flow validate <file-or-url> [--json]',
-    )
+    expect(output.stderr.join('')).toContain('Usage: schema-flow validate <file-or-url> [--json]')
   })
 
   test('emits a stable JSON validation report', async () => {
