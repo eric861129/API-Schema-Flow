@@ -2,9 +2,68 @@
 
 > **將 OpenAPI 的端點清單，轉換成可視化、可執行、可模擬的 API 工作流程。**
 
-API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。它會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
+API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha／規格設計階段**。下列 CLI 指令代表預計完成的 MVP 體驗，目前尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。目前 Repository 已完成 M0 Foundation 與 M1-A OpenAPI Core Slice，包含可實際執行的本機 `validate` 指令。視覺化 Workspace、Arazzo、Inference、Stateful Mock、Workflow Executor 與 Exporter 仍在 Roadmap 中；目前尚未發布 npm 套件。
+
+## 現在已經能做什麼？
+
+目前版本已具備：
+
+- pnpm、Turborepo 與 TypeScript Strict Monorepo；
+- Parser-independent 的 Domain、Diagnostics、Redaction、Project Config 與 Source Loader Package；
+- 隱藏在自有介面後方的 Scalar OpenAPI Parser Adapter；
+- 具備決定性的 OpenAPI Operation 與 Schema Normalization；
+- OpenAPI 3.0.x、3.1.x 支援，以及 3.2.x Compatibility Diagnostic；
+- 本機 YAML／JSON 的 `schema-flow validate <file> [--json]`；
+- Structured Diagnostic、Stable Source Pointer、敏感資料遮罩與穩定 Exit Code；
+- 離線 Reservation API Fixture，以及 Unit、Integration、Golden、Security、Boundary Test；
+- 使用 Frozen Lockfile 的 GitHub Actions 驗證流程。
+
+## 執行目前的垂直切片
+
+環境需求：
+
+- Node.js 24
+- pnpm 11
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+
+node packages/cli/bin/schema-flow.mjs \
+  validate examples/reservation/openapi.yaml
+```
+
+取得機器可讀的 JSON 輸出：
+
+```bash
+node packages/cli/bin/schema-flow.mjs \
+  validate examples/reservation/openapi.yaml \
+  --json
+```
+
+執行與 CI 相同的完整品質檢查：
+
+```bash
+pnpm ci:verify
+```
+
+成功驗證時，現在會得到：
+
+```text
+API Schema Flow
+
+✓ OpenAPI document loaded
+✓ OpenAPI 3.1.0 detected
+✓ 4 operations normalized
+✓ 6 schemas discovered
+✓ 0 errors
+✓ 0 warnings
+
+Validation completed successfully.
+```
 
 ## 為什麼需要這個專案？
 
@@ -17,14 +76,31 @@ OpenAPI 很擅長描述單一 API Operation，卻很難直接回答流程層級�
 
 API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作流程層」。
 
+## 功能狀態
+
+| 能力 | 目前 Repository | MVP 方向 |
+|---|---|---|
+| OpenAPI 匯入 | M1-A 已支援本機 YAML／JSON | M1-B 增加受政策控制的 URL 與 Multi-file Loading |
+| OpenAPI Normalization | 已具備 Stable ID、Source Pointer、Schema、Security、Server 與 Diagnostic | 後續增加 Fixture、Link、效能與 Conformance Coverage |
+| CLI | 已完成 `validate <file> [--json]` | 預計增加 `open`、`infer`、`mock`、`run`、`export` |
+| Workflow 標準 | 尚未實作 | Arazzo 1.1.x 匯入、驗證、視覺化與支援子集合執行 |
+| 視覺拓撲 | 目前只有設計規格與概念圖 | React Flow 節點與連線，使用 ELK Layered Layout |
+| 依賴推導 | 尚未實作 | Declared、Manual 與具 Evidence 的 Inferred Edge |
+| Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
+| Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
+| Live Trace 與 Export | 尚未實作 | Live Trace、Arazzo、Mermaid、Project JSON 與執行報告 |
+| 變更影響 | Post-MVP | Flow-aware OpenAPI Diff 與 GitHub 整合 |
+
 ## 目標使用體驗
 
+最終希望提供：
+
 ```bash
-# 目標 CLI 體驗；正式發布前仍需確認套件名稱可用性。
+# 規劃中的 CLI 體驗；npm 套件尚未發布。
 npx schema-flow open ./openapi.yaml
 ```
 
-執行後開啟本機 Workspace，使用者可以：
+執行後開啟本機 Web Workspace，使用者可以：
 
 1. 查看 Endpoint Node、Request 與 Response Schema；
 2. 審核 Declared、Manual 與 Inferred 依賴；
@@ -32,20 +108,6 @@ npx schema-flow open ./openapi.yaml
 4. 匯出符合標準的 Arazzo Workflow；
 5. 啟動彼此隔離的 Stateful Mock Session；
 6. 執行工作流並查看逐步 Live Trace。
-
-## MVP 核心能力
-
-| 能力 | MVP 定義 |
-|---|---|
-| OpenAPI 匯入 | 正式支援 3.0.x、3.1.x；3.2.x 採相容性設定檔 |
-| 工作流標準 | Arazzo 1.1.x 匯入、驗證、視覺化與「明確標示的子集合」執行 |
-| 視覺拓撲 | React Flow 節點與連線，使用 ELK Layered Layout |
-| 依賴探索 | Declared、Manual 與具證據分數的 Inferred Edge |
-| Stateful Mock | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
-| 工作流執行 | 同步 OpenAPI Step、Inputs、Mappings、Outputs、Criteria、Timeout、有限 Retry |
-| Live Trace | Step 耗時、Request/Response 摘要、輸出擷取、狀態異動與失敗原因 |
-| 匯出 | Arazzo、Mermaid、Project JSON、機器可讀的執行報告 |
-| 變更影響 | Post-MVP 的 Flow-aware OpenAPI Diff |
 
 ## 差異化原則
 
@@ -77,7 +139,31 @@ flowchart LR
     RUN --> TRACE[Live Trace / Run Report]
 ```
 
-Domain Model、Inference、Execution 與 Mock Runtime 不得直接依賴 React、Fastify、MSW 或特定 OpenAPI Parser。
+目前已完成的 Core 會將 Framework 與 Parser 細節封裝在 Package Boundary 之後，讓 Domain、Diagnostics、Redaction、Config、Source Loading、OpenAPI Normalization 與 CLI 不直接依賴未來的 React、Fastify、MSW 或 ELK Adapter。
+
+## 目前的 Repository 結構
+
+```text
+packages/
+  domain/
+  diagnostics/
+  redaction/
+  config/
+  source-loader/
+  openapi/
+  cli/
+examples/
+  reservation/
+docs/
+  adr/
+  design/
+  spikes/
+  superpowers/plans/
+tooling/
+.github/workflows/
+```
+
+完整規劃請參考 [Repository Structure](docs/22-REPOSITORY-STRUCTURE.md)。
 
 ## 專案邊界
 
@@ -98,18 +184,18 @@ MVP 不會嘗試成為：
 - [產品需求文件 PRD](docs/02-PRD.md)
 - [MVP 範圍與驗收](docs/03-MVP-SCOPE-AND-ACCEPTANCE.md)
 - [系統架構](docs/06-SYSTEM-ARCHITECTURE.md)
-- [Flow Inference 規格](docs/10-FLOW-INFERENCE-SPEC.md)
-- [Stateful Mock Runtime 規格](docs/11-STATEFUL-MOCK-RUNTIME-SPEC.md)
-- [Web UX 規格](docs/13-WEB-APP-UX-SPEC.md)
+- [OpenAPI Ingestion 規格](docs/08-OPENAPI-INGESTION-SPEC.md)
+- [CLI 規格](docs/14-CLI-SPEC.md)
 - [安全威脅模型](docs/19-SECURITY-THREAT-MODEL.md)
-- [正式開工檢查表](docs/30-IMPLEMENTATION-READINESS-CHECKLIST.md)
+- [測試策略](docs/20-TEST-STRATEGY.md)
+- [M0/M1-A Implementation Plan](docs/superpowers/plans/2026-09-01-m0-m1a-foundation.md)
 
 English: [README.md](README.md)
 
 ## 安全與隱私
 
-MVP 採 Local-first，預設不傳送 Telemetry。Remote `$ref`、URL 匯入、Markdown 呈現、Mock Server 對外暴露與敏感 Header 都屬於明確的 Trust Boundary。詳見 [SECURITY.md](SECURITY.md) 與 [安全威脅模型](docs/19-SECURITY-THREAT-MODEL.md)。
+本專案採 Local-first，預設不傳送 Telemetry。M1-A 只讀取本機檔案，未啟用 Remote URL Loader 或 Fetch Plugin；Parser Diagnostic 與 Normalized Example 在進入 CLI 輸出前會執行敏感資料遮罩。詳見 [SECURITY.md](SECURITY.md) 與 [安全威脅模型](docs/19-SECURITY-THREAT-MODEL.md)。
 
 ## License
 
-建議採用 **Apache License 2.0**。此專案屬於標準導向的基礎工具，Apache-2.0 的專利授權條款有利於企業採用與外部貢獻。公開 Repo 前仍由專案負責人完成最終確認，記錄於 [Open Decisions](docs/25-OPEN-DECISIONS.md)。
+本專案採用 [Apache License 2.0](LICENSE)。

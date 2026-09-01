@@ -1,0 +1,42 @@
+{
+  "name": "api-schema-flow",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eric861129/API-Schema-Flow.git"
+  },
+  "homepage": "https://github.com/eric861129/API-Schema-Flow#readme",
+  "bugs": {
+    "url": "https://github.com/eric861129/API-Schema-Flow/issues"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24 <27",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "workspace:check": "node tooling/scripts/check-workspace.mjs",
+    "boundaries:check": "node tooling/scripts/check-boundaries.mjs",
+    "ci:verify": "pnpm workspace:check && pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm boundaries:check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.0.0",
+    "prettier": "^3.9.0",
+    "turbo": "^2.10.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.0"
+  }
+}

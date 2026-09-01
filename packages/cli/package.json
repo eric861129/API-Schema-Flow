@@ -1,0 +1,33 @@
+{
+  "name": "@api-schema-flow/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run tests/unit --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "bin": {
+    "schema-flow": "./bin/schema-flow.mjs"
+  },
+  "dependencies": {
+    "@api-schema-flow/diagnostics": "workspace:*",
+    "@api-schema-flow/domain": "workspace:*",
+    "@api-schema-flow/openapi": "workspace:*",
+    "@api-schema-flow/redaction": "workspace:*",
+    "@api-schema-flow/source-loader": "workspace:*"
+  }
+}

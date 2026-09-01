@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+docs/
+*.md
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+pnpm-lock.yaml
