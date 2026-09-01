@@ -21,7 +21,6 @@ import { ScalarOpenApiParserAdapter } from './scalar-parser-adapter.js'
 export interface ProcessOpenApiLocationOptions {
   readonly acquirer: SourceAcquirer
   readonly policy?: SourceRetrievalPolicy
-  readonly adapter?: OpenApiParserAdapter
 }
 
 function referenceKey(reference: string, source: SourcePointer): string {
@@ -83,15 +82,7 @@ export async function processOpenApiLocation(
     return { diagnostics: sortDiagnostics([...graphResult.diagnostics, diagnostic]) }
   }
 
-  const adapter = options.adapter ?? new ScalarOpenApiParserAdapter()
-  const parsed = await adapter.parse(entry.source)
-  if (!parsed.document || hasDiagnosticErrors(parsed.diagnostics)) {
-    return {
-      diagnostics: sortDiagnostics([...graphResult.diagnostics, ...parsed.diagnostics]),
-    }
-  }
-
-  const normalized = normalizeOpenApiDocument(parsed.document, entry.source, {
+  const normalized = normalizeOpenApiDocument(entry.document, entry.source, {
     resolveReference: referenceResolver(graphResult.graph.references),
   })
   const document =
@@ -106,10 +97,6 @@ export async function processOpenApiLocation(
 
   return {
     ...(document === undefined ? {} : { document }),
-    diagnostics: sortDiagnostics([
-      ...graphResult.diagnostics,
-      ...parsed.diagnostics,
-      ...normalized.diagnostics,
-    ]),
+    diagnostics: sortDiagnostics([...graphResult.diagnostics, ...normalized.diagnostics]),
   }
 }
