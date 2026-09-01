@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import * as sourceLoader from '../../src/index.js'
 
+// These contract tests intentionally precede the M1-B retrieval implementation.
 const sourceLoaderExports = sourceLoader as unknown as Record<string, unknown>
 
 describe('source retrieval policy', () => {
