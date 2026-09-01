@@ -26,9 +26,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Create development archive
-        run: tar --exclude=.git --exclude='**/dist' -czf /tmp/m2a-dev.tar.gz .
+        run: |
+          find packages apps -type d -name dist -prune -exec rm -rf {} + 2>/dev/null || true
+          tar --exclude=.git -czf /tmp/m2a-dev.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
-          name: m2a-dev
+          name: m2a-dev-complete
           path: /tmp/m2a-dev.tar.gz
           retention-days: 1
