@@ -31,4 +31,27 @@ describe('Scalar parser adapter', () => {
     expect(result.diagnostics.length).toBeGreaterThan(0)
     expect(result.diagnostics[0]).toMatchObject({ code: 'ASF-OAS-1003', severity: 'error' })
   })
+
+  test('does not fetch external references without an explicit source-loading policy', async () => {
+    const contents = JSON.stringify({
+      openapi: '3.1.0',
+      info: { title: 'External reference', version: '1.0.0' },
+      paths: {},
+      components: {
+        schemas: {
+          External: { $ref: 'https://example.invalid/private.yaml#/External' },
+        },
+      },
+    })
+    const result = await adapter.parse({
+      uri: 'memory://external-ref.json',
+      byteLength: Buffer.byteLength(contents),
+      contents,
+    })
+
+    expect(result.document).toBeUndefined()
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({ code: 'ASF-OAS-1003', severity: 'error' }),
+    ])
+  })
 })

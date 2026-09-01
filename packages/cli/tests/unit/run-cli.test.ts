@@ -61,6 +61,58 @@ describe('schema-flow CLI', () => {
     expect(output.stderr).toEqual([])
   })
 
+  test('returns input exit code when a local file cannot be read', async () => {
+    const output = createIo()
+    const inputError = Object.assign(new Error('ENOENT: no such file or directory'), {
+      code: 'ENOENT',
+    })
+    const exitCode = await runCli(
+      ['validate', 'missing.yaml'],
+      createDependencies({
+        readFile: vi.fn(async () => {
+          throw inputError
+        }),
+      }),
+      output.io,
+    )
+
+    expect(exitCode).toBe(2)
+    expect(output.stderr.join('')).toContain('ASF-CLI-1002')
+    expect(output.stderr.join('')).toContain('missing.yaml')
+  })
+
+  test('redacts parser diagnostics in JSON output', async () => {
+    const output = createIo()
+    const exitCode = await runCli(
+      ['validate', 'openapi.json', '--json'],
+      createDependencies({
+        processOpenApi: vi.fn(async () => ({
+          diagnostics: [
+            {
+              code: 'ASF-OAS-1003',
+              severity: 'error' as const,
+              message: 'Authorization: Bearer parser-secret',
+              source: { uri: 'openapi.json', pointer: '#' },
+              details: { accessToken: 'details-secret' },
+            },
+          ],
+        })),
+      }),
+      output.io,
+    )
+
+    const rawOutput = output.stdout.join('')
+    const report = JSON.parse(rawOutput)
+
+    expect(exitCode).toBe(1)
+    expect(rawOutput).not.toContain('parser-secret')
+    expect(rawOutput).not.toContain('details-secret')
+    expect(report.diagnostics[0]).toMatchObject({
+      message: 'Authorization: Bearer [REDACTED]',
+      details: { accessToken: '[REDACTED]' },
+    })
+  })
+
   test('redacts unexpected credential text', async () => {
     const output = createIo()
     const exitCode = await runCli(

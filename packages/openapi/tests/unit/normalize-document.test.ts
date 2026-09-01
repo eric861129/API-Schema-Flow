@@ -111,6 +111,85 @@ describe('OpenAPI normalization', () => {
     ])
   })
 
+  test('preserves the source pointer of inherited root servers', () => {
+    const result = normalizeOpenApiDocument(document, source)
+    expect(result.document?.operations[0]?.servers[0]?.source).toEqual({
+      uri: source.uri,
+      pointer: '#/servers/0',
+    })
+  })
+
+  test('preserves OpenAPI security alternative groups', () => {
+    const result = normalizeOpenApiDocument(
+      {
+        ...document,
+        security: [{ oauth: ['read'], apiKey: [] }, { bearerAuth: [] }],
+      },
+      source,
+    )
+
+    expect(result.document?.operations[0]?.security).toEqual([
+      { requirementIndex: 0, scheme: 'apiKey', scopes: [] },
+      { requirementIndex: 0, scheme: 'oauth', scopes: ['read'] },
+      { requirementIndex: 1, scheme: 'bearerAuth', scopes: [] },
+    ])
+  })
+
+  test('redacts secret-shaped examples and defaults in normalized schemas', () => {
+    const result = normalizeOpenApiDocument(
+      {
+        ...document,
+        components: {
+          ...document.components,
+          schemas: {
+            ...document.components.schemas,
+            Credentials: {
+              type: 'object',
+              properties: {
+                password: { type: 'string', example: 'password-secret' },
+                accessToken: { type: 'string', default: 'token-secret' },
+                email: { type: 'string', example: 'developer@example.test' },
+              },
+            },
+          },
+        },
+      },
+      source,
+    )
+
+    const schema = result.document?.componentSchemas.find(({ name }) => name === 'Credentials')
+    expect(schema?.schema.properties.password?.example).toBe('[REDACTED]')
+    expect(schema?.schema.properties.accessToken?.defaultValue).toBe('[REDACTED]')
+    expect(schema?.schema.properties.email?.example).toBe('developer@example.test')
+  })
+
+  test('retains the OpenAPI 3.2 querystring parameter location in compatibility mode', () => {
+    const result = normalizeOpenApiDocument(
+      {
+        ...document,
+        openapi: '3.2.0',
+        paths: {
+          '/search': {
+            get: {
+              parameters: [
+                {
+                  name: 'filters',
+                  in: 'querystring',
+                  required: false,
+                  schema: { type: 'string' },
+                },
+              ],
+              responses: { '200': { description: 'OK' } },
+            },
+          },
+        },
+      },
+      source,
+    )
+
+    expect(result.document?.operations[0]?.parameters[0]?.location).toBe('querystring')
+  })
+
   test('emits a compatibility warning for OpenAPI 3.2', () => {
     const result = normalizeOpenApiDocument({ ...document, openapi: '3.2.0' }, source)
     expect(result.document?.compatibilityMode).toBe(true)

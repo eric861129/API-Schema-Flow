@@ -6,19 +6,36 @@ const root = fileURLToPath(new URL('../../', import.meta.url))
 const packagesDirectory = fileURLToPath(new URL('../../packages/', import.meta.url))
 const forbiddenDeepImport = /from\s+['"]@api-schema-flow\/[^'"]+\/src\//
 const scalarTypeLeak = /@scalar\/openapi-parser/
+const zodTypeLeak = /(?:from|import\()\s*['"]zod['"]/
 
-async function walk(directory) {
+async function walk(directory, options = {}) {
+  const { includeDist = false, extension = '.ts' } = options
   const entries = await readdir(directory, { withFileTypes: true })
   const files = []
 
   for (const entry of entries) {
-    if (['dist', 'node_modules', 'coverage'].includes(entry.name)) continue
+    if ((!includeDist && entry.name === 'dist') || ['node_modules', 'coverage'].includes(entry.name)) {
+      continue
+    }
     const child = path.join(directory, entry.name)
-    if (entry.isDirectory()) files.push(...(await walk(child)))
-    else if (entry.isFile() && entry.name.endsWith('.ts')) files.push(child)
+    if (entry.isDirectory()) files.push(...(await walk(child, options)))
+    else if (entry.isFile() && entry.name.endsWith(extension)) files.push(child)
   }
 
   return files
+}
+
+async function collectDeclarationViolations(directory, pattern, message) {
+  const files = await walk(directory, { includeDist: true, extension: '.d.ts' })
+  const violations = []
+
+  for (const file of files) {
+    if (pattern.test(await readFile(file, 'utf8'))) {
+      violations.push(`${path.relative(root, file)}: ${message}`)
+    }
+  }
+
+  return violations
 }
 
 async function main() {
@@ -36,7 +53,24 @@ async function main() {
     if (!relative.startsWith('packages/openapi/') && scalarTypeLeak.test(content)) {
       violations.push(`${relative}: Scalar parser leaked outside openapi package`)
     }
+
+    if (!relative.startsWith('packages/config/') && zodTypeLeak.test(content)) {
+      violations.push(`${relative}: Zod leaked outside config package`)
+    }
   }
+
+  violations.push(
+    ...(await collectDeclarationViolations(
+      path.join(packagesDirectory, 'openapi', 'dist'),
+      scalarTypeLeak,
+      'Scalar type leaked through public declarations',
+    )),
+    ...(await collectDeclarationViolations(
+      path.join(packagesDirectory, 'config', 'dist'),
+      zodTypeLeak,
+      'Zod type leaked through public declarations',
+    )),
+  )
 
   if (violations.length > 0) {
     throw new Error(`Package boundary violations:\n${violations.join('\n')}`)
