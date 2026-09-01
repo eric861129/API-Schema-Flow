@@ -1,8 +1,8 @@
 import {
-  createSourceBudget,
   createSourceDocument,
   createSourceRetrievalPolicy,
 } from '@api-schema-flow/source-loader'
+import type { createSourceBudget } from '@api-schema-flow/source-loader'
 import { describe, expect, test } from 'vitest'
 
 import * as openApi from '../../src/index.js'
