@@ -34,7 +34,10 @@ function nonNegativeInteger(flag: string, value: string | undefined): number | s
   return parsed
 }
 
-function flagValue(arguments_: readonly string[], index: number): string | undefined {
+function flagValue(
+  arguments_: readonly string[],
+  index: number,
+): string | undefined {
   const value = arguments_[index + 1]
   return value === undefined || value.startsWith('--') ? undefined : value
 }
