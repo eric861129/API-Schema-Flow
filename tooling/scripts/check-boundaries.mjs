@@ -1,8 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('../../', import.meta.url)
-const packagesDirectory = new URL('../../packages/', import.meta.url)
+const root = fileURLToPath(new URL('../../', import.meta.url))
+const packagesDirectory = fileURLToPath(new URL('../../packages/', import.meta.url))
 const forbiddenDeepImport = /from\s+['"]@api-schema-flow\/[^'"]+\/src\//
 const scalarTypeLeak = /@scalar\/openapi-parser/
 
@@ -26,7 +27,7 @@ async function main() {
 
   for (const file of packageFiles) {
     const content = await readFile(file, 'utf8')
-    const relative = path.relative(root.pathname, file)
+    const relative = path.relative(root, file)
 
     if (forbiddenDeepImport.test(content)) {
       violations.push(`${relative}: deep workspace import`)
