@@ -115,7 +115,7 @@ describe('OpenAPI Link normalization', () => {
       source,
     )
 
-    const link = result.document?.operations[0]?.responses[0]?.links[0]
+    const link = result.document?.operations[0]?.responses[0]?.links?.[0]
     expect(link).toMatchObject({
       name: 'Missing',
       target: { type: 'operationRef', operationRef: '#/paths/~1missing/get' },
