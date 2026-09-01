@@ -1,0 +1,44 @@
+name: M2-A normalizer format autofix
+
+on:
+  push:
+    branches:
+      - feat/m2a-arazzo-core
+    paths:
+      - packages/arazzo/src/index.ts
+      - packages/arazzo/src/normalize-arazzo.ts
+      - packages/arazzo/src/normalize-value.ts
+      - .github/workflows/m2a-normalizer-format-autofix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2a-arazzo-core
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write packages/arazzo/src/index.ts packages/arazzo/src/normalize-arazzo.ts packages/arazzo/src/normalize-value.ts
+      - name: Commit formatting
+        run: |
+          if git diff --quiet -- packages/arazzo/src; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/arazzo/src/index.ts packages/arazzo/src/normalize-arazzo.ts packages/arazzo/src/normalize-value.ts
+          git commit -m "style(arazzo): format workflow normalizer"
+          git push
