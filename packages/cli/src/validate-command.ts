@@ -40,9 +40,7 @@ function sanitizeDiagnostic(diagnostic: Diagnostic): Diagnostic {
   return {
     ...diagnostic,
     message: redactText(diagnostic.message),
-    ...(diagnostic.details === undefined
-      ? {}
-      : { details: redactSecrets(diagnostic.details) }),
+    ...(diagnostic.details === undefined ? {} : { details: redactSecrets(diagnostic.details) }),
   }
 }
 
