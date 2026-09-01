@@ -3,6 +3,7 @@ import {
   createSourcePointer,
   type NormalizedApiDocument,
   type NormalizedComponentSchema,
+  type NormalizedLink,
   type NormalizedOperation,
 } from '@api-schema-flow/domain'
 import {
@@ -29,6 +30,156 @@ export interface NormalizeOpenApiResult {
 
 export interface NormalizeOpenApiOptions {
   readonly resolveReference?: SchemaReferenceResolver
+}
+
+function groupOperationsById(
+  operations: readonly NormalizedOperation[],
+): Map<string, NormalizedOperation[]> {
+  const groups = new Map<string, NormalizedOperation[]>()
+  for (const operation of operations) {
+    if (operation.operationId === undefined) continue
+    const current = groups.get(operation.operationId) ?? []
+    current.push(operation)
+    groups.set(operation.operationId, current)
+  }
+  return groups
+}
+
+function collectOperationConformanceDiagnostics(
+  operations: readonly NormalizedOperation[],
+  diagnostics: Diagnostic[],
+): void {
+  const operationIdGroups = groupOperationsById(operations)
+  for (const [operationId, group] of [...operationIdGroups.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
+    if (group.length < 2) continue
+    diagnostics.push({
+      code: DIAGNOSTIC_CODES.OPENAPI_DUPLICATE_OPERATION_ID,
+      severity: 'error',
+      message: `operationId "${operationId}" is declared by ${group.length} operations.`,
+      source: group[0]!.source,
+      details: {
+        operationId,
+        operationKeys: group.map(({ id }) => id),
+      },
+    })
+  }
+
+  for (const operation of operations) {
+    const queryNames = new Set(
+      operation.parameters
+        .filter(({ location }) => location === 'query')
+        .map(({ name }) => name),
+    )
+    const conflicts = [
+      ...new Set(
+        operation.parameters
+          .filter(
+            ({ location, name }) => location === 'querystring' && queryNames.has(name),
+          )
+          .map(({ name }) => name),
+      ),
+    ].sort()
+
+    for (const name of conflicts) {
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.OPENAPI_PARAMETER_LOCATION_CONFLICT,
+        severity: 'warning',
+        message: `Parameter "${name}" is declared in both query and querystring locations.`,
+        source: operation.source,
+        details: { operationKey: operation.id, parameterName: name },
+      })
+    }
+  }
+}
+
+function operationRefPointer(operationRef: string, sourceUri: string): string | undefined {
+  if (operationRef.startsWith('#')) return operationRef
+
+  try {
+    const target = new URL(operationRef, sourceUri)
+    const targetPointer = target.hash
+    target.hash = ''
+
+    const source = new URL(sourceUri)
+    source.hash = ''
+    return target.href === source.href && targetPointer.length > 0 ? targetPointer : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function linkTargetLabel(link: NormalizedLink): string {
+  return link.target.type === 'operationRef'
+    ? link.target.operationRef
+    : link.target.operationId
+}
+
+function resolveOperationLinks(
+  operations: readonly NormalizedOperation[],
+  sourceUri: string,
+  diagnostics: Diagnostic[],
+): NormalizedOperation[] {
+  const operationIdGroups = groupOperationsById(operations)
+  const operationsByPointer = new Map(
+    operations.map((operation) => [operation.source.pointer, operation] as const),
+  )
+
+  const resolveLink = (link: NormalizedLink): NormalizedLink => {
+    if (link.target.type === 'operationRef') {
+      const pointer = operationRefPointer(link.target.operationRef, sourceUri)
+      const target = pointer === undefined ? undefined : operationsByPointer.get(pointer)
+      if (target !== undefined) {
+        return { ...link, resolvedOperationKey: target.id }
+      }
+
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.OPENAPI_LINK_TARGET_NOT_FOUND,
+        severity: 'error',
+        message: `Link "${link.name}" target "${link.target.operationRef}" was not found.`,
+        source: link.source,
+        details: { target: link.target.operationRef },
+      })
+      return link
+    }
+
+    const candidates = operationIdGroups.get(link.target.operationId) ?? []
+    if (candidates.length === 1) {
+      return { ...link, resolvedOperationKey: candidates[0]!.id }
+    }
+
+    if (candidates.length > 1) {
+      diagnostics.push({
+        code: DIAGNOSTIC_CODES.OPENAPI_LINK_TARGET_AMBIGUOUS,
+        severity: 'error',
+        message: `Link "${link.name}" operationId target "${link.target.operationId}" is ambiguous.`,
+        source: link.source,
+        details: {
+          target: link.target.operationId,
+          operationKeys: candidates.map(({ id }) => id),
+        },
+      })
+      return link
+    }
+
+    diagnostics.push({
+      code: DIAGNOSTIC_CODES.OPENAPI_LINK_TARGET_NOT_FOUND,
+      severity: 'error',
+      message: `Link "${link.name}" target "${linkTargetLabel(link)}" was not found.`,
+      source: link.source,
+      details: { target: linkTargetLabel(link) },
+    })
+    return link
+  }
+
+  return operations.map((operation) => ({
+    ...operation,
+    responses: operation.responses.map((response) => ({
+      ...response,
+      links: response.links.map(resolveLink),
+    })),
+  }))
 }
 
 export function normalizeOpenApiDocument(
@@ -93,6 +244,8 @@ export function normalizeOpenApiDocument(
       left.path.localeCompare(right.path) ||
       operationMethodOrder(left.method) - operationMethodOrder(right.method),
   )
+  collectOperationConformanceDiagnostics(operations, diagnostics)
+  const resolvedOperations = resolveOperationLinks(operations, source.uri, diagnostics)
 
   const components = isRecord(input.components) ? input.components : {}
   const componentSchemas: NormalizedComponentSchema[] = sortedRecordEntries(
@@ -132,7 +285,7 @@ export function normalizeOpenApiDocument(
         : {},
     ).map(([name]) => name),
     servers: normalizeServers(input.servers, createSourcePointer(source.uri, ['servers'])),
-    operations,
+    operations: resolvedOperations,
     componentSchemas,
   }
 

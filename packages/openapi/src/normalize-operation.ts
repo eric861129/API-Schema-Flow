@@ -4,6 +4,9 @@ import {
   createOperationId,
   createSourcePointer,
   type HttpMethod,
+  type NormalizedLink,
+  type NormalizedLinkMapping,
+  type NormalizedLinkTarget,
   type NormalizedMediaType,
   type NormalizedOperation,
   type NormalizedParameter,
@@ -109,7 +112,10 @@ function normalizeParameters(
 
   const add = (value: unknown, source: SourcePointer) => {
     const parameter = normalizeParameter(value, source, referenceResolver)
-    if (parameter) merged.set(`${parameter.location}:${parameter.name}`, parameter)
+    if (!parameter) return
+    const comparisonName =
+      parameter.location === 'header' ? parameter.name.toLowerCase() : parameter.name
+    merged.set(`${parameter.location}:${comparisonName}`, parameter)
   }
 
   if (Array.isArray(pathParameters)) {
@@ -148,6 +154,49 @@ function normalizeRequestBody(
   }
 }
 
+function normalizeLinkTarget(value: UnknownRecord): NormalizedLinkTarget | undefined {
+  const operationRef = stringValue(value.operationRef)
+  if (operationRef !== undefined) {
+    return { type: 'operationRef', operationRef }
+  }
+
+  const operationId = stringValue(value.operationId)
+  if (operationId !== undefined) {
+    return { type: 'operationId', operationId }
+  }
+
+  return undefined
+}
+
+function normalizeLinkMappings(value: unknown): NormalizedLinkMapping[] {
+  return sortedRecordEntries(value).flatMap(([target, expressionValue]) => {
+    const expression = stringValue(expressionValue)
+    return expression === undefined ? [] : [{ target, expression }]
+  })
+}
+
+function normalizeLinks(value: unknown, source: SourcePointer): NormalizedLink[] {
+  return sortedRecordEntries(value).flatMap(([name, linkValue]) => {
+    if (!isRecord(linkValue)) return []
+    const target = normalizeLinkTarget(linkValue)
+    if (target === undefined) return []
+
+    const description = stringValue(linkValue.description)
+    return [
+      {
+        name,
+        ...(description === undefined ? {} : { description }),
+        target,
+        parameters: normalizeLinkMappings(linkValue.parameters),
+        ...(!Object.hasOwn(linkValue, 'requestBody')
+          ? {}
+          : { requestBody: redactSchemaProjection(linkValue.requestBody) }),
+        source: appendSourcePointer(source, [name]),
+      },
+    ]
+  })
+}
+
 function normalizeResponses(
   value: unknown,
   source: SourcePointer,
@@ -164,6 +213,7 @@ function normalizeResponses(
         appendSourcePointer(responseSource, ['content']),
         referenceResolver,
       ),
+      links: normalizeLinks(response.links, appendSourcePointer(responseSource, ['links'])),
       source: responseSource,
     }
   })
