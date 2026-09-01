@@ -1,10 +1,7 @@
 import type { SourcePointer } from '@api-schema-flow/domain'
 import { DIAGNOSTIC_CODES, type Diagnostic } from '@api-schema-flow/diagnostics'
 
-import {
-  parseRuntimeExpression,
-  type RuntimeExpression,
-} from './runtime-expression.js'
+import { parseRuntimeExpression, type RuntimeExpression } from './runtime-expression.js'
 
 export interface RuntimeTemplateLiteralSegment {
   readonly kind: 'literal'
@@ -17,8 +14,7 @@ export interface RuntimeTemplateExpressionSegment {
 }
 
 export type RuntimeTemplateSegment =
-  | RuntimeTemplateLiteralSegment
-  | RuntimeTemplateExpressionSegment
+  RuntimeTemplateLiteralSegment | RuntimeTemplateExpressionSegment
 
 export interface RuntimeTemplate {
   readonly kind: 'template'
@@ -115,11 +111,7 @@ export function parseRuntimeTemplate(
   }
 }
 
-export type RuntimeDependencyInput =
-  | string
-  | RuntimeExpression
-  | RuntimeTemplate
-  | undefined
+export type RuntimeDependencyInput = string | RuntimeExpression | RuntimeTemplate | undefined
 
 export function runtimeExpressionStepDependencies(
   input: RuntimeDependencyInput,
@@ -135,9 +127,7 @@ export function runtimeExpressionStepDependencies(
   return [
     ...new Set(
       input.segments.flatMap((segment) =>
-        segment.kind === 'expression'
-          ? runtimeExpressionStepDependencies(segment.expression)
-          : [],
+        segment.kind === 'expression' ? runtimeExpressionStepDependencies(segment.expression) : [],
       ),
     ),
   ].sort()

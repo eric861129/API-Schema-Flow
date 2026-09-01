@@ -96,10 +96,7 @@ function withSource<T extends { readonly kind: RuntimeExpressionKind; readonly r
   }
 }
 
-function invalidExpression(
-  raw: string,
-  source?: SourcePointer,
-): ParseRuntimeExpressionResult {
+function invalidExpression(raw: string, source?: SourcePointer): ParseRuntimeExpressionResult {
   return {
     diagnostics: [
       {
@@ -135,9 +132,9 @@ export function parseRuntimeExpression(
     }
   }
 
-  const httpNamed = new RegExp(`^\\$(request|response)\\.(header|query|path)\\.(${HTTP_NAME})$`).exec(
-    raw,
-  )
+  const httpNamed = new RegExp(
+    `^\\$(request|response)\\.(header|query|path)\\.(${HTTP_NAME})$`,
+  ).exec(raw)
   if (httpNamed) {
     return {
       expression: withSource(
@@ -219,9 +216,9 @@ export function parseRuntimeExpression(
     }
   }
 
-  const stepOutput = new RegExp(
-    `^\\$steps\\.(${IDENTIFIER})\\.outputs\\.(${IDENTIFIER})$`,
-  ).exec(raw)
+  const stepOutput = new RegExp(`^\\$steps\\.(${IDENTIFIER})\\.outputs\\.(${IDENTIFIER})$`).exec(
+    raw,
+  )
   if (stepOutput) {
     return {
       expression: withSource(
