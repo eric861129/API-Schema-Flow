@@ -28,3 +28,33 @@ export {
   type RuntimeTemplateLiteralSegment,
   type RuntimeTemplateSegment,
 } from './runtime-template.js'
+export {
+  clonePreservedValue,
+  normalizeArazzoValue,
+  type NormalizeArazzoValueOptions,
+  type NormalizeArazzoValueResult,
+} from './normalize-value.js'
+export {
+  normalizeArazzoDocument,
+  type NormalizeArazzoResult,
+} from './normalize-arazzo.js'
+export type {
+  ArazzoOperationTarget,
+  ArazzoPreservedObject,
+  NormalizedArazzoAction,
+  NormalizedArazzoArrayValue,
+  NormalizedArazzoCriterion,
+  NormalizedArazzoDocument,
+  NormalizedArazzoExpressionValue,
+  NormalizedArazzoInfo,
+  NormalizedArazzoLiteralValue,
+  NormalizedArazzoObjectValue,
+  NormalizedArazzoParameter,
+  NormalizedArazzoRequestBody,
+  NormalizedArazzoSourceDescription,
+  NormalizedArazzoStep,
+  NormalizedArazzoTemplateValue,
+  NormalizedArazzoValue,
+  NormalizedArazzoWorkflow,
+  PreservedRecord,
+} from './model.js'
