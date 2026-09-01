@@ -1,4 +1,4 @@
-name: Preview M1-B Task 3 formatting
+name: Apply M1-B Task 3 formatting
 
 on:
   push:
@@ -6,10 +6,11 @@ on:
       - feat/m1b-ingestion-hardening
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  preview:
+  format:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -24,10 +25,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Print Prettier patches
+      - run: pnpm exec prettier --write packages/openapi/src/fingerprint.ts packages/openapi/src/parse-structured-document.ts packages/openapi/src/process-openapi.ts packages/openapi/src/reference-graph.ts
+      - name: Commit formatting and remove workflow
         run: |
-          for file in packages/openapi/src/fingerprint.ts packages/openapi/src/parse-structured-document.ts packages/openapi/src/process-openapi.ts packages/openapi/src/reference-graph.ts; do
-            target="/tmp/$(basename "$file")"
-            pnpm exec prettier "$file" > "$target"
-            diff -u "$file" "$target" || true
-          done
+          rm .github/workflows/m1b-task3-format-preview.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add packages/openapi/src .github/workflows/m1b-task3-format-preview.yml
+          git commit -m "style(openapi): format reference graph implementation"
+          git push origin HEAD:feat/m1b-ingestion-hardening
