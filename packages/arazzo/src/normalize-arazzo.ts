@@ -15,7 +15,6 @@ import type {
   NormalizedArazzoStep,
   NormalizedArazzoValue,
   NormalizedArazzoWorkflow,
-  PreservedRecord,
 } from './model.js'
 import { isRecord, stringValue, type UnknownRecord } from './object-utils.js'
 import {
