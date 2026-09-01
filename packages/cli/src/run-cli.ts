@@ -1,9 +1,11 @@
 import type { NormalizedApiDocument } from '@api-schema-flow/domain'
 import type { Diagnostic } from '@api-schema-flow/diagnostics'
+import type { ProcessOpenApiLocationOptions } from '@api-schema-flow/openapi'
 import { redactText } from '@api-schema-flow/redaction'
-import type { SourceDocument } from '@api-schema-flow/source-loader'
+import type { SourceAcquirer, SourceLocation } from '@api-schema-flow/source-loader'
 
 import { executeValidateCommand } from './validate-command.js'
+import { parseValidateArguments, VALIDATE_USAGE } from './validate-options.js'
 
 export interface CliIo {
   readonly stdout: (message: string) => void
@@ -16,11 +18,15 @@ export interface CliProcessResult {
 }
 
 export interface CliDependencies {
-  readonly readFile: (path: string) => Promise<string>
-  readonly processOpenApi?: (source: SourceDocument) => Promise<CliProcessResult>
+  readonly createAcquirer?: () => SourceAcquirer
+  readonly processOpenApiLocation?: (
+    location: SourceLocation,
+    options: ProcessOpenApiLocationOptions,
+  ) => Promise<CliProcessResult>
+  readonly resolvePath?: (...paths: string[]) => string
+  readonly dirname?: (path: string) => string
+  readonly cwd?: () => string
 }
-
-const USAGE = 'Usage: schema-flow validate <file> [--json]'
 
 export async function runCli(
   argv: readonly string[],
@@ -30,21 +36,17 @@ export async function runCli(
   try {
     const [command, ...arguments_] = argv
     if (command !== 'validate') {
-      io.stderr(`${USAGE}\n`)
+      io.stderr(`${VALIDATE_USAGE}\n`)
       return 2
     }
 
-    const json = arguments_.includes('--json')
-    const positional = arguments_.filter((argument) => argument !== '--json')
-    if (
-      positional.length !== 1 ||
-      arguments_.some((argument) => argument.startsWith('--') && argument !== '--json')
-    ) {
-      io.stderr(`${USAGE}\n`)
+    const parsed = parseValidateArguments(arguments_)
+    if ('error' in parsed) {
+      io.stderr(`${parsed.error}\n${VALIDATE_USAGE}\n`)
       return 2
     }
 
-    return await executeValidateCommand(positional[0]!, json, dependencies, io)
+    return await executeValidateCommand(parsed.options, dependencies, io)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     io.stderr(`Unexpected error: ${redactText(message)}\n`)
