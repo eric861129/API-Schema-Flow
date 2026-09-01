@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import {
-  parseRuntimeTemplate,
-  runtimeExpressionStepDependencies,
-} from '../../src/index.js'
+import { parseRuntimeTemplate, runtimeExpressionStepDependencies } from '../../src/index.js'
 
 describe('Arazzo Runtime Expression templates', () => {
   test('keeps a pure expression typed instead of coercing it to a string template', () => {
