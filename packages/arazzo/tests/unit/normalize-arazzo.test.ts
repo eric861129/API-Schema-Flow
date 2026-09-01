@@ -64,8 +64,7 @@ function canonicalDocument() {
           },
           {
             stepId: 'reserve',
-            operationPath:
-              '{$sourceDescriptions.reservationApi.url}#/paths/~1reservations/post',
+            operationPath: '{$sourceDescriptions.reservationApi.url}#/paths/~1reservations/post',
             dependsOn: ['login'],
             parameters: [
               {
@@ -133,14 +132,11 @@ describe('Arazzo normalization', () => {
 
     const workflow = result.document?.workflows[0]
     expect(workflow?.steps.map(({ stepId }) => stepId)).toEqual(['login', 'reserve'])
-    expect(workflow?.steps[0]?.targets).toEqual([
-      { type: 'operationId', operationId: 'login' },
-    ])
+    expect(workflow?.steps[0]?.targets).toEqual([{ type: 'operationId', operationId: 'login' }])
     expect(workflow?.steps[1]?.targets).toEqual([
       {
         type: 'operationPath',
-        operationPath:
-          '{$sourceDescriptions.reservationApi.url}#/paths/~1reservations/post',
+        operationPath: '{$sourceDescriptions.reservationApi.url}#/paths/~1reservations/post',
       },
     ])
     expect(workflow?.parameters[0]?.value).toMatchObject({ kind: 'template' })
