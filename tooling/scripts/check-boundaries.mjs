@@ -14,7 +14,10 @@ async function walk(directory, options = {}) {
   const files = []
 
   for (const entry of entries) {
-    if ((!includeDist && entry.name === 'dist') || ['node_modules', 'coverage'].includes(entry.name)) {
+    if (
+      (!includeDist && entry.name === 'dist') ||
+      ['node_modules', 'coverage'].includes(entry.name)
+    ) {
       continue
     }
     const child = path.join(directory, entry.name)
