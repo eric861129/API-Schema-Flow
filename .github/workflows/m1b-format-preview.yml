@@ -1,0 +1,31 @@
+name: Preview M1-B source formatting
+
+on:
+  push:
+    branches:
+      - feat/m1b-ingestion-hardening
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m1b-ingestion-hardening
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Print Prettier patch
+        run: |
+          pnpm exec prettier packages/source-loader/src/node-source-acquirer.ts > /tmp/node-source-acquirer.ts
+          diff -u packages/source-loader/src/node-source-acquirer.ts /tmp/node-source-acquirer.ts || true
