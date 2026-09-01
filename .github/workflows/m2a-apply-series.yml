@@ -1,0 +1,53 @@
+name: Apply checksum-verified M2-A patch series
+
+on:
+  push:
+    branches:
+      - feat/m2a-arazzo-core
+    paths:
+      - .github/workflows/m2a-apply-series.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out M2-A branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m2a-arazzo-core
+          fetch-depth: 0
+
+      - name: Verify and decode patch series
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find .github/m2a-patch -maxdepth 1 -type f | wc -l)" -eq 71
+          cat .github/m2a-patch/* > /tmp/m2a-series.b64
+          test "$(wc -c < /tmp/m2a-series.b64)" -eq 35428
+          echo "f27045e1ab74169e1eb8f4b28239e2c7e47fbbc53ab9b3dfc658ea05835c6e25  /tmp/m2a-series.b64" | sha256sum --check --strict
+          base64 --decode /tmp/m2a-series.b64 | gzip --decompress --stdout > /tmp/m2a-series.patch
+          echo "ab64c58abdecce93303fea2bb9fc77fab9966b8455035240792356ee319af043  /tmp/m2a-series.patch" | sha256sum --check --strict
+
+      - name: Apply reviewed M2-A commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI Development Agent"
+          git config user.email "noreply@openai.com"
+          git am --3way /tmp/m2a-series.patch
+          test "$(git log -4 --pretty=%s | wc -l)" -eq 4
+          git diff --check
+
+      - name: Remove patch staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r .github/m2a-patch .github/workflows/m2a-apply-series.yml
+          git commit -m "chore: remove M2-A patch staging files"
+          git push origin HEAD:feat/m2a-arazzo-core
