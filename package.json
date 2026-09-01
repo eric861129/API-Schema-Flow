@@ -2,7 +2,16 @@
   "name": "api-schema-flow",
   "version": "0.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eric861129/API-Schema-Flow.git"
+  },
+  "homepage": "https://github.com/eric861129/API-Schema-Flow#readme",
+  "bugs": {
+    "url": "https://github.com/eric861129/API-Schema-Flow/issues"
+  },
   "packageManager": "pnpm@11.24.0",
   "engines": {
     "node": ">=24 <27",

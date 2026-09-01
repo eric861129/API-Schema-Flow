@@ -2,9 +2,68 @@
 
 > **Turn OpenAPI endpoint lists into visual, executable, and stateful API workflows.**
 
-API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. It imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
+API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha / specification stage**. The commands below describe the intended MVP experience. No npm package is published yet.
+> Project status: **pre-alpha**. The repository now contains the M0 foundation and M1-A OpenAPI core slice, including a working local `validate` command. The visual workspace, Arazzo, inference, stateful mock runtime, workflow execution, and exporters remain on the roadmap. No npm package is published yet.
+
+## What works today
+
+The current implementation provides:
+
+- a pnpm and Turborepo TypeScript monorepo with strict package boundaries;
+- parser-independent domain, diagnostic, redaction, project-config, and source-loader packages;
+- a Scalar OpenAPI parser adapter hidden behind a project-owned interface;
+- deterministic OpenAPI operation and schema normalization;
+- OpenAPI 3.0.x and 3.1.x support, plus 3.2.x compatibility diagnostics;
+- `schema-flow validate <file> [--json]` for local YAML and JSON files;
+- structured diagnostics, stable source pointers, secret-safe CLI output, and stable exit codes;
+- an offline Reservation API fixture with unit, integration, golden, security, and boundary tests;
+- frozen-lockfile GitHub Actions verification.
+
+## Run the current vertical slice
+
+Requirements:
+
+- Node.js 24
+- pnpm 11
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+
+node packages/cli/bin/schema-flow.mjs \
+  validate examples/reservation/openapi.yaml
+```
+
+Machine-readable output:
+
+```bash
+node packages/cli/bin/schema-flow.mjs \
+  validate examples/reservation/openapi.yaml \
+  --json
+```
+
+Run the same quality gate used by CI:
+
+```bash
+pnpm ci:verify
+```
+
+A successful validation currently reports:
+
+```text
+API Schema Flow
+
+✓ OpenAPI document loaded
+✓ OpenAPI 3.1.0 detected
+✓ 4 operations normalized
+✓ 6 schemas discovered
+✓ 0 errors
+✓ 0 warnings
+
+Validation completed successfully.
+```
 
 ## Why this project exists
 
@@ -17,14 +76,31 @@ OpenAPI is excellent at describing individual operations, but teams still strugg
 
 API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 
+## Capability status
+
+| Capability | Current repository | MVP direction |
+|---|---|---|
+| OpenAPI import | Implemented for local YAML/JSON in M1-A | Policy-controlled URL and multi-file loading in M1-B |
+| OpenAPI normalization | Implemented with stable IDs, source pointers, schemas, security, servers, and diagnostics | Additional fixtures, links, performance, and conformance coverage |
+| CLI | `validate <file> [--json]` implemented | `open`, `infer`, `mock`, `run`, and `export` planned |
+| Workflow standard | Not implemented | Arazzo 1.1.x import, validation, visualization, and supported-subset execution |
+| Visual topology | Design specifications and concept mockups only | React Flow nodes and edges with ELK layered layout |
+| Dependency discovery | Not implemented | Declared, manual, and evidence-based inferred edges |
+| Stateful mocking | Not implemented | In-memory CRUD lifecycle, deterministic seed, session isolation, reset, and snapshot |
+| Workflow execution | Not implemented | Synchronous OpenAPI steps, mappings, outputs, criteria, timeout, and bounded retry |
+| Live trace and export | Not implemented | Live trace, Arazzo, Mermaid, project JSON, and execution reports |
+| Change impact | Post-MVP | Flow-aware OpenAPI diff and GitHub integration |
+
 ## Target experience
 
+The intended product experience remains:
+
 ```bash
-# Target CLI UX; package name is provisional until publication.
+# Planned CLI UX; the npm package has not been published.
 npx schema-flow open ./openapi.yaml
 ```
 
-The command is expected to open a local workspace where a developer can:
+The command is expected to open a local web workspace where a developer can:
 
 1. inspect endpoint nodes and schemas;
 2. review declared and inferred dependencies;
@@ -32,20 +108,6 @@ The command is expected to open a local workspace where a developer can:
 4. export a standards-based Arazzo workflow;
 5. start an isolated stateful mock session;
 6. execute the workflow and inspect a live trace.
-
-## Core capabilities
-
-| Capability | MVP intent |
-|---|---|
-| OpenAPI import | OpenAPI 3.0.x and 3.1.x supported; 3.2.x handled as a compatibility profile |
-| Workflow standard | Arazzo 1.1.x import, validation, visualization, and supported-subset execution |
-| Visual topology | React Flow nodes and edges with ELK layered layout |
-| Dependency discovery | Declared, manual, and evidence-based inferred edges |
-| Stateful mocking | In-memory CRUD lifecycle, deterministic seed, session isolation, reset and snapshot |
-| Workflow execution | Synchronous OpenAPI steps, inputs, mappings, outputs, criteria, timeout and bounded retry |
-| Live trace | Step timing, request/response metadata, output extraction, state mutation and failures |
-| Export | Arazzo, Mermaid, project JSON, and machine-readable execution reports |
-| Change impact | Designed as a post-MVP flow-aware OpenAPI diff capability |
 
 ## What makes it different
 
@@ -77,40 +139,39 @@ flowchart LR
     RUN --> TRACE[Live trace and run report]
 ```
 
-The domain model, inference engine, workflow executor, and mock runtime must not depend on React, Fastify, MSW, or a specific OpenAPI parser.
+The implemented core keeps framework and parser details behind package-owned boundaries. Domain, diagnostics, redaction, config, source loading, OpenAPI normalization, and CLI orchestration can evolve independently of the future React, Fastify, MSW, and ELK adapters.
 
-## Planned repository layout
+## Current repository layout
 
 ```text
-apps/
-  web/
 packages/
   domain/
-  openapi/
-  arazzo/
-  inference/
-  layout/
-  mock-runtime/
-  adapter-fastify/
-  adapter-msw/
-  execution/
-  exporters/
+  diagnostics/
+  redaction/
   config/
+  source-loader/
+  openapi/
   cli/
-  ui/
-  test-fixtures/
+examples/
+  reservation/
 docs/
+  adr/
+  design/
+  spikes/
+  superpowers/plans/
+tooling/
+.github/workflows/
 ```
 
-See [Repository Structure](docs/22-REPOSITORY-STRUCTURE.md) for package boundaries.
+See [Repository Structure](docs/22-REPOSITORY-STRUCTURE.md) for the complete planned package map and dependency rules.
 
 ## Standards baseline
 
 The design baseline was reviewed on **2026-09-01**:
 
-- OpenAPI Specification 3.2.0 is the latest published OAS version.
-- Arazzo Specification 1.1.0 is the latest published Arazzo version.
-- MVP execution intentionally supports a documented subset instead of claiming full Arazzo or AsyncAPI execution conformance.
+- OpenAPI Specification 3.2.0 is the latest published OAS version recorded by the project documentation.
+- Arazzo Specification 1.1.0 is the latest published Arazzo version recorded by the project documentation.
+- MVP execution will support a documented subset instead of claiming full Arazzo or AsyncAPI execution conformance.
 
 See [Standards Baseline](docs/28-STANDARDS-BASELINE.md).
 
@@ -133,22 +194,22 @@ Key documents:
 - [Product Requirements Document](docs/02-PRD.md)
 - [MVP Scope and Acceptance](docs/03-MVP-SCOPE-AND-ACCEPTANCE.md)
 - [System Architecture](docs/06-SYSTEM-ARCHITECTURE.md)
-- [Flow Inference Specification](docs/10-FLOW-INFERENCE-SPEC.md)
-- [Stateful Mock Runtime Specification](docs/11-STATEFUL-MOCK-RUNTIME-SPEC.md)
-- [Web Application UX Specification](docs/13-WEB-APP-UX-SPEC.md)
+- [OpenAPI Ingestion Specification](docs/08-OPENAPI-INGESTION-SPEC.md)
+- [CLI Specification](docs/14-CLI-SPEC.md)
 - [Security Threat Model](docs/19-SECURITY-THREAT-MODEL.md)
-- [Implementation Readiness Checklist](docs/30-IMPLEMENTATION-READINESS-CHECKLIST.md)
+- [Test Strategy](docs/20-TEST-STRATEGY.md)
+- [M0/M1-A Implementation Plan](docs/superpowers/plans/2026-09-01-m0-m1a-foundation.md)
 
 Traditional Chinese: [README.zh-TW.md](README.zh-TW.md)
 
 ## Contributing
 
-The project will use small, reviewable pull requests, Conventional Commits, Changesets, strict TypeScript, fixture-based standards tests, and an evidence benchmark for inference quality. See [CONTRIBUTING.md](CONTRIBUTING.md).
+The project uses small, reviewable pull requests, Conventional Commits, strict TypeScript, fixture-based standards tests, and package-boundary verification. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Security and privacy
 
-The MVP is local-first and sends no telemetry by default. Remote references, URL imports, rendered Markdown, mock-server exposure, and secrets are treated as explicit trust-boundary concerns. See [SECURITY.md](SECURITY.md) and the [Threat Model](docs/19-SECURITY-THREAT-MODEL.md).
+The project is local-first and sends no telemetry by default. M1-A reads local files only; no remote URL loader or fetch plugin is enabled. Parser diagnostics and normalized examples are redacted before reaching CLI output. See [SECURITY.md](SECURITY.md) and the [Threat Model](docs/19-SECURITY-THREAT-MODEL.md).
 
 ## License
 
-The recommended default is **Apache License 2.0** because this is standards-oriented infrastructure and the explicit patent grant is useful for contributors and adopters. Final owner confirmation is recorded in [Open Decisions](docs/25-OPEN-DECISIONS.md) before the repository is made public.
+Licensed under the [Apache License 2.0](LICENSE).
