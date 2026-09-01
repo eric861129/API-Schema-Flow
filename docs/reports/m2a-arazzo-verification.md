@@ -1,7 +1,7 @@
 # M2-A Arazzo Core Verification
 
-> Status: GitHub Actions verification pending  
-> Implementation head before this report: `8e506977cd75b46a7276ca6b76b06886539e04fd`  
+> Status: verified  
+> Verified implementation head: `d29a45a488b3bfaa9e4f9fcc201b34d45f47053b`  
 > Verification date: 2026-09-01
 
 ## Delivered scope
@@ -19,9 +19,54 @@ M2-A adds the parser-independent Arazzo 1.1 core:
 - canonical, preserve-only, invalid, and Runtime Expression fixtures;
 - package-boundary enforcement between the OpenAPI and Arazzo cores.
 
-## Supplemental local evidence
+## GitHub Actions evidence
 
-The exact reviewed source tree was verified in an isolated workspace with Node.js 22.16.0. This is supplemental evidence only; the release gate is the repository CI on Node.js 24.
+Official verification ran through the repository's existing read-only CI workflow:
+
+- Run: [GitHub Actions #122](https://github.com/eric861129/API-Schema-Flow/actions/runs/33521934433)
+- Job: `Verify`
+- Result: `success`
+- Runner: Ubuntu 24.04
+- Node.js: 24.19.0
+- pnpm: 11.24.0
+- Frozen lockfile installation: passed
+- Workspace structure and package boundaries: passed
+- Prettier and ESLint: passed
+- Build and TypeScript typecheck: passed
+- Unit tests: 147 passed
+- Integration tests: 6 passed
+- Total automated tests: 153 passed
+- OpenAPI CLI smoke test: passed
+
+Package-level test evidence:
+
+| Package / layer | Unit tests | Integration tests |
+|---|---:|---:|
+| Arazzo | 62 | 2 |
+| OpenAPI | 21 | 2 |
+| CLI | 23 | 2 |
+| Source Loader | 27 | 0 |
+| Domain | 4 | 0 |
+| Diagnostics | 3 | 0 |
+| Redaction | 3 | 0 |
+| Config | 4 | 0 |
+| **Total** | **147** | **6** |
+
+The official OpenAPI smoke test reported:
+
+```text
+OpenAPI 3.1.0 detected
+4 operations normalized
+6 schemas discovered
+1 source loaded
+9 references inspected
+0 errors
+0 warnings
+```
+
+## Supplemental Arazzo CLI evidence
+
+The exact reviewed source tree was also verified in an isolated workspace with Node.js 22.16.0. This is supplemental evidence; the release gate remains the Node.js 24 GitHub Actions run above.
 
 Commands completed successfully:
 
@@ -32,16 +77,17 @@ node packages/cli/bin/schema-flow.mjs validate examples/reservation/arazzo.yaml 
 git diff --check
 ```
 
-Observed CLI results:
+Observed Arazzo result:
 
-- OpenAPI 3.1.0 detected, valid, 4 operations, 6 schemas;
-- Arazzo 1.1.0 detected, valid, 1 workflow, 4 steps;
-- Arazzo support summary: `supported`;
-- both commands returned exit code `0`.
+```text
+Arazzo 1.1.0 detected
+1 workflow normalized
+4 steps normalized
+support: supported
+0 errors
+```
 
-## GitHub Actions evidence
-
-Pending the first Node.js 24 CI run for this report commit. This section will be updated with the exact head SHA, run URL, test counts, and gate results after the run completes.
+Both OpenAPI and Arazzo validation commands returned exit code `0`.
 
 ## Known M2-A limitations
 
