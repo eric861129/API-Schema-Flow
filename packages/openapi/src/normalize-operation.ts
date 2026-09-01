@@ -41,11 +41,20 @@ function normalizeContent(value: unknown, source: SourcePointer): NormalizedMedi
   })
 }
 
-function normalizeParameter(value: unknown, source: SourcePointer): NormalizedParameter | undefined {
+function normalizeParameter(
+  value: unknown,
+  source: SourcePointer,
+): NormalizedParameter | undefined {
   if (!isRecord(value)) return undefined
   const name = stringValue(value.name)
   const location = stringValue(value.in)
-  if (!name || !location || !PARAMETER_LOCATIONS.has(location as ParameterLocation)) return undefined
+  if (
+    !name ||
+    !location ||
+    !PARAMETER_LOCATIONS.has(location as ParameterLocation)
+  ) {
+    return undefined
+  }
 
   const schema = normalizeSchema(value.schema, appendSourcePointer(source, ['schema']))
   const description = stringValue(value.description)

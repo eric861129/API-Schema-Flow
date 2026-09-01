@@ -21,9 +21,7 @@ export interface CreateSourceDocumentResult {
   readonly diagnostics: readonly Diagnostic[]
 }
 
-export function createSourceDocument(
-  input: CreateSourceDocumentInput,
-): CreateSourceDocumentResult {
+export function createSourceDocument(input: CreateSourceDocumentInput): CreateSourceDocumentResult {
   const byteLength = new TextEncoder().encode(input.contents).byteLength
 
   if (input.contents.trim().length === 0) {
