@@ -31,9 +31,7 @@ function validDocument() {
   }
 }
 
-function createDependencies(
-  result: unknown = { document: validDocument(), diagnostics: [] },
-) {
+function createDependencies(result: unknown = { document: validDocument(), diagnostics: [] }) {
   const acquirer = {
     resolveLocation: vi.fn(),
     acquire: vi.fn(),
@@ -147,11 +145,7 @@ describe('schema-flow validate retrieval policy flags', () => {
       ],
     })
 
-    const exitCode = await runCli(
-      ['validate', 'openapi.yaml'],
-      setup.dependencies,
-      output.io,
-    )
+    const exitCode = await runCli(['validate', 'openapi.yaml'], setup.dependencies, output.io)
 
     expect(exitCode).toBe(2)
     expect(output.stderr.join('')).toContain('ASF-SRC-1004')
@@ -170,11 +164,7 @@ describe('schema-flow validate retrieval policy flags', () => {
       ],
     })
 
-    const exitCode = await runCli(
-      ['validate', 'openapi.yaml'],
-      setup.dependencies,
-      output.io,
-    )
+    const exitCode = await runCli(['validate', 'openapi.yaml'], setup.dependencies, output.io)
 
     expect(exitCode).toBe(1)
     expect(output.stderr.join('')).toContain('ASF-OAS-1003')
