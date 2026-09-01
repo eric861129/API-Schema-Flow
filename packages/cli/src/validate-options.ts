@@ -13,7 +13,8 @@ export interface ValidateCommandOptions {
 }
 
 export type ParseValidateArgumentsResult =
-  { readonly options: ValidateCommandOptions } | { readonly error: string }
+  | { readonly options: ValidateCommandOptions }
+  | { readonly error: string }
 
 function positiveInteger(flag: string, value: string | undefined): number | string {
   if (value === undefined) return `Missing value for ${flag}.`
@@ -33,7 +34,7 @@ function nonNegativeInteger(flag: string, value: string | undefined): number | s
   return parsed
 }
 
-function flagValue(arguments_: readonly string[], index: number, flag: string): string | undefined {
+function flagValue(arguments_: readonly string[], index: number): string | undefined {
   const value = arguments_[index + 1]
   return value === undefined || value.startsWith('--') ? undefined : value
 }
@@ -66,28 +67,28 @@ export function parseValidateArguments(
       continue
     }
     if (argument === '--allow-path') {
-      const value = flagValue(arguments_, index, argument)
+      const value = flagValue(arguments_, index)
       if (value === undefined) return { error: `Missing value for ${argument}.` }
       allowPaths.push(value)
       index += 1
       continue
     }
     if (argument === '--max-documents') {
-      const value = positiveInteger(argument, flagValue(arguments_, index, argument))
+      const value = positiveInteger(argument, flagValue(arguments_, index))
       if (typeof value === 'string') return { error: value }
       maxDocuments = value
       index += 1
       continue
     }
     if (argument === '--max-total-bytes') {
-      const value = positiveInteger(argument, flagValue(arguments_, index, argument))
+      const value = positiveInteger(argument, flagValue(arguments_, index))
       if (typeof value === 'string') return { error: value }
       maxTotalBytes = value
       index += 1
       continue
     }
     if (argument === '--max-ref-depth') {
-      const value = nonNegativeInteger(argument, flagValue(arguments_, index, argument))
+      const value = nonNegativeInteger(argument, flagValue(arguments_, index))
       if (typeof value === 'string') return { error: value }
       maxReferenceDepth = value
       index += 1
