@@ -1,0 +1,39 @@
+name: Format M1-B Task 4
+
+on:
+  push:
+    branches:
+      - feat/m1b-ingestion-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m1b-ingestion-hardening
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply project formatting
+        run: |
+          pnpm exec prettier --write packages/domain/src/index.ts packages/openapi/src/normalize-document.ts
+          rm .github/workflows/m1b-format-task4.yml
+      - name: Commit formatted sources
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add packages/domain/src/index.ts packages/openapi/src/normalize-document.ts .github/workflows/m1b-format-task4.yml
+          git commit -m "style: format M1-B Link normalization"
+          git push origin HEAD:feat/m1b-ingestion-hardening
