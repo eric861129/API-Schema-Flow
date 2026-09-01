@@ -4,3 +4,27 @@ export {
   parseArazzoSource,
   type ParseArazzoSourceResult,
 } from './parse-arazzo.js'
+export {
+  parseRuntimeExpression,
+  type ParseRuntimeExpressionResult,
+  type RuntimeComponentExpression,
+  type RuntimeContextExpression,
+  type RuntimeExpression,
+  type RuntimeExpressionKind,
+  type RuntimeHttpExpression,
+  type RuntimeMessageExpression,
+  type RuntimeNamedExpression,
+  type RuntimeSourceOperationExpression,
+  type RuntimeStepOutputExpression,
+  type RuntimeWorkflowOutputExpression,
+} from './runtime-expression.js'
+export {
+  parseRuntimeTemplate,
+  runtimeExpressionStepDependencies,
+  type ParseRuntimeTemplateResult,
+  type RuntimeDependencyInput,
+  type RuntimeTemplate,
+  type RuntimeTemplateExpressionSegment,
+  type RuntimeTemplateLiteralSegment,
+  type RuntimeTemplateSegment,
+} from './runtime-template.js'
