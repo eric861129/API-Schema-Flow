@@ -12,6 +12,9 @@ export interface NormalizedApiDocument {
   readonly sourceUri: string
   readonly openapiVersion: string
   readonly compatibilityMode: boolean
+  readonly fingerprint?: string
+  readonly sourceCount?: number
+  readonly referenceCount?: number
   readonly info: NormalizedApiInfo
   readonly tags: readonly string[]
   readonly servers: readonly NormalizedServer[]

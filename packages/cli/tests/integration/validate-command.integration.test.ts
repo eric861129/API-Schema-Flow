@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, test } from 'vitest'
@@ -10,7 +9,7 @@ const fixturePath = fileURLToPath(
 )
 
 describe('validate command integration', () => {
-  test('validates the Reservation fixture through the real parser adapter', async () => {
+  test('validates the Reservation fixture through the source graph and parser adapter', async () => {
     const stdout: string[] = []
     const stderr: string[] = []
     const io: CliIo = {
@@ -18,11 +17,7 @@ describe('validate command integration', () => {
       stderr: (message) => stderr.push(message),
     }
 
-    const exitCode = await runCli(
-      ['validate', fixturePath, '--json'],
-      { readFile: (path) => readFile(path, 'utf8') },
-      io,
-    )
+    const exitCode = await runCli(['validate', fixturePath, '--json'], {}, io)
 
     expect(exitCode).toBe(0)
     expect(stderr).toEqual([])
@@ -35,6 +30,9 @@ describe('validate command integration', () => {
       openapiVersion: '3.1.0',
       operationCount: 4,
       schemaCount: 6,
+      sourceCount: 1,
     })
+    expect(report.fingerprint).toMatch(/^[a-f0-9]{64}$/)
+    expect(report.referenceCount).toEqual(expect.any(Number))
   })
 })

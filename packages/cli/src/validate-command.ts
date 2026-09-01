@@ -1,15 +1,22 @@
+import path from 'node:path'
+
 import {
-  DIAGNOSTIC_CODES,
   formatDiagnostic,
   hasDiagnosticErrors,
   sortDiagnostics,
   type Diagnostic,
 } from '@api-schema-flow/diagnostics'
-import { processOpenApi as defaultProcessOpenApi } from '@api-schema-flow/openapi'
+import { processOpenApiLocation as defaultProcessOpenApiLocation } from '@api-schema-flow/openapi'
 import { redactSecrets, redactText } from '@api-schema-flow/redaction'
-import { createSourceDocument } from '@api-schema-flow/source-loader'
+import {
+  createSourceRetrievalPolicy,
+  type SourceLocation,
+  type SourceRetrievalPolicy,
+} from '@api-schema-flow/source-loader'
+import { createNodeSourceAcquirer } from '@api-schema-flow/source-loader/node'
 
 import type { CliDependencies, CliIo } from './run-cli.js'
+import type { ValidateCommandOptions } from './validate-options.js'
 
 export interface ValidationReport {
   readonly schemaVersion: '1.0'
@@ -18,22 +25,62 @@ export interface ValidationReport {
   readonly valid: boolean
   readonly openapiVersion?: string
   readonly compatibilityMode?: boolean
+  readonly fingerprint?: string
+  readonly sourceCount?: number
+  readonly referenceCount?: number
   readonly operationCount: number
   readonly schemaCount: number
   readonly diagnostics: readonly Diagnostic[]
 }
 
-const LOCAL_INPUT_ERROR_CODES = new Set(['EACCES', 'EISDIR', 'ENOENT', 'ENOTDIR', 'EPERM'])
-
-function mediaTypeForPath(path: string): string | undefined {
-  if (path.endsWith('.json')) return 'application/json'
-  if (path.endsWith('.yaml') || path.endsWith('.yml')) return 'application/yaml'
-  return undefined
+function isUrlTarget(target: string): boolean {
+  return /^https?:\/\//i.test(target)
 }
 
-function isLocalInputError(error: unknown): error is Error & { readonly code: string } {
-  if (!(error instanceof Error) || !('code' in error)) return false
-  return typeof error.code === 'string' && LOCAL_INPUT_ERROR_CODES.has(error.code)
+function resolveFilePath(target: string, dependencies: CliDependencies): string {
+  const resolvePath = dependencies.resolvePath ?? path.resolve
+  const cwd = dependencies.cwd?.() ?? process.cwd()
+  return resolvePath(cwd, target)
+}
+
+function unique(values: readonly string[]): string[] {
+  return [...new Set(values)]
+}
+
+function sourceLocation(
+  options: ValidateCommandOptions,
+  dependencies: CliDependencies,
+): SourceLocation {
+  return isUrlTarget(options.target)
+    ? { kind: 'url', url: options.target }
+    : { kind: 'file', path: resolveFilePath(options.target, dependencies) }
+}
+
+function retrievalPolicy(
+  options: ValidateCommandOptions,
+  location: SourceLocation,
+  dependencies: CliDependencies,
+): SourceRetrievalPolicy {
+  const dirname = dependencies.dirname ?? path.dirname
+  const extraRoots = options.allowPaths.map((allowedPath) =>
+    resolveFilePath(allowedPath, dependencies),
+  )
+  const allowedFileRoots = unique([
+    ...(location.kind === 'file' ? [dirname(location.path)] : []),
+    ...extraRoots,
+  ])
+
+  return createSourceRetrievalPolicy({
+    mode: 'local-cli',
+    allowedFileRoots,
+    allowHttp: options.allowHttp,
+    allowPrivateNetwork: options.allowPrivateNetwork,
+    ...(options.maxDocuments === undefined ? {} : { maxDocuments: options.maxDocuments }),
+    ...(options.maxTotalBytes === undefined ? {} : { maxTotalBytes: options.maxTotalBytes }),
+    ...(options.maxReferenceDepth === undefined
+      ? {}
+      : { maxReferenceDepth: options.maxReferenceDepth }),
+  })
 }
 
 function sanitizeDiagnostic(diagnostic: Diagnostic): Diagnostic {
@@ -55,10 +102,15 @@ function writeHumanReport(report: ValidationReport, io: CliIo): void {
     ...(report.openapiVersion ? [`✓ OpenAPI ${report.openapiVersion} detected`] : []),
     `✓ ${report.operationCount} operations normalized`,
     `✓ ${report.schemaCount} schemas discovered`,
+    ...(report.sourceCount === undefined ? [] : [`✓ ${report.sourceCount} sources loaded`]),
+    ...(report.referenceCount === undefined
+      ? []
+      : [`✓ ${report.referenceCount} references inspected`]),
     `${errors === 0 ? '✓' : '✗'} ${errors} errors`,
     `${warnings === 0 ? '✓' : '⚠'} ${warnings} warnings`,
   ]
 
+  if (report.fingerprint !== undefined) lines.push(`Fingerprint: ${report.fingerprint}`)
   if (report.diagnostics.length > 0) {
     lines.push('', ...report.diagnostics.map(formatDiagnostic))
   }
@@ -71,75 +123,55 @@ function writeReport(report: ValidationReport, json: boolean, io: CliIo): void {
   else writeHumanReport(report, io)
 }
 
-function createInputFailureReport(
-  filePath: string,
-  error: Error & { readonly code: string },
-): ValidationReport {
-  return {
-    schemaVersion: '1.0',
-    command: 'validate',
-    source: filePath,
-    valid: false,
-    operationCount: 0,
-    schemaCount: 0,
-    diagnostics: [
-      {
-        code: DIAGNOSTIC_CODES.CLI_INPUT,
-        severity: 'error',
-        message: `Unable to read local file "${filePath}".`,
-        source: { uri: filePath, pointer: '#' },
-        details: {
-          code: error.code,
-          reason: redactText(error.message),
-        },
-      },
-    ],
+function failureExitCode(diagnostics: readonly Diagnostic[]): number {
+  const errorCodes = diagnostics
+    .filter(({ severity }) => severity === 'error')
+    .map(({ code }) => code)
+
+  if (errorCodes.some((code) => code.startsWith('ASF-INT-'))) return 3
+  if (errorCodes.some((code) => code.startsWith('ASF-SRC-') || code.startsWith('ASF-CLI-'))) {
+    return 2
   }
+  return 1
 }
 
 export async function executeValidateCommand(
-  filePath: string,
-  json: boolean,
+  options: ValidateCommandOptions,
   dependencies: CliDependencies,
   io: CliIo,
 ): Promise<number> {
-  let contents: string
-  try {
-    contents = await dependencies.readFile(filePath)
-  } catch (error) {
-    if (!isLocalInputError(error)) throw error
-    writeReport(createInputFailureReport(filePath, error), json, io)
-    return 2
-  }
-
-  const mediaType = mediaTypeForPath(filePath)
-  const sourceResult = createSourceDocument({
-    uri: filePath,
-    contents,
-    ...(mediaType === undefined ? {} : { mediaType }),
-  })
-  const processor = dependencies.processOpenApi ?? defaultProcessOpenApi
-  const processed = sourceResult.source
-    ? await processor(sourceResult.source)
-    : { diagnostics: sourceResult.diagnostics }
+  const location = sourceLocation(options, dependencies)
+  const policy = retrievalPolicy(options, location, dependencies)
+  const acquirer = dependencies.createAcquirer?.() ?? createNodeSourceAcquirer()
+  const processor = dependencies.processOpenApiLocation ?? defaultProcessOpenApiLocation
+  const processed = await processor(location, { acquirer, policy })
   const diagnostics = sortDiagnostics(processed.diagnostics.map(sanitizeDiagnostic))
   const valid = Boolean(processed.document) && !hasDiagnosticErrors(diagnostics)
   const report: ValidationReport = {
     schemaVersion: '1.0',
     command: 'validate',
-    source: filePath,
+    source: options.target,
     valid,
     ...(processed.document === undefined
       ? {}
       : {
           openapiVersion: processed.document.openapiVersion,
           compatibilityMode: processed.document.compatibilityMode,
+          ...(processed.document.fingerprint === undefined
+            ? {}
+            : { fingerprint: processed.document.fingerprint }),
+          ...(processed.document.sourceCount === undefined
+            ? {}
+            : { sourceCount: processed.document.sourceCount }),
+          ...(processed.document.referenceCount === undefined
+            ? {}
+            : { referenceCount: processed.document.referenceCount }),
         }),
     operationCount: processed.document?.operations.length ?? 0,
     schemaCount: processed.document?.componentSchemas.length ?? 0,
     diagnostics,
   }
 
-  writeReport(report, json, io)
-  return valid ? 0 : sourceResult.source ? 1 : 2
+  writeReport(report, options.json, io)
+  return valid ? 0 : failureExitCode(diagnostics)
 }

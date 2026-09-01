@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { describe, expect, test, vi } from 'vitest'
 
 import { runCli, type CliDependencies, type CliIo } from '../../src/index.js'
@@ -13,14 +15,21 @@ function createIo() {
 }
 
 function createDependencies(overrides: Partial<CliDependencies> = {}): CliDependencies {
+  const acquirer = {
+    resolveLocation: vi.fn(),
+    acquire: vi.fn(),
+  }
   return {
-    readFile: vi.fn(async () => '{"openapi":"3.1.0"}'),
-    processOpenApi: vi.fn(async () => ({
+    createAcquirer: () => acquirer,
+    processOpenApiLocation: vi.fn(async () => ({
       document: {
         schemaVersion: '1.0',
-        sourceUri: 'openapi.json',
+        sourceUri: 'file:///workspace/openapi.json',
         openapiVersion: '3.1.0',
         compatibilityMode: false,
+        fingerprint: 'sha256:example',
+        sourceCount: 1,
+        referenceCount: 0,
         info: { title: 'Example', version: '1.0.0' },
         tags: [],
         servers: [],
@@ -29,8 +38,11 @@ function createDependencies(overrides: Partial<CliDependencies> = {}): CliDepend
       },
       diagnostics: [],
     })),
+    resolvePath: path.posix.resolve,
+    dirname: path.posix.dirname,
+    cwd: () => '/workspace',
     ...overrides,
-  }
+  } as CliDependencies
 }
 
 describe('schema-flow CLI', () => {
@@ -39,7 +51,7 @@ describe('schema-flow CLI', () => {
     const exitCode = await runCli(['validate'], createDependencies(), output.io)
 
     expect(exitCode).toBe(2)
-    expect(output.stderr.join('')).toContain('Usage: schema-flow validate <file> [--json]')
+    expect(output.stderr.join('')).toContain('Usage: schema-flow validate <file-or-url> [--json]')
   })
 
   test('emits a stable JSON validation report', async () => {
@@ -56,6 +68,9 @@ describe('schema-flow CLI', () => {
       command: 'validate',
       valid: true,
       openapiVersion: '3.1.0',
+      fingerprint: 'sha256:example',
+      sourceCount: 1,
+      referenceCount: 0,
       operationCount: 0,
     })
     expect(output.stderr).toEqual([])
@@ -63,21 +78,25 @@ describe('schema-flow CLI', () => {
 
   test('returns input exit code when a local file cannot be read', async () => {
     const output = createIo()
-    const inputError = Object.assign(new Error('ENOENT: no such file or directory'), {
-      code: 'ENOENT',
-    })
     const exitCode = await runCli(
       ['validate', 'missing.yaml'],
       createDependencies({
-        readFile: vi.fn(async () => {
-          throw inputError
-        }),
+        processOpenApiLocation: vi.fn(async () => ({
+          diagnostics: [
+            {
+              code: 'ASF-SRC-1011',
+              severity: 'error' as const,
+              message: 'Unable to read source file missing.yaml.',
+              source: { uri: 'missing.yaml', pointer: '#' },
+            },
+          ],
+        })),
       }),
       output.io,
     )
 
     expect(exitCode).toBe(2)
-    expect(output.stderr.join('')).toContain('ASF-CLI-1002')
+    expect(output.stderr.join('')).toContain('ASF-SRC-1011')
     expect(output.stderr.join('')).toContain('missing.yaml')
   })
 
@@ -86,7 +105,7 @@ describe('schema-flow CLI', () => {
     const exitCode = await runCli(
       ['validate', 'openapi.json', '--json'],
       createDependencies({
-        processOpenApi: vi.fn(async () => ({
+        processOpenApiLocation: vi.fn(async () => ({
           diagnostics: [
             {
               code: 'ASF-OAS-1003',
@@ -118,7 +137,7 @@ describe('schema-flow CLI', () => {
     const exitCode = await runCli(
       ['validate', 'openapi.json'],
       createDependencies({
-        readFile: vi.fn(async () => {
+        processOpenApiLocation: vi.fn(async () => {
           throw new Error('Authorization: Bearer super-secret')
         }),
       }),

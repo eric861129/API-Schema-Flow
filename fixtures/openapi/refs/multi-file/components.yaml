@@ -1,0 +1,15 @@
+components:
+  schemas:
+    Reservation:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - confirmed
+            - cancelled

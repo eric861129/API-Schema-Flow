@@ -1,4 +1,5 @@
 import type { HttpMethod } from './http-method.js'
+import type { NormalizedLink } from './link.js'
 import type { NormalizedSchema } from './schema.js'
 import type { SourcePointer } from './source-pointer.js'
 
@@ -32,6 +33,7 @@ export interface NormalizedResponse {
   readonly statusCode: string
   readonly description: string
   readonly content: readonly NormalizedMediaType[]
+  readonly links: readonly NormalizedLink[]
   readonly source: SourcePointer
 }
 

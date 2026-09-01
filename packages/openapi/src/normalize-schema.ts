@@ -28,6 +28,11 @@ const SECRET_SCHEMA_KEYS = new Set([
   'xapikey',
 ])
 
+export type SchemaReferenceResolver = (
+  reference: string,
+  source: SourcePointer,
+) => SourcePointer | undefined
+
 function normalizeTypes(value: unknown): string[] {
   if (typeof value === 'string') return [value]
   return stringArray(value).sort()
@@ -76,6 +81,7 @@ export function normalizeSchema(
   source: SourcePointer,
   ancestors: WeakSet<object> = new WeakSet(),
   propertyName?: string,
+  referenceResolver?: SchemaReferenceResolver,
 ): NormalizedSchema | undefined {
   if (!isRecord(value)) return undefined
 
@@ -92,6 +98,7 @@ export function normalizeSchema(
         appendSourcePointer(source, ['properties', name]),
         ancestors,
         name,
+        referenceResolver,
       )
       if (normalized) properties[name] = normalized
     }
@@ -104,6 +111,7 @@ export function normalizeSchema(
           appendSourcePointer(source, [key, String(index)]),
           ancestors,
           propertyName,
+          referenceResolver,
         )
         return normalized ? [normalized] : []
       })
@@ -114,6 +122,7 @@ export function normalizeSchema(
       appendSourcePointer(source, ['items']),
       ancestors,
       propertyName,
+      referenceResolver,
     )
     const additionalProperties =
       typeof value.additionalProperties === 'boolean'
@@ -123,9 +132,14 @@ export function normalizeSchema(
             appendSourcePointer(source, ['additionalProperties']),
             ancestors,
             propertyName,
+            referenceResolver,
           )
 
     const ref = stringValue(value.$ref)
+    const resolvedRef =
+      ref === undefined
+        ? undefined
+        : referenceResolver?.(ref, appendSourcePointer(source, ['$ref']))
     const format = stringValue(value.format)
     const title = stringValue(value.title)
     const description = stringValue(value.description)
@@ -134,6 +148,7 @@ export function normalizeSchema(
     return {
       source,
       ...(ref === undefined ? {} : { ref }),
+      ...(resolvedRef === undefined ? {} : { resolvedRef }),
       types: normalizeTypes(value.type),
       ...(format === undefined ? {} : { format }),
       ...(title === undefined ? {} : { title }),

@@ -8,6 +8,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node-source-acquirer.d.ts",
+      "import": "./dist/node-source-acquirer.js",
+      "default": "./dist/node-source-acquirer.js"
     }
   },
   "files": [
