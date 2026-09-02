@@ -83,13 +83,15 @@ describe('declared flow Golden Fixtures', () => {
     expect(projection.diagnostics).toEqual([])
     expect(projection.operationGraph.nodes).toHaveLength(4)
     expect(projection.workflowGraphs[0]?.nodes).toHaveLength(4)
-    expect(projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'control')).toHaveLength(
-      3,
-    )
+    expect(
+      projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'control'),
+    ).toHaveLength(3)
     expect(
       projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'dependency'),
     ).toHaveLength(3)
-    expect(projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'data')).toHaveLength(5)
+    expect(projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'data')).toHaveLength(
+      5,
+    )
     expect(serialize(projection)).toBe(expected)
   })
 

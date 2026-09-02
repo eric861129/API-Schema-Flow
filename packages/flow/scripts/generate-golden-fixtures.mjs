@@ -47,7 +47,9 @@ const linkProjection = buildDeclaredFlowGraphs({
   openApiSources: [{ sourceId: 'linkApi', sourceName: 'linkApi', document: linkDocument }],
 })
 if (linkProjection.diagnostics.length > 0) {
-  throw new Error(`OpenAPI Link projection failed:\n${JSON.stringify(linkProjection.diagnostics, null, 2)}`)
+  throw new Error(
+    `OpenAPI Link projection failed:\n${JSON.stringify(linkProjection.diagnostics, null, 2)}`,
+  )
 }
 await writeGolden('openapi-link/expected-operation-graph.json', linkProjection.operationGraph)
 
