@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 
 import { runtimeExpressionToSelector } from '../../src/index.js'
 
+// This suite stays red until the M2-B projection API is implemented.
 function expression(raw: string) {
   const result = parseRuntimeExpression(raw)
   expect(result.diagnostics).toEqual([])
