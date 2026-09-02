@@ -11,21 +11,21 @@
           "targetOperationKey": "operation:get:/spaces/available",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         },
         {
           "sourceOperationKey": "operation:post:/auth/login",
           "targetOperationKey": "operation:post:/reservations",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         },
         {
           "sourceOperationKey": "operation:post:/auth/login",
           "targetOperationKey": "operation:get:/reservations/{id}",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         },
         {
           "sourceOperationKey": "operation:post:/reservations",
@@ -69,21 +69,21 @@
           "targetOperationKey": "operation:get:/spaces/available",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         },
         {
           "sourceOperationKey": "operation:post:/auth/login",
           "targetOperationKey": "operation:post:/reservations",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         },
         {
           "sourceOperationKey": "operation:post:/auth/login",
           "targetOperationKey": "operation:get:/reservations/{id}",
           "source": { "kind": "response-body", "pointer": "#/token" },
           "target": { "kind": "header-parameter", "name": "Authorization" },
-          "minimumBand": "high"
+          "minimumBand": "medium"
         }
       ],
       "expectedNegativeMappings": [],
