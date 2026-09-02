@@ -8,6 +8,7 @@ import {
   type SourcePointer,
 } from '@api-schema-flow/domain'
 import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
+import { canonicalizeJson } from '@api-schema-flow/flow'
 
 import type {
   InferenceConfig,
@@ -285,7 +286,7 @@ export function extractOperationSourceFields(
     fields: fields.sort(
       (left, right) =>
         left.operationNodeId.localeCompare(right.operationNodeId) ||
-        left.selector.pointer.localeCompare(right.selector.pointer),
+        canonicalizeJson(left.selector).localeCompare(canonicalizeJson(right.selector)),
     ),
     diagnostics: sortDiagnostics(diagnostics),
   }
@@ -326,7 +327,7 @@ export function extractOperationTargetFields(
     targetField(context, {
       name: parameter.name,
       target: parameterTarget(parameter),
-      schema: parameter.schema,
+      ...(parameter.schema === undefined ? {} : { schema: parameter.schema }),
       sourcePointer: parameter.source,
       required: parameter.required,
       securityTarget:
