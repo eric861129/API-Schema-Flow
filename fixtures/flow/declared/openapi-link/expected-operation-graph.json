@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "id": "graph:operation-topology:linkApi",
+  "kind": "operation-topology",
+  "title": "Operation topology",
+  "sourceIds": ["linkApi"],
+  "nodes": [
+    {
+      "kind": "endpoint",
+      "id": "endpoint:linkApi:operation:get:/reservations/{id}",
+      "sourceId": "linkApi",
+      "operationKey": "operation:get:/reservations/{id}",
+      "method": "get",
+      "path": "/reservations/{id}",
+      "operationId": "getReservation",
+      "source": {
+        "uri": "memory://fixtures/openapi-link/openapi.yaml",
+        "pointer": "#/paths/~1reservations~1{id}/get"
+      }
+    },
+    {
+      "kind": "endpoint",
+      "id": "endpoint:linkApi:operation:post:/reservations",
+      "sourceId": "linkApi",
+      "operationKey": "operation:post:/reservations",
+      "method": "post",
+      "path": "/reservations",
+      "operationId": "createReservation",
+      "source": {
+        "uri": "memory://fixtures/openapi-link/openapi.yaml",
+        "pointer": "#/paths/~1reservations/post"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:data:ff189a1ca3c7c937",
+      "kind": "data",
+      "sourceNodeId": "endpoint:linkApi:operation:post:/reservations",
+      "targetNodeId": "endpoint:linkApi:operation:get:/reservations/{id}",
+      "provenance": "declared",
+      "status": "accepted",
+      "mappings": [
+        {
+          "id": "mapping:26751498dd4bef7e",
+          "source": {
+            "kind": "response-body",
+            "pointer": "#/id"
+          },
+          "target": {
+            "kind": "path-parameter",
+            "name": "id"
+          },
+          "aliases": [],
+          "sourcePointers": [
+            {
+              "uri": "memory://fixtures/openapi-link/openapi.yaml",
+              "pointer": "#/paths/~1reservations/post/responses/201/links/GetReservation/parameters/id"
+            }
+          ]
+        }
+      ],
+      "sourceStandardRefs": [
+        {
+          "standard": "openapi-link",
+          "source": {
+            "uri": "memory://fixtures/openapi-link/openapi.yaml",
+            "pointer": "#/paths/~1reservations/post/responses/201/links/GetReservation"
+          }
+        }
+      ]
+    }
+  ]
+}
