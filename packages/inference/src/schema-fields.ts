@@ -348,9 +348,7 @@ export function extractOperationTargetFields(
     }
   }
 
-  const bearerRequirements = operation.security.filter(({ schemeName }) =>
-    isBearerSecurityName(schemeName),
-  )
+  const bearerRequirements = operation.security.filter(({ scheme }) => isBearerSecurityName(scheme))
   if (bearerRequirements.length > 0) {
     fields.push(
       targetField(context, {
