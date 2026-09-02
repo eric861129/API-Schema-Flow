@@ -41,6 +41,10 @@ function standardRefKey(reference: SourceStandardRef): string {
   return `${reference.standard}\u0000${sourceKey(reference.source)}`
 }
 
+function sourceProperty(source: SourcePointer | undefined): { readonly source?: SourcePointer } {
+  return source === undefined ? {} : { source }
+}
+
 function uniqueByKey<T>(values: readonly T[], keyOf: (value: T) => string): T[] {
   const result = new Map<string, T>()
   for (const value of values) {
@@ -86,7 +90,7 @@ function mergeMappings(
         code: DIAGNOSTIC_CODES.FLOW_DECLARED_MAPPING_CONFLICT,
         severity: 'error',
         message: `Declared mapping "${id}" has conflicting semantic definitions.`,
-        source: group[0]?.sourcePointers[0],
+        ...sourceProperty(group[0]?.sourcePointers[0]),
         details: { mappingId: id },
       })
     }
@@ -172,7 +176,7 @@ function mergeEdges(edges: readonly FlowEdge[], diagnostics: Diagnostic[]): Flow
         code: DIAGNOSTIC_CODES.FLOW_DECLARED_MAPPING_CONFLICT,
         severity: 'error',
         message: `Flow edge "${id}" has conflicting definitions.`,
-        source: selected.sourceStandardRefs[0]?.source,
+        ...sourceProperty(selected.sourceStandardRefs[0]?.source),
         details: { edgeId: id },
       })
     }
@@ -198,12 +202,13 @@ export function assembleFlowGraph(input: AssembleFlowGraphInput): AssembleFlowGr
   const validEdges: FlowEdge[] = []
 
   for (const edge of input.edges) {
+    const source = edge.sourceStandardRefs[0]?.source
     if (edge.provenance !== DECLARED_FLOW_PROVENANCE || edge.status !== ACCEPTED_FLOW_STATUS) {
       diagnostics.push({
         code: DIAGNOSTIC_CODES.FLOW_PROJECTION_UNSUPPORTED,
         severity: 'error',
         message: `M2-B accepts only declared, accepted edges; edge "${edge.id}" was omitted.`,
-        source: edge.sourceStandardRefs[0]?.source,
+        ...sourceProperty(source),
         details: { edgeId: edge.id, provenance: edge.provenance, status: edge.status },
       })
       continue
@@ -213,7 +218,7 @@ export function assembleFlowGraph(input: AssembleFlowGraphInput): AssembleFlowGr
         code: DIAGNOSTIC_CODES.FLOW_ENDPOINT_TARGET_UNRESOLVED,
         severity: 'error',
         message: `Flow edge "${edge.id}" references missing source node "${edge.sourceNodeId}".`,
-        source: edge.sourceStandardRefs[0]?.source,
+        ...sourceProperty(source),
         details: { edgeId: edge.id, nodeId: edge.sourceNodeId, endpoint: 'source' },
       })
       continue
@@ -223,7 +228,7 @@ export function assembleFlowGraph(input: AssembleFlowGraphInput): AssembleFlowGr
         code: DIAGNOSTIC_CODES.FLOW_ENDPOINT_TARGET_UNRESOLVED,
         severity: 'error',
         message: `Flow edge "${edge.id}" references missing target node "${edge.targetNodeId}".`,
-        source: edge.sourceStandardRefs[0]?.source,
+        ...sourceProperty(source),
         details: { edgeId: edge.id, nodeId: edge.targetNodeId, endpoint: 'target' },
       })
       continue
@@ -233,7 +238,7 @@ export function assembleFlowGraph(input: AssembleFlowGraphInput): AssembleFlowGr
         code: DIAGNOSTIC_CODES.FLOW_DATA_MAPPING_INVALID,
         severity: 'error',
         message: `Data edge "${edge.id}" contains no mappings and was omitted.`,
-        source: edge.sourceStandardRefs[0]?.source,
+        ...sourceProperty(source),
         details: { edgeId: edge.id },
       })
       continue
