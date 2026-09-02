@@ -31,7 +31,11 @@ function numericValue(
   argv: readonly string[],
   index: number,
   flag: string,
-): { readonly value?: number; readonly nextIndex: number; readonly diagnostic?: ParseInferArgumentsResult } {
+): {
+  readonly value?: number
+  readonly nextIndex: number
+  readonly diagnostic?: ParseInferArgumentsResult
+} {
   const raw = argv[index + 1]
   if (raw === undefined || raw.startsWith('--')) {
     return {
