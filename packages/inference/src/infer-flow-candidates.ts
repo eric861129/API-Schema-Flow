@@ -11,13 +11,10 @@ import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-
 import { canonicalizeJson, createMappingId } from '@api-schema-flow/flow'
 
 import { createInferenceCandidateId, createInferenceFingerprint } from './canonical.js'
-import {
-  DEFAULT_INFERENCE_CONFIG,
-  INFERENCE_RULE_SET_VERSION,
-  resolveInferenceConfig,
-} from './config.js'
+import { INFERENCE_RULE_SET_VERSION, resolveInferenceConfig } from './config.js'
 import type {
   InferFlowCandidatesInput,
+  InferenceConfig,
   InferenceOperationIndex,
   InferencePair,
   InferenceSourceField,
@@ -46,7 +43,7 @@ function endpointNodeMap(input: InferFlowCandidatesInput): Map<string, EndpointF
 
 function buildOperationIndex(
   input: InferFlowCandidatesInput,
-  config: typeof DEFAULT_INFERENCE_CONFIG,
+  config: InferenceConfig,
 ): InferenceOperationIndex {
   const diagnostics: Diagnostic[] = []
   const sourceFields: InferenceSourceField[] = []
@@ -166,7 +163,10 @@ function validateInput(input: InferFlowCandidatesInput): readonly Diagnostic[] {
   ]
 }
 
-function applyTopK(candidates: readonly InferenceCandidate[], topK: number): InferenceCandidate[] {
+function applyTopK(
+  candidates: readonly InferenceCandidate[],
+  topK: number,
+): InferenceCandidate[] {
   const counts = new Map<string, number>()
   const result: InferenceCandidate[] = []
   for (const candidate of [...candidates].sort(candidateOrder)) {
@@ -181,7 +181,9 @@ function applyTopK(candidates: readonly InferenceCandidate[], topK: number): Inf
   return result
 }
 
-export function inferFlowCandidates(input: InferFlowCandidatesInput): InferenceReport<Diagnostic> {
+export function inferFlowCandidates(
+  input: InferFlowCandidatesInput,
+): InferenceReport<Diagnostic> {
   const startedAt = Date.now()
   const inputDiagnostics = validateInput(input)
   if (inputDiagnostics.length > 0) return emptyReport(inputDiagnostics)
