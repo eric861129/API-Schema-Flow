@@ -35,7 +35,7 @@ jobs:
       - run: pnpm exec prettier --write fixtures/flow/declared/**/*.json
       - name: Commit generated Golden Files
         run: |
-          if git diff --quiet -- fixtures/flow/declared; then
+          if [ -z "$(git status --porcelain -- fixtures/flow/declared)" ]; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
