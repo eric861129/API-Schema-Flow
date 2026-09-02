@@ -56,10 +56,6 @@ function uniqueByKey<T>(values: readonly T[], keyOf: (value: T) => string): T[] 
     .map(([, value]) => value)
 }
 
-function semanticNode(node: FlowNode): unknown {
-  return node
-}
-
 function semanticMapping(mapping: FlowDataMapping): unknown {
   return {
     id: mapping.id,
@@ -94,11 +90,7 @@ function mergeMappings(
         details: { mappingId: id },
       })
     }
-    const selected = [...group].sort((left, right) =>
-      canonicalizeJson(semanticMapping(left)).localeCompare(
-        canonicalizeJson(semanticMapping(right)),
-      ),
-    )[0]!
+    const selected = group[0]!
     result.push({
       ...selected,
       aliases: uniqueByKey(
@@ -126,11 +118,8 @@ function mergeNodes(nodes: readonly FlowNode[], diagnostics: Diagnostic[]): Flow
   for (const [id, group] of [...groups.entries()].sort(([left], [right]) =>
     left.localeCompare(right),
   )) {
-    const ordered = [...group].sort((left, right) =>
-      canonicalizeJson(semanticNode(left)).localeCompare(canonicalizeJson(semanticNode(right))),
-    )
-    const selected = ordered[0]!
-    if (new Set(ordered.map((node) => canonicalizeJson(semanticNode(node)))).size > 1) {
+    const selected = group[0]!
+    if (new Set(group.map((node) => canonicalizeJson(node))).size > 1) {
       diagnostics.push({
         code: DIAGNOSTIC_CODES.FLOW_NODE_IDENTITY_CONFLICT,
         severity: 'error',
@@ -167,11 +156,8 @@ function mergeEdges(edges: readonly FlowEdge[], diagnostics: Diagnostic[]): Flow
   for (const [id, group] of [...groups.entries()].sort(([left], [right]) =>
     left.localeCompare(right),
   )) {
-    const ordered = [...group].sort((left, right) =>
-      canonicalizeJson(semanticEdge(left)).localeCompare(canonicalizeJson(semanticEdge(right))),
-    )
-    const selected = ordered[0]!
-    if (new Set(ordered.map((edge) => canonicalizeJson(semanticEdge(edge)))).size > 1) {
+    const selected = group[0]!
+    if (new Set(group.map((edge) => canonicalizeJson(semanticEdge(edge)))).size > 1) {
       diagnostics.push({
         code: DIAGNOSTIC_CODES.FLOW_DECLARED_MAPPING_CONFLICT,
         severity: 'error',

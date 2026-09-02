@@ -96,7 +96,7 @@ describe('flow graph assembler', () => {
     const result = assembleFlowGraph(input())
 
     expect(result.diagnostics).toEqual([])
-    expect(result.graph.nodes.map(({ id }) => id)).toEqual([sourceNode.id, targetNode.id])
+    expect(result.graph.nodes.map(({ id }) => id)).toEqual([targetNode.id, sourceNode.id])
     expect(result.graph.edges).toHaveLength(1)
     expect(result.graph.edges[0]?.sourceStandardRefs.map(({ standard }) => standard)).toEqual([
       'arazzo',
