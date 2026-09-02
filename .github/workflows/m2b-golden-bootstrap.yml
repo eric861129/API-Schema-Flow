@@ -1,0 +1,45 @@
+name: Bootstrap M2-B Golden Files
+
+on:
+  push:
+    branches:
+      - feat/m2b-declared-flow-graph
+    paths:
+      - packages/flow/scripts/generate-golden-fixtures.mjs
+      - fixtures/flow/declared/**
+      - .github/workflows/m2b-golden-bootstrap.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2b-declared-flow-graph
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @api-schema-flow/flow generate:fixtures
+      - run: pnpm exec prettier --write fixtures/flow/declared/**/*.json
+      - name: Commit generated Golden Files
+        run: |
+          if git diff --quiet -- fixtures/flow/declared; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fixtures/flow/declared
+          git commit -m "test(flow): add declared graph Golden Files"
+          git push
