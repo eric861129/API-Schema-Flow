@@ -6,6 +6,16 @@ export {
   type CliProcessResult,
 } from './run-cli.js'
 export {
+  executeInferCommand,
+  type InferenceCliReport,
+} from './infer-command.js'
+export {
+  INFER_USAGE,
+  parseInferArguments,
+  type InferCommandOptions,
+  type ParseInferArgumentsResult,
+} from './infer-options.js'
+export {
   parseValidateArguments,
   VALIDATE_USAGE,
   type ParseValidateArgumentsResult,
