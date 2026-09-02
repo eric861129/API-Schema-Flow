@@ -59,6 +59,12 @@ importers:
       '@api-schema-flow/domain':
         specifier: workspace:*
         version: link:../domain
+      '@api-schema-flow/flow':
+        specifier: workspace:*
+        version: link:../flow
+      '@api-schema-flow/inference':
+        specifier: workspace:*
+        version: link:../inference
       '@api-schema-flow/openapi':
         specifier: workspace:*
         version: link:../openapi
