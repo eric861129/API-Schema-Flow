@@ -1,0 +1,40 @@
+name: Finalize M2-B formatting
+
+on:
+  push:
+    branches:
+      - feat/m2b-declared-flow-graph
+    paths:
+      - tooling/scripts/check-boundaries.mjs
+      - .github/workflows/m2b-final-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2b-declared-flow-graph
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write tooling/scripts/check-boundaries.mjs
+      - name: Commit formatting and remove this workflow
+        run: |
+          rm .github/workflows/m2b-final-format.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tooling/scripts/check-boundaries.mjs .github/workflows/m2b-final-format.yml
+          git commit -m "style(flow): finalize boundary checks"
+          git push
