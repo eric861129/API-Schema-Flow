@@ -25,7 +25,11 @@ export type {
   ParameterLocation,
 } from './operation.js'
 export type { NormalizedApiDocument, NormalizedApiInfo } from './document.js'
-export type { EndpointFlowNode, FlowNode, WorkflowStepFlowNode } from './flow-node.js'
+export type {
+  EndpointFlowNode,
+  FlowNode,
+  WorkflowStepFlowNode,
+} from './flow-node.js'
 export type {
   FlowDataMapping,
   FlowLiteralValue,
