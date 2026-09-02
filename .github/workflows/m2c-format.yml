@@ -10,7 +10,6 @@ on:
       - packages/cli/**
       - tooling/**
       - package.json
-      - .prettierignore
       - .github/workflows/m2c-format.yml
 
 permissions:
@@ -36,7 +35,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Format existing M2-C paths
         run: |
-          targets=(packages/domain packages/cli tooling package.json .prettierignore)
+          targets=(packages/domain packages/cli tooling package.json)
           if [ -d packages/inference ]; then
             targets+=(packages/inference)
           fi
@@ -48,7 +47,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/domain packages/cli tooling package.json .prettierignore
+          git add packages/domain packages/cli tooling package.json
           if [ -d packages/inference ]; then
             git add packages/inference
           fi
