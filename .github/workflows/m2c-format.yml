@@ -1,0 +1,47 @@
+name: Format M2-C branch
+
+on:
+  push:
+    branches:
+      - feat/m2c-inference-core
+    paths:
+      - packages/domain/**
+      - packages/inference/**
+      - packages/cli/**
+      - tooling/**
+      - package.json
+      - .prettierignore
+      - .github/workflows/m2c-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2c-inference-core
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write packages/domain packages/inference packages/cli tooling package.json .prettierignore
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/domain packages/inference packages/cli tooling package.json .prettierignore
+          git commit -m "style(inference): apply repository formatting"
+          git push
