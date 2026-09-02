@@ -86,6 +86,21 @@ importers:
 
   packages/domain: {}
 
+  packages/flow:
+    dependencies:
+      '@api-schema-flow/arazzo':
+        specifier: workspace:*
+        version: link:../arazzo
+      '@api-schema-flow/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@api-schema-flow/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@api-schema-flow/openapi':
+        specifier: workspace:*
+        version: link:../openapi
+
   packages/openapi:
     dependencies:
       '@api-schema-flow/diagnostics':
