@@ -1,4 +1,4 @@
-// Public, framework-free entry point for deterministic M2-C inference.
+// Framework-free public entry point for deterministic M2-C inference.
 export {
   DEFAULT_INFERENCE_CONFIG,
   INFERENCE_RULE_SET_VERSION,
