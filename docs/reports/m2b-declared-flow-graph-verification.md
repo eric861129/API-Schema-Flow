@@ -43,6 +43,10 @@ fixtures/flow/declared/arazzo-reservation/expected-projection.json
 
 The committed Golden output is compared byte for byte against the public OpenAPI and Arazzo processing pipelines.
 
+### Deterministic serialization format
+
+GitHub Actions run `33595822418` demonstrated that the generated graph values were semantically identical to the committed Golden Files, but Prettier had rewritten single-value arrays and broken the byte comparison. Declared-flow Golden JSON is therefore excluded from Prettier and regenerated directly by the deterministic `JSON.stringify(value, null, 2)` serializer. This keeps the repository formatting gate and byte-for-byte graph gate independent.
+
 ## Acceptance matrix
 
 | Requirement | Verification |
