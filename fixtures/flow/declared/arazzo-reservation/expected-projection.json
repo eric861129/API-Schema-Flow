@@ -1,0 +1,866 @@
+{
+  "operationGraph": {
+    "schemaVersion": "1.0",
+    "id": "graph:operation-topology:reservationApi",
+    "kind": "operation-topology",
+    "title": "Operation topology",
+    "sourceIds": [
+      "reservationApi"
+    ],
+    "nodes": [
+      {
+        "kind": "endpoint",
+        "id": "endpoint:reservationApi:operation:get:/reservations/{id}",
+        "sourceId": "reservationApi",
+        "operationKey": "operation:get:/reservations/{id}",
+        "method": "get",
+        "path": "/reservations/{id}",
+        "operationId": "getReservation",
+        "source": {
+          "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+          "pointer": "#/paths/~1reservations~1{id}/get"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:reservationApi:operation:get:/spaces/available",
+        "sourceId": "reservationApi",
+        "operationKey": "operation:get:/spaces/available",
+        "method": "get",
+        "path": "/spaces/available",
+        "operationId": "listAvailableSpaces",
+        "source": {
+          "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+          "pointer": "#/paths/~1spaces~1available/get"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:reservationApi:operation:post:/auth/login",
+        "sourceId": "reservationApi",
+        "operationKey": "operation:post:/auth/login",
+        "method": "post",
+        "path": "/auth/login",
+        "operationId": "login",
+        "source": {
+          "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+          "pointer": "#/paths/~1auth~1login/post"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:reservationApi:operation:post:/reservations",
+        "sourceId": "reservationApi",
+        "operationKey": "operation:post:/reservations",
+        "method": "post",
+        "path": "/reservations",
+        "operationId": "createReservation",
+        "source": {
+          "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+          "pointer": "#/paths/~1reservations/post"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge:control:09cee89649f3d054",
+        "kind": "control",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/auth/login",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:control:aaddd501eee1b063",
+        "kind": "control",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/reservations/{id}",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/3"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:control:b48c261dba021489",
+        "kind": "control",
+        "sourceNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "targetNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/2"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:data:60b0d54fdd1089f6",
+        "kind": "data",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/auth/login",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/reservations/{id}",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:5c9f908690679830",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "header-parameter",
+              "name": "Authorization"
+            },
+            "aliases": [
+              {
+                "kind": "step-output",
+                "workflowId": "createReservation",
+                "stepId": "login",
+                "outputName": "token"
+              }
+            ],
+            "transform": {
+              "kind": "template",
+              "raw": "Bearer {$steps.login.outputs.token}"
+            },
+            "sourcePointers": [
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/0/outputs/token"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3/parameters/1/value"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/3/parameters/1/value"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:data:a0889c4b3de86be6",
+        "kind": "data",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/auth/login",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:5c9f908690679830",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "header-parameter",
+              "name": "Authorization"
+            },
+            "aliases": [
+              {
+                "kind": "step-output",
+                "workflowId": "createReservation",
+                "stepId": "login",
+                "outputName": "token"
+              }
+            ],
+            "transform": {
+              "kind": "template",
+              "raw": "Bearer {$steps.login.outputs.token}"
+            },
+            "sourcePointers": [
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/0/outputs/token"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/1/parameters/0/value"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/1/parameters/0/value"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:data:a75e532975bcc102",
+        "kind": "data",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/auth/login",
+        "targetNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:5c9f908690679830",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "header-parameter",
+              "name": "Authorization"
+            },
+            "aliases": [
+              {
+                "kind": "step-output",
+                "workflowId": "createReservation",
+                "stepId": "login",
+                "outputName": "token"
+              }
+            ],
+            "transform": {
+              "kind": "template",
+              "raw": "Bearer {$steps.login.outputs.token}"
+            },
+            "sourcePointers": [
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/0/outputs/token"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/parameters/0/value"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/2/parameters/0/value"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:data:bb0f2172277f7dab",
+        "kind": "data",
+        "sourceNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "targetNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:3df532b9d516f398",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/0/id"
+            },
+            "target": {
+              "kind": "request-body",
+              "pointer": "#/spaceId"
+            },
+            "aliases": [
+              {
+                "kind": "step-output",
+                "workflowId": "createReservation",
+                "stepId": "listSpaces",
+                "outputName": "spaceId"
+              }
+            ],
+            "sourcePointers": [
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/1/outputs/spaceId"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/requestBody/payload/spaceId"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/2/requestBody/payload/spaceId"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:data:daed02a8c9cbdb13",
+        "kind": "data",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/reservations/{id}",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:26751498dd4bef7e",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/id"
+            },
+            "target": {
+              "kind": "path-parameter",
+              "name": "id"
+            },
+            "aliases": [
+              {
+                "kind": "step-output",
+                "workflowId": "createReservation",
+                "stepId": "createReservation",
+                "outputName": "reservationId"
+              }
+            ],
+            "sourcePointers": [
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/outputs/reservationId"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3/parameters/0/value"
+              },
+              {
+                "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+                "pointer": "#/paths/~1reservations/post/responses/201/links/GetReservation/parameters/id"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/3/parameters/0/value"
+            }
+          },
+          {
+            "standard": "openapi-link",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/openapi.yaml",
+              "pointer": "#/paths/~1reservations/post/responses/201/links/GetReservation"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:dependency:58a469f823031e3f",
+        "kind": "dependency",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/reservations/{id}",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/3/dependsOn/0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:dependency:ab1f2013bccb20c8",
+        "kind": "dependency",
+        "sourceNodeId": "endpoint:reservationApi:operation:post:/auth/login",
+        "targetNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/1/dependsOn/0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "edge:dependency:f2ca77cbeedd6635",
+        "kind": "dependency",
+        "sourceNodeId": "endpoint:reservationApi:operation:get:/spaces/available",
+        "targetNodeId": "endpoint:reservationApi:operation:post:/reservations",
+        "provenance": "declared",
+        "status": "accepted",
+        "mappings": [],
+        "sourceStandardRefs": [
+          {
+            "standard": "arazzo",
+            "source": {
+              "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+              "pointer": "#/workflows/0/steps/2/dependsOn/0"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "workflowGraphs": [
+    {
+      "schemaVersion": "1.0",
+      "id": "graph:workflow:reservationWorkflow:createReservation",
+      "kind": "workflow-instance",
+      "title": "Create and retrieve a reservation",
+      "sourceIds": [
+        "reservationWorkflow"
+      ],
+      "nodes": [
+        {
+          "kind": "workflow-step",
+          "id": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "sourceId": "reservationWorkflow",
+          "workflowId": "createReservation",
+          "stepId": "createReservation",
+          "operationKey": "operation:post:/reservations",
+          "operationId": "createReservation",
+          "source": {
+            "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+            "pointer": "#/workflows/0/steps/2"
+          }
+        },
+        {
+          "kind": "workflow-step",
+          "id": "workflow-step:reservationWorkflow:createReservation:getReservation",
+          "sourceId": "reservationWorkflow",
+          "workflowId": "createReservation",
+          "stepId": "getReservation",
+          "operationKey": "operation:get:/reservations/{id}",
+          "operationId": "getReservation",
+          "source": {
+            "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+            "pointer": "#/workflows/0/steps/3"
+          }
+        },
+        {
+          "kind": "workflow-step",
+          "id": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "sourceId": "reservationWorkflow",
+          "workflowId": "createReservation",
+          "stepId": "listSpaces",
+          "operationKey": "operation:get:/spaces/available",
+          "operationId": "listAvailableSpaces",
+          "source": {
+            "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+            "pointer": "#/workflows/0/steps/1"
+          }
+        },
+        {
+          "kind": "workflow-step",
+          "id": "workflow-step:reservationWorkflow:createReservation:login",
+          "sourceId": "reservationWorkflow",
+          "workflowId": "createReservation",
+          "stepId": "login",
+          "operationKey": "operation:post:/auth/login",
+          "operationId": "login",
+          "source": {
+            "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+            "pointer": "#/workflows/0/steps/0"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge:control:3cb27cea68161699",
+          "kind": "control",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:getReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:control:3ff7dbb750358197",
+          "kind": "control",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:login",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:control:f0a5ac8bb3a47cec",
+          "kind": "control",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:data:1631d4bb2c1ec509",
+          "kind": "data",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:getReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [
+            {
+              "id": "mapping:26751498dd4bef7e",
+              "source": {
+                "kind": "response-body",
+                "pointer": "#/id"
+              },
+              "target": {
+                "kind": "path-parameter",
+                "name": "id"
+              },
+              "aliases": [
+                {
+                  "kind": "step-output",
+                  "workflowId": "createReservation",
+                  "stepId": "createReservation",
+                  "outputName": "reservationId"
+                }
+              ],
+              "sourcePointers": [
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/2/outputs/reservationId"
+                },
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/3/parameters/0/value"
+                }
+              ]
+            }
+          ],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3/parameters/0/value"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:data:31acd5287f7f3d58",
+          "kind": "data",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:login",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:getReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [
+            {
+              "id": "mapping:5c9f908690679830",
+              "source": {
+                "kind": "response-body",
+                "pointer": "#/token"
+              },
+              "target": {
+                "kind": "header-parameter",
+                "name": "Authorization"
+              },
+              "aliases": [
+                {
+                  "kind": "step-output",
+                  "workflowId": "createReservation",
+                  "stepId": "login",
+                  "outputName": "token"
+                }
+              ],
+              "transform": {
+                "kind": "template",
+                "raw": "Bearer {$steps.login.outputs.token}"
+              },
+              "sourcePointers": [
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/0/outputs/token"
+                },
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/3/parameters/1/value"
+                }
+              ]
+            }
+          ],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3/parameters/1/value"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:data:d06567e00c00882e",
+          "kind": "data",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:login",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [
+            {
+              "id": "mapping:5c9f908690679830",
+              "source": {
+                "kind": "response-body",
+                "pointer": "#/token"
+              },
+              "target": {
+                "kind": "header-parameter",
+                "name": "Authorization"
+              },
+              "aliases": [
+                {
+                  "kind": "step-output",
+                  "workflowId": "createReservation",
+                  "stepId": "login",
+                  "outputName": "token"
+                }
+              ],
+              "transform": {
+                "kind": "template",
+                "raw": "Bearer {$steps.login.outputs.token}"
+              },
+              "sourcePointers": [
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/0/outputs/token"
+                },
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/2/parameters/0/value"
+                }
+              ]
+            }
+          ],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/parameters/0/value"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:data:d78af59467ef696e",
+          "kind": "data",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [
+            {
+              "id": "mapping:3df532b9d516f398",
+              "source": {
+                "kind": "response-body",
+                "pointer": "#/0/id"
+              },
+              "target": {
+                "kind": "request-body",
+                "pointer": "#/spaceId"
+              },
+              "aliases": [
+                {
+                  "kind": "step-output",
+                  "workflowId": "createReservation",
+                  "stepId": "listSpaces",
+                  "outputName": "spaceId"
+                }
+              ],
+              "sourcePointers": [
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/1/outputs/spaceId"
+                },
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/2/requestBody/payload/spaceId"
+                }
+              ]
+            }
+          ],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/requestBody/payload/spaceId"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:data:e5fc163f704c2e31",
+          "kind": "data",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:login",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [
+            {
+              "id": "mapping:5c9f908690679830",
+              "source": {
+                "kind": "response-body",
+                "pointer": "#/token"
+              },
+              "target": {
+                "kind": "header-parameter",
+                "name": "Authorization"
+              },
+              "aliases": [
+                {
+                  "kind": "step-output",
+                  "workflowId": "createReservation",
+                  "stepId": "login",
+                  "outputName": "token"
+                }
+              ],
+              "transform": {
+                "kind": "template",
+                "raw": "Bearer {$steps.login.outputs.token}"
+              },
+              "sourcePointers": [
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/0/outputs/token"
+                },
+                {
+                  "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                  "pointer": "#/workflows/0/steps/1/parameters/0/value"
+                }
+              ]
+            }
+          ],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/1/parameters/0/value"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:dependency:3611974843dc217d",
+          "kind": "dependency",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:getReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/3/dependsOn/0"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:dependency:ad85b3d60e8aab60",
+          "kind": "dependency",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:createReservation",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/2/dependsOn/0"
+              }
+            }
+          ]
+        },
+        {
+          "id": "edge:dependency:e4a8d021088b8853",
+          "kind": "dependency",
+          "sourceNodeId": "workflow-step:reservationWorkflow:createReservation:login",
+          "targetNodeId": "workflow-step:reservationWorkflow:createReservation:listSpaces",
+          "provenance": "declared",
+          "status": "accepted",
+          "mappings": [],
+          "sourceStandardRefs": [
+            {
+              "standard": "arazzo",
+              "source": {
+                "uri": "memory://fixtures/arazzo-reservation/arazzo.yaml",
+                "pointer": "#/workflows/0/steps/1/dependsOn/0"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

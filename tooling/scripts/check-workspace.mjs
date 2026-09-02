@@ -8,6 +8,7 @@ const requiredPackages = [
   'source-loader',
   'openapi',
   'arazzo',
+  'flow',
   'cli',
 ]
 
@@ -18,6 +19,7 @@ const requiredScripts = [
   'format:check',
   'test',
   'test:integration',
+  'test:flow-fixtures',
   'boundaries:check',
   'ci:verify',
 ]
