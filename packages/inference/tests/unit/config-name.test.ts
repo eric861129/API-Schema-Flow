@@ -3,9 +3,10 @@ import { describe, expect, test } from 'vitest'
 type InferenceApi = {
   readonly INFERENCE_RULE_SET_VERSION?: string
   readonly DEFAULT_INFERENCE_CONFIG?: Readonly<Record<string, unknown>>
-  readonly resolveInferenceConfig?: (
-    value?: Readonly<Record<string, unknown>>,
-  ) => { readonly config?: Readonly<Record<string, unknown>>; readonly diagnostics: readonly unknown[] }
+  readonly resolveInferenceConfig?: (value?: Readonly<Record<string, unknown>>) => {
+    readonly config?: Readonly<Record<string, unknown>>
+    readonly diagnostics: readonly unknown[]
+  }
   readonly normalizeFieldName?: (value: string) => {
     readonly original: string
     readonly tokens: readonly string[]

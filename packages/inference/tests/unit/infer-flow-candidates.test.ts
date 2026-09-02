@@ -62,8 +62,16 @@ describe('evidence-based inference pipeline', () => {
 
     expect(authCandidates.length).toBeGreaterThan(0)
     expect(authCandidates.every(({ confidence }) => confidence === 0.95)).toBe(true)
-    expect(authCandidates.every(({ evidence }) => evidence.some(({ ruleId }) => ruleId === 'INF-AUTH-BEARER'))).toBe(true)
-    expect(authCandidates.some(({ targetOperationKey }) => targetOperationKey === 'operation:get:/users/{id}')).toBe(false)
+    expect(
+      authCandidates.every(({ evidence }) =>
+        evidence.some(({ ruleId }) => ruleId === 'INF-AUTH-BEARER'),
+      ),
+    ).toBe(true)
+    expect(
+      authCandidates.some(
+        ({ targetOperationKey }) => targetOperationKey === 'operation:get:/users/{id}',
+      ),
+    ).toBe(false)
   })
 
   test('does not infer an array item without an explicit selector', async () => {

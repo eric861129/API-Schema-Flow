@@ -91,7 +91,9 @@ function response(
             {
               mediaType: 'application/json',
               schema,
-              source: pointer(`${operationPointer}/responses/${statusCode}/content/application~1json`),
+              source: pointer(
+                `${operationPointer}/responses/${statusCode}/content/application~1json`,
+              ),
             },
           ],
     links,
@@ -143,7 +145,9 @@ function operation(
   }
 }
 
-export function createInferenceSource(options: { readonly declaredLink?: boolean } = {}): FlowOpenApiSource {
+export function createInferenceSource(
+  options: { readonly declaredLink?: boolean } = {},
+): FlowOpenApiSource {
   const loginPointer = '#/paths/~1auth~1login/post'
   const createPointer = '#/paths/~1reservations/post'
   const getPointer = '#/paths/~1reservations~1{id}/get'
@@ -192,7 +196,9 @@ export function createInferenceSource(options: { readonly declaredLink?: boolean
     }),
     operation('post', '/reservations', 'createReservation', {
       tags: ['Reservations'],
-      responses: [response(createPointer, '201', reservationSchema, options.declaredLink ? [link] : [])],
+      responses: [
+        response(createPointer, '201', reservationSchema, options.declaredLink ? [link] : []),
+      ],
       security: [{ requirementIndex: 0, scheme: 'bearerAuth', scopes: [] }],
     }),
     operation('get', '/reservations/{id}', 'getReservation', {
