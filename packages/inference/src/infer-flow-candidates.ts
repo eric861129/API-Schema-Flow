@@ -163,10 +163,7 @@ function validateInput(input: InferFlowCandidatesInput): readonly Diagnostic[] {
   ]
 }
 
-function applyTopK(
-  candidates: readonly InferenceCandidate[],
-  topK: number,
-): InferenceCandidate[] {
+function applyTopK(candidates: readonly InferenceCandidate[], topK: number): InferenceCandidate[] {
   const counts = new Map<string, number>()
   const result: InferenceCandidate[] = []
   for (const candidate of [...candidates].sort(candidateOrder)) {
@@ -181,9 +178,7 @@ function applyTopK(
   return result
 }
 
-export function inferFlowCandidates(
-  input: InferFlowCandidatesInput,
-): InferenceReport<Diagnostic> {
+export function inferFlowCandidates(input: InferFlowCandidatesInput): InferenceReport<Diagnostic> {
   const startedAt = Date.now()
   const inputDiagnostics = validateInput(input)
   if (inputDiagnostics.length > 0) return emptyReport(inputDiagnostics)
