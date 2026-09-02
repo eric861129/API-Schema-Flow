@@ -1,5 +1,8 @@
 import { DIAGNOSTIC_CODES, type Diagnostic } from '@api-schema-flow/diagnostics'
 
+export const INFER_USAGE =
+  'Usage: schema-flow infer <openapi-file-or-url> [--json] [--minimum-confidence <0..1>] [--top-k <n>] [--max-candidates <n>] [--include-low] [--allow-path <dir>] [--allow-http] [--allow-private-network] [--max-documents <n>] [--max-total-bytes <n>] [--max-ref-depth <n>]'
+
 export interface InferCommandOptions {
   readonly target: string
   readonly json: boolean
@@ -53,11 +56,19 @@ function numericValue(
   return { value, nextIndex: index + 1 }
 }
 
+const forwardedBooleanFlags = new Set(['--allow-http', '--allow-private-network'])
+const forwardedValueFlags = new Set([
+  '--allow-path',
+  '--max-documents',
+  '--max-total-bytes',
+  '--max-ref-depth',
+])
+
 export function parseInferArguments(argv: readonly string[]): ParseInferArgumentsResult {
   if (argv[0] !== 'infer') return usage('Expected the infer command.')
   const target = argv[1]
   if (target === undefined || target.startsWith('--')) {
-    return usage('Usage: schema-flow infer <openapi-file-or-url> [options]')
+    return usage(INFER_USAGE)
   }
 
   let json = false
@@ -98,18 +109,20 @@ export function parseInferArguments(argv: readonly string[]): ParseInferArgument
         break
       }
       default:
-        validateArguments.push(argument)
-        if (
-          ['--allow-path', '--max-documents', '--max-total-bytes', '--max-ref-depth'].includes(
-            argument,
-          )
-        ) {
-          const value = argv[index + 1]
-          if (value === undefined) return usage(`${argument} requires a value.`)
-          validateArguments.push(value)
-          index += 1
+        if (forwardedBooleanFlags.has(argument)) {
+          validateArguments.push(argument)
+          break
         }
-        break
+        if (forwardedValueFlags.has(argument)) {
+          const value = argv[index + 1]
+          if (value === undefined || value.startsWith('--')) {
+            return usage(`${argument} requires a value.`)
+          }
+          validateArguments.push(argument, value)
+          index += 1
+          break
+        }
+        return usage(`Unknown option ${argument}.`)
     }
   }
 
