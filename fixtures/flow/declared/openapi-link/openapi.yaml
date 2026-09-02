@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Declared Link API
+  version: 1.0.0
+paths:
+  /reservations:
+    post:
+      operationId: createReservation
+      responses:
+        '201':
+          description: Reservation created.
+          links:
+            GetReservation:
+              operationId: getReservation
+              parameters:
+                id: $response.body#/id
+  /reservations/{id}:
+    get:
+      operationId: getReservation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservation found.

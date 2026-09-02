@@ -1,0 +1,50 @@
+openapi: 3.1.0
+info:
+  title: Reservation API
+  version: 1.0.0
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      security: []
+      responses:
+        '200':
+          description: Authentication succeeded.
+  /spaces/available:
+    get:
+      operationId: listAvailableSpaces
+      responses:
+        '200':
+          description: Available spaces.
+  /reservations:
+    post:
+      operationId: createReservation
+      responses:
+        '201':
+          description: Reservation created.
+          links:
+            GetReservation:
+              operationId: getReservation
+              parameters:
+                id: $response.body#/id
+  /reservations/{id}:
+    get:
+      operationId: getReservation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservation found.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

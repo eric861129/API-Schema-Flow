@@ -1,0 +1,51 @@
+arazzo: 1.1.0
+info:
+  title: Reservation workflow
+  version: 1.0.0
+sourceDescriptions:
+  - name: reservationApi
+    url: ./openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: createReservation
+    summary: Create and retrieve a reservation
+    steps:
+      - stepId: login
+        operationId: login
+        outputs:
+          token: $response.body#/token
+      - stepId: listSpaces
+        operationId: listAvailableSpaces
+        dependsOn:
+          - login
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+        outputs:
+          spaceId: $response.body#/0/id
+      - stepId: createReservation
+        operationId: createReservation
+        dependsOn:
+          - listSpaces
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+        requestBody:
+          contentType: application/json
+          payload:
+            spaceId: $steps.listSpaces.outputs.spaceId
+        outputs:
+          reservationId: $response.body#/id
+      - stepId: getReservation
+        operationId: getReservation
+        dependsOn:
+          - createReservation
+        parameters:
+          - name: id
+            in: path
+            value: $steps.createReservation.outputs.reservationId
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
