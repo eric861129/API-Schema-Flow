@@ -10,3 +10,4 @@ docs/
 *.gif
 *.webp
 pnpm-lock.yaml
+fixtures/flow/declared/**/*.json
