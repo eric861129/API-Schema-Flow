@@ -1,2 +1,2 @@
-// TDD RED: public inference APIs are intentionally absent in this commit.
+// TDD RED: the public inference surface is intentionally empty until these tests fail for missing behavior.
 export {}
