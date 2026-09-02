@@ -101,6 +101,18 @@ importers:
         specifier: workspace:*
         version: link:../openapi
 
+  packages/inference:
+    dependencies:
+      '@api-schema-flow/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@api-schema-flow/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@api-schema-flow/flow':
+        specifier: workspace:*
+        version: link:../flow
+
   packages/openapi:
     dependencies:
       '@api-schema-flow/diagnostics':
