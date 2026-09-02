@@ -338,7 +338,7 @@ export function projectOpenApiLinks(source: FlowOpenApiSource): FlowProjectionFr
   }
 
   const edges: FlowEdge[] = [...buckets.values()]
-    .map((bucket) => {
+    .map((bucket): FlowEdge => {
       const mappings = mergeOpenApiMappings(bucket.mappings)
       return {
         id: createEdgeId('data', bucket.sourceNodeId, bucket.targetNodeId, mappings),
