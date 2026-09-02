@@ -10,6 +10,7 @@ import {
   type InferenceReport,
 } from '../../src/index.js'
 
+// RED contract: these project-owned inference exports do not exist yet.
 const sourcePointer = {
   uri: 'memory://reservation.yaml',
   pointer:
