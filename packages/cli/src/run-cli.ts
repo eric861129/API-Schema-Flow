@@ -1,8 +1,9 @@
+import type { NormalizedArazzoDocument, ProcessArazzoResult } from '@api-schema-flow/arazzo'
 import type { NormalizedApiDocument } from '@api-schema-flow/domain'
 import type { Diagnostic } from '@api-schema-flow/diagnostics'
 import type { ProcessOpenApiLocationOptions } from '@api-schema-flow/openapi'
 import { redactText } from '@api-schema-flow/redaction'
-import type { SourceAcquirer, SourceLocation } from '@api-schema-flow/source-loader'
+import type { SourceAcquirer, SourceDocument, SourceLocation } from '@api-schema-flow/source-loader'
 
 import { executeValidateCommand } from './validate-command.js'
 import { parseValidateArguments, VALIDATE_USAGE } from './validate-options.js'
@@ -17,12 +18,19 @@ export interface CliProcessResult {
   readonly diagnostics: readonly Diagnostic[]
 }
 
+export interface CliArazzoProcessResult extends ProcessArazzoResult {
+  readonly document?: NormalizedArazzoDocument
+}
+
 export interface CliDependencies {
   readonly createAcquirer?: () => SourceAcquirer
   readonly processOpenApiLocation?: (
     location: SourceLocation,
     options: ProcessOpenApiLocationOptions,
   ) => Promise<CliProcessResult>
+  readonly processArazzoSource?: (
+    source: SourceDocument,
+  ) => CliArazzoProcessResult | Promise<CliArazzoProcessResult>
   readonly resolvePath?: (...paths: string[]) => string
   readonly dirname?: (path: string) => string
   readonly cwd?: () => string

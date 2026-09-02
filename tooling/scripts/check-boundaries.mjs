@@ -7,6 +7,8 @@ const packagesDirectory = fileURLToPath(new URL('../../packages/', import.meta.u
 const forbiddenDeepImport = /from\s+['"]@api-schema-flow\/[^'"]+\/src\//
 const scalarTypeLeak = /@scalar\/openapi-parser/
 const zodTypeLeak = /(?:from|import\()\s*['"]zod['"]/
+const openApiPackageImport = /@api-schema-flow\/openapi(?:['"/])/
+const arazzoPackageImport = /@api-schema-flow\/arazzo(?:['"/])/
 
 async function walk(directory, options = {}) {
   const { includeDist = false, extension = '.ts' } = options
@@ -59,6 +61,14 @@ async function main() {
 
     if (!relative.startsWith('packages/config/') && zodTypeLeak.test(content)) {
       violations.push(`${relative}: Zod leaked outside config package`)
+    }
+
+    if (relative.startsWith('packages/arazzo/') && openApiPackageImport.test(content)) {
+      violations.push(`${relative}: Arazzo package must not depend on OpenAPI package`)
+    }
+
+    if (relative.startsWith('packages/openapi/') && arazzoPackageImport.test(content)) {
+      violations.push(`${relative}: OpenAPI package must not depend on Arazzo package`)
     }
   }
 

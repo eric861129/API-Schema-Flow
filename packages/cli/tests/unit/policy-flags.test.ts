@@ -32,9 +32,22 @@ function validDocument() {
 }
 
 function createDependencies(result: unknown = { document: validDocument(), diagnostics: [] }) {
+  const contents = JSON.stringify({
+    openapi: '3.1.0',
+    info: { title: 'Example', version: '1.0.0' },
+    paths: {},
+  })
   const acquirer = {
     resolveLocation: vi.fn(),
-    acquire: vi.fn(),
+    acquire: vi.fn(async () => ({
+      source: {
+        uri: 'file:///workspace/project/openapi.yaml',
+        contents,
+        byteLength: new TextEncoder().encode(contents).byteLength,
+        mediaType: 'application/json',
+      },
+      diagnostics: [],
+    })),
   }
   const processOpenApiLocation = vi.fn(async () => result)
   const dependencies = {
@@ -77,7 +90,10 @@ describe('schema-flow validate retrieval policy flags', () => {
     expect(setup.processOpenApiLocation).toHaveBeenCalledWith(
       { kind: 'file', path: '/workspace/project/openapi.yaml' },
       {
-        acquirer: setup.acquirer,
+        acquirer: expect.objectContaining({
+          acquire: expect.any(Function),
+          resolveLocation: expect.any(Function),
+        }),
         policy: expect.objectContaining({
           version: 1,
           mode: 'local-cli',
@@ -106,7 +122,10 @@ describe('schema-flow validate retrieval policy flags', () => {
     expect(setup.processOpenApiLocation).toHaveBeenCalledWith(
       { kind: 'url', url: 'https://api.example.com/openapi.yaml' },
       {
-        acquirer: setup.acquirer,
+        acquirer: expect.objectContaining({
+          acquire: expect.any(Function),
+          resolveLocation: expect.any(Function),
+        }),
         policy: expect.objectContaining({
           allowedFileRoots: [],
           allowHttp: false,

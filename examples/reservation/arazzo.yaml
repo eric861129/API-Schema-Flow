@@ -1,0 +1,82 @@
+arazzo: 1.1.0
+$self: ./arazzo.yaml
+info:
+  title: Reservation workflows
+  version: 0.1.0
+  summary: Canonical API Schema Flow reservation workflow
+sourceDescriptions:
+  - name: reservationApi
+    url: ./openapi.yaml
+    type: openapi
+workflows:
+  - workflowId: createReservation
+    summary: Login, find a space, create a reservation, and retrieve it
+    inputs:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    steps:
+      - stepId: login
+        operationId: login
+        requestBody:
+          contentType: application/json
+          payload:
+            username: $inputs.username
+            password: $inputs.password
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+        outputs:
+          token: $response.body#/token
+      - stepId: listSpaces
+        operationId: listAvailableSpaces
+        dependsOn:
+          - login
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+        outputs:
+          spaceId: $response.body#/0/id
+      - stepId: createReservation
+        operationId: createReservation
+        dependsOn:
+          - listSpaces
+        parameters:
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+        requestBody:
+          contentType: application/json
+          payload:
+            spaceId: $steps.listSpaces.outputs.spaceId
+        successCriteria:
+          - condition: $statusCode == 201
+            type: simple
+        outputs:
+          reservationId: $response.body#/id
+      - stepId: getReservation
+        operationId: getReservation
+        dependsOn:
+          - createReservation
+        parameters:
+          - name: id
+            in: path
+            value: $steps.createReservation.outputs.reservationId
+          - name: Authorization
+            in: header
+            value: Bearer {$steps.login.outputs.token}
+        successCriteria:
+          - condition: $statusCode == 200
+            type: simple
+    outputs:
+      reservationId: $steps.createReservation.outputs.reservationId
