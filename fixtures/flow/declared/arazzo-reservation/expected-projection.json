@@ -4,7 +4,9 @@
     "id": "graph:operation-topology:reservationApi",
     "kind": "operation-topology",
     "title": "Operation topology",
-    "sourceIds": ["reservationApi"],
+    "sourceIds": [
+      "reservationApi"
+    ],
     "nodes": [
       {
         "kind": "endpoint",
@@ -439,7 +441,9 @@
       "id": "graph:workflow:reservationWorkflow:createReservation",
       "kind": "workflow-instance",
       "title": "Create and retrieve a reservation",
-      "sourceIds": ["reservationWorkflow"],
+      "sourceIds": [
+        "reservationWorkflow"
+      ],
       "nodes": [
         {
           "kind": "workflow-step",

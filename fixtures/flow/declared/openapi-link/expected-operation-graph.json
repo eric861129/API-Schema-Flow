@@ -3,7 +3,9 @@
   "id": "graph:operation-topology:linkApi",
   "kind": "operation-topology",
   "title": "Operation topology",
-  "sourceIds": ["linkApi"],
+  "sourceIds": [
+    "linkApi"
+  ],
   "nodes": [
     {
       "kind": "endpoint",
