@@ -27,6 +27,8 @@
     "@api-schema-flow/arazzo": "workspace:*",
     "@api-schema-flow/diagnostics": "workspace:*",
     "@api-schema-flow/domain": "workspace:*",
+    "@api-schema-flow/flow": "workspace:*",
+    "@api-schema-flow/inference": "workspace:*",
     "@api-schema-flow/openapi": "workspace:*",
     "@api-schema-flow/redaction": "workspace:*",
     "@api-schema-flow/source-loader": "workspace:*"
