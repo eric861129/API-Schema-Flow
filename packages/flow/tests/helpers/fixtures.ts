@@ -42,11 +42,18 @@ function operation(
     responses,
     security: [],
     servers: [],
-    source: pointer(OPENAPI_URI, `#/paths/${path.replaceAll('~', '~0').replaceAll('/', '~1')}/${method}`),
+    source: pointer(
+      OPENAPI_URI,
+      `#/paths/${path.replaceAll('~', '~0').replaceAll('/', '~1')}/${method}`,
+    ),
   }
 }
 
-function response(operationPath: string, statusCode: string, links: readonly NormalizedLink[] = []): NormalizedResponse {
+function response(
+  operationPath: string,
+  statusCode: string,
+  links: readonly NormalizedLink[] = [],
+): NormalizedResponse {
   return {
     statusCode,
     description: 'Synthetic response',
@@ -56,7 +63,9 @@ function response(operationPath: string, statusCode: string, links: readonly Nor
   }
 }
 
-export function createReservationOpenApiSource(options: { readonly includeLink?: boolean } = {}): FlowOpenApiSource {
+export function createReservationOpenApiSource(
+  options: { readonly includeLink?: boolean } = {},
+): FlowOpenApiSource {
   const createPath = '#/paths/~1reservations/post'
   const link: NormalizedLink = {
     name: 'GetReservation',
@@ -74,18 +83,28 @@ export function createReservationOpenApiSource(options: { readonly includeLink?:
   }
 
   const operations = [
-    operation('post', '/auth/login', 'login', [], [
-      response('#/paths/~1auth~1login/post', '200'),
-    ]),
-    operation('get', '/spaces/available', 'listAvailableSpaces', [], [
-      response('#/paths/~1spaces~1available/get', '200'),
-    ]),
-    operation('post', '/reservations', 'createReservation', [], [
-      response(createPath, '201', options.includeLink ? [link] : []),
-    ]),
-    operation('get', '/reservations/{id}', 'getReservation', [idParameter], [
-      response('#/paths/~1reservations~1{id}/get', '200'),
-    ]),
+    operation('post', '/auth/login', 'login', [], [response('#/paths/~1auth~1login/post', '200')]),
+    operation(
+      'get',
+      '/spaces/available',
+      'listAvailableSpaces',
+      [],
+      [response('#/paths/~1spaces~1available/get', '200')],
+    ),
+    operation(
+      'post',
+      '/reservations',
+      'createReservation',
+      [],
+      [response(createPath, '201', options.includeLink ? [link] : [])],
+    ),
+    operation(
+      'get',
+      '/reservations/{id}',
+      'getReservation',
+      [idParameter],
+      [response('#/paths/~1reservations~1{id}/get', '200')],
+    ),
   ]
 
   const document: NormalizedApiDocument = {
@@ -111,7 +130,11 @@ function preserved(source: SourcePointer) {
   return { source, extensions: {}, preservedFields: {} }
 }
 
-function responseBodyExpression(raw: string, pointerValue: string, source: SourcePointer): NormalizedArazzoExpressionValue {
+function responseBodyExpression(
+  raw: string,
+  pointerValue: string,
+  source: SourcePointer,
+): NormalizedArazzoExpressionValue {
   return {
     kind: 'expression',
     expression: {
@@ -126,7 +149,11 @@ function responseBodyExpression(raw: string, pointerValue: string, source: Sourc
   }
 }
 
-function stepOutputExpression(stepId: string, outputName: string, source: SourcePointer): NormalizedArazzoExpressionValue {
+function stepOutputExpression(
+  stepId: string,
+  outputName: string,
+  source: SourcePointer,
+): NormalizedArazzoExpressionValue {
   return {
     kind: 'expression',
     expression: {
@@ -140,7 +167,11 @@ function stepOutputExpression(stepId: string, outputName: string, source: Source
   }
 }
 
-function bearerTemplate(stepId: string, outputName: string, source: SourcePointer): NormalizedArazzoTemplateValue {
+function bearerTemplate(
+  stepId: string,
+  outputName: string,
+  source: SourcePointer,
+): NormalizedArazzoTemplateValue {
   const expression = {
     kind: 'step-output' as const,
     raw: `$steps.${stepId}.outputs.${outputName}`,
@@ -245,11 +276,7 @@ export function createReservationArazzoSource(): FlowArazzoSource {
         },
       },
       outputs: {
-        reservationId: responseBodyExpression(
-          '$response.body#/id',
-          '#/id',
-          createOutputSource,
-        ),
+        reservationId: responseBodyExpression('$response.body#/id', '#/id', createOutputSource),
       },
     }),
     step(3, 'getReservation', 'getReservation', {

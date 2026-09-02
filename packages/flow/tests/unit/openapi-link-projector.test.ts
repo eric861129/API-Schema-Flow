@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import {
-  projectOpenApiLinks,
-  resolveLinkParameterTarget,
-} from '../../src/index.js'
+import { projectOpenApiLinks, resolveLinkParameterTarget } from '../../src/index.js'
 import { createReservationOpenApiSource } from '../helpers/fixtures.js'
 
 describe('OpenAPI Link projection', () => {
@@ -39,9 +36,7 @@ describe('OpenAPI Link projection', () => {
           target: { kind: 'path-parameter', name: 'id' },
         },
       ],
-      sourceStandardRefs: [
-        expect.objectContaining({ standard: 'openapi-link' }),
-      ],
+      sourceStandardRefs: [expect.objectContaining({ standard: 'openapi-link' })],
     })
   })
 
