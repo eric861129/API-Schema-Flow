@@ -101,7 +101,9 @@ async function main() {
     }
 
     if (relative.startsWith('packages/flow/src/') && forbiddenFlowRuntimeImport.test(content)) {
-      violations.push(`${relative}: Flow core must not depend on UI, layout, server, mock, or execution runtimes`)
+      violations.push(
+        `${relative}: Flow core must not depend on UI, layout, server, mock, or execution runtimes`,
+      )
     }
   }
 
