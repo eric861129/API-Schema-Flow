@@ -141,9 +141,10 @@ function outputDiagnostic(
   }
 }
 
-function selectorFromOutputValue(
-  value: NormalizedArazzoValue,
-): { readonly selector?: FlowValueSelector; readonly transform?: FlowValueTransform } {
+function selectorFromOutputValue(value: NormalizedArazzoValue): {
+  readonly selector?: FlowValueSelector
+  readonly transform?: FlowValueTransform
+} {
   if (value.kind === 'expression') {
     const selector = runtimeExpressionToSelector(value.expression)
     return selector === undefined ? {} : { selector }

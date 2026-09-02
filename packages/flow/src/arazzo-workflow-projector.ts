@@ -18,7 +18,12 @@ import {
 } from '@api-schema-flow/domain'
 import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
 
-import { createEdgeId, createEndpointNodeId, createMappingId, createWorkflowStepNodeId } from './canonical.js'
+import {
+  createEdgeId,
+  createEndpointNodeId,
+  createMappingId,
+  createWorkflowStepNodeId,
+} from './canonical.js'
 import type {
   ArazzoProjectionResult,
   ArazzoWorkflowGraphFragment,
@@ -135,9 +140,7 @@ function bindResolution(
   )
   if (matchingSources.length !== 1) return undefined
   const source = matchingSources[0]!
-  const operation = source.document.operations.find(
-    ({ id }) => id === resolution.operationKey,
-  )
+  const operation = source.document.operations.find(({ id }) => id === resolution.operationKey)
   if (operation === undefined) return undefined
   return {
     source,
@@ -187,11 +190,7 @@ function targetMapping(
   target: FlowValueTarget,
   diagnostics: Diagnostic[],
 ): FlowDataMapping | undefined {
-  const resolved = resolveArazzoStepOutputSelector(
-    workflow,
-    use.stepId,
-    use.outputName,
-  )
+  const resolved = resolveArazzoStepOutputSelector(workflow, use.stepId, use.outputName)
   diagnostics.push(...resolved.diagnostics)
   if (resolved.selector === undefined) return undefined
   if (resolved.transform !== undefined && use.transform !== undefined) {
@@ -264,12 +263,7 @@ function appendMappingEdges(
   const targetBinding = bindings.get(bindingKey(workflow.workflowId, targetStep.stepId))
   if (sourceBinding !== undefined && targetBinding !== undefined) {
     operationEdges.push(
-      dataEdge(
-        sourceBinding.endpointNodeId,
-        targetBinding.endpointNodeId,
-        mapping,
-        use.source,
-      ),
+      dataEdge(sourceBinding.endpointNodeId, targetBinding.endpointNodeId, mapping, use.source),
     )
   }
 }
@@ -280,11 +274,7 @@ export function projectArazzoWorkflowStructure(
 ): ArazzoProjectionResult {
   const diagnostics: Diagnostic[] = []
   const catalogs = createArazzoOperationCatalogs(openApiSources)
-  const resolutionResult = resolveArazzoOperations(
-    source.document,
-    catalogs,
-    source.retrievalUri,
-  )
+  const resolutionResult = resolveArazzoOperations(source.document, catalogs, source.retrievalUri)
   const resolutionByStep = mapResolutionByStep(resolutionResult.resolutions)
   const bindings = new Map<string, BoundStepOperation>()
   const operationEdges: FlowEdge[] = []
@@ -354,9 +344,7 @@ export function projectArazzoWorkflowStructure(
         }
         const sourceNode = workflowNodes.get(sourceStep.stepId)!
         const relationSource = appendSourcePointer(targetStep.source, ['dependsOn', String(index)])
-        workflowEdges.push(
-          relationEdge('dependency', sourceNode.id, targetNode.id, relationSource),
-        )
+        workflowEdges.push(relationEdge('dependency', sourceNode.id, targetNode.id, relationSource))
 
         const sourceBinding = bindings.get(bindingKey(workflow.workflowId, sourceStep.stepId))
         const targetBinding = bindings.get(bindingKey(workflow.workflowId, targetStep.stepId))

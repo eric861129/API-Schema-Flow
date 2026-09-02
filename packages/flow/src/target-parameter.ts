@@ -63,10 +63,7 @@ export function resolveLinkParameterTarget(
   return matches.length === 1 ? matches[0] : undefined
 }
 
-export function arazzoParameterTarget(
-  location: string,
-  name: string,
-): FlowValueTarget | undefined {
+export function arazzoParameterTarget(location: string, name: string): FlowValueTarget | undefined {
   switch (location) {
     case 'path':
       return { kind: 'path-parameter', name }

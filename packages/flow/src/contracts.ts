@@ -1,7 +1,4 @@
-import type {
-  NormalizedArazzoDocument,
-  NormalizedArazzoValue,
-} from '@api-schema-flow/arazzo'
+import type { NormalizedArazzoDocument, NormalizedArazzoValue } from '@api-schema-flow/arazzo'
 import type {
   FlowEdge,
   FlowGraph,

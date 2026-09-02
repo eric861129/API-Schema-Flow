@@ -19,10 +19,7 @@ import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-
 import { createEdgeId, createEndpointNodeId, createMappingId } from './canonical.js'
 import type { FlowOpenApiSource, FlowProjectionFragment } from './contracts.js'
 import { runtimeExpressionToSelector } from './expression-selector.js'
-import {
-  matchingLinkParameterTargets,
-  resolveLinkParameterTarget,
-} from './target-parameter.js'
+import { matchingLinkParameterTargets, resolveLinkParameterTarget } from './target-parameter.js'
 
 interface MappingBucket {
   readonly sourceNodeId: string
@@ -51,7 +48,11 @@ function endpointNode(source: FlowOpenApiSource, operation: NormalizedOperation)
   }
 }
 
-function flowMappingDiagnostic(message: string, source: SourcePointer, details: Record<string, unknown>): Diagnostic {
+function flowMappingDiagnostic(
+  message: string,
+  source: SourcePointer,
+  details: Record<string, unknown>,
+): Diagnostic {
   return {
     code: DIAGNOSTIC_CODES.FLOW_DATA_MAPPING_INVALID,
     severity: 'error',
@@ -245,10 +246,13 @@ function mergeOpenApiMappings(mappings: readonly FlowDataMapping[]): FlowDataMap
 
 function uniqueStandardRefs(references: readonly SourceStandardRef[]): SourceStandardRef[] {
   const values = new Map(
-    references.map((reference) => [
-      `${reference.standard}\u0000${reference.source.uri}\u0000${reference.source.pointer}`,
-      reference,
-    ] as const),
+    references.map(
+      (reference) =>
+        [
+          `${reference.standard}\u0000${reference.source.uri}\u0000${reference.source.pointer}`,
+          reference,
+        ] as const,
+    ),
   )
   return [...values.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
@@ -260,9 +264,7 @@ export { resolveLinkParameterTarget }
 export function projectOpenApiLinks(source: FlowOpenApiSource): FlowProjectionFragment {
   const diagnostics: Diagnostic[] = []
   const nodes = source.document.operations.map((operation) => endpointNode(source, operation))
-  const nodesByOperationKey = new Map(
-    nodes.map((node) => [node.operationKey, node] as const),
-  )
+  const nodesByOperationKey = new Map(nodes.map((node) => [node.operationKey, node] as const))
   const operationsByKey = new Map(
     source.document.operations.map((operation) => [operation.id, operation] as const),
   )
