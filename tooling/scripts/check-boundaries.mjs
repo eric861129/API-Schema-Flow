@@ -9,6 +9,20 @@ const scalarTypeLeak = /@scalar\/openapi-parser/
 const zodTypeLeak = /(?:from|import\()\s*['"]zod['"]/
 const openApiPackageImport = /@api-schema-flow\/openapi(?:['"/])/
 const arazzoPackageImport = /@api-schema-flow\/arazzo(?:['"/])/
+const forbiddenFlowRuntimeImport =
+  /(?:from|import\()\s*['"](?:react|@xyflow\/react|elkjs|fastify|hono|msw|@api-schema-flow\/(?:mock-runtime|execution|web|ui))(?:['"/])/
+const forbiddenFlowDependencies = new Set([
+  'react',
+  '@xyflow/react',
+  'elkjs',
+  'fastify',
+  'hono',
+  'msw',
+  '@api-schema-flow/mock-runtime',
+  '@api-schema-flow/execution',
+  '@api-schema-flow/web',
+  '@api-schema-flow/ui',
+])
 
 async function walk(directory, options = {}) {
   const { includeDist = false, extension = '.ts' } = options
@@ -43,6 +57,21 @@ async function collectDeclarationViolations(directory, pattern, message) {
   return violations
 }
 
+async function collectFlowDependencyViolations() {
+  const packagePath = path.join(packagesDirectory, 'flow', 'package.json')
+  const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))
+  const dependencies = {
+    ...(packageJson.dependencies ?? {}),
+    ...(packageJson.optionalDependencies ?? {}),
+    ...(packageJson.peerDependencies ?? {}),
+  }
+
+  return Object.keys(dependencies)
+    .filter((dependency) => forbiddenFlowDependencies.has(dependency))
+    .sort()
+    .map((dependency) => `packages/flow/package.json: forbidden Flow dependency ${dependency}`)
+}
+
 async function main() {
   const packageFiles = await walk(packagesDirectory)
   const violations = []
@@ -70,6 +99,10 @@ async function main() {
     if (relative.startsWith('packages/openapi/') && arazzoPackageImport.test(content)) {
       violations.push(`${relative}: OpenAPI package must not depend on Arazzo package`)
     }
+
+    if (relative.startsWith('packages/flow/src/') && forbiddenFlowRuntimeImport.test(content)) {
+      violations.push(`${relative}: Flow core must not depend on UI, layout, server, mock, or execution runtimes`)
+    }
   }
 
   violations.push(
@@ -83,6 +116,7 @@ async function main() {
       zodTypeLeak,
       'Zod type leaked through public declarations',
     )),
+    ...(await collectFlowDependencyViolations()),
   )
 
   if (violations.length > 0) {

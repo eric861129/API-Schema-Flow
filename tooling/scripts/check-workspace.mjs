@@ -19,6 +19,7 @@ const requiredScripts = [
   'format:check',
   'test',
   'test:integration',
+  'test:flow-fixtures',
   'boundaries:check',
   'ci:verify',
 ]
