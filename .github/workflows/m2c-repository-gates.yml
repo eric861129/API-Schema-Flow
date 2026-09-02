@@ -1,0 +1,93 @@
+name: Apply M2-C repository gates
+
+on:
+  push:
+    branches:
+      - feat/m2c-inference-core
+    paths:
+      - .github/workflows/m2c-repository-gates.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2c-inference-core
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply package, script, and boundary requirements
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('package.json')
+          package = json.loads(root.read_text())
+          package['scripts']['test:inference-benchmark'] = 'pnpm --filter @api-schema-flow/inference test:integration -- benchmark.integration.test.ts'
+          package['scripts']['test:inference-performance'] = 'pnpm --filter @api-schema-flow/inference test:integration -- performance.integration.test.ts'
+          root.write_text(json.dumps(package, indent=2) + '\n')
+
+          workspace = Path('tooling/scripts/check-workspace.mjs')
+          text = workspace.read_text()
+          if "  'inference',\n" not in text:
+              text = text.replace("  'flow',\n  'cli',", "  'flow',\n  'inference',\n  'cli',")
+          if "  'test:inference-benchmark',\n" not in text:
+              text = text.replace(
+                  "  'test:flow-fixtures',\n  'boundaries:check',",
+                  "  'test:flow-fixtures',\n  'test:inference-benchmark',\n  'test:inference-performance',\n  'boundaries:check',",
+              )
+          workspace.write_text(text)
+
+          index = Path('packages/inference/src/index.ts')
+          text = index.read_text()
+          benchmark_export = "export {\n  evaluateInferenceBenchmark,\n  type InferenceBenchmarkCase,\n  type InferenceBenchmarkCaseResult,\n  type InferenceBenchmarkMapping,\n  type InferenceBenchmarkReport,\n} from './benchmark.js'\n"
+          if "from './benchmark.js'" not in text:
+              text += benchmark_export
+          index.write_text(text)
+
+          boundaries = Path('tooling/scripts/check-boundaries.mjs')
+          text = boundaries.read_text()
+          marker = "const forbiddenFlowDependencies = new Set(["
+          insertion = """const forbiddenInferenceRuntimeImport =\n  /(?:from|import\\()\\s*['\"](?:@api-schema-flow\\/(?:openapi|arazzo|source-loader|mock-runtime|execution|web|ui)|react|@xyflow\\/react|elkjs|fastify|hono|msw)(?:['\"/])/\nconst forbiddenInferenceDependencies = new Set([\n  '@api-schema-flow/openapi',\n  '@api-schema-flow/arazzo',\n  '@api-schema-flow/source-loader',\n  '@api-schema-flow/mock-runtime',\n  '@api-schema-flow/execution',\n  '@api-schema-flow/web',\n  '@api-schema-flow/ui',\n  'react',\n  '@xyflow/react',\n  'elkjs',\n  'fastify',\n  'hono',\n  'msw',\n])\n"""
+          if 'forbiddenInferenceRuntimeImport' not in text:
+              text = text.replace(marker, insertion + marker)
+
+          flow_function = 'async function collectFlowDependencyViolations() {'
+          inference_function = """async function collectInferenceDependencyViolations() {\n  const packagePath = path.join(packagesDirectory, 'inference', 'package.json')\n  const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))\n  const dependencies = {\n    ...(packageJson.dependencies ?? {}),\n    ...(packageJson.optionalDependencies ?? {}),\n    ...(packageJson.peerDependencies ?? {}),\n  }\n\n  return Object.keys(dependencies)\n    .filter((dependency) => forbiddenInferenceDependencies.has(dependency))\n    .sort()\n    .map(\n      (dependency) =>\n        `packages/inference/package.json: forbidden Inference dependency ${dependency}`,\n    )\n}\n\n"""
+          if 'collectInferenceDependencyViolations' not in text:
+              text = text.replace(flow_function, inference_function + flow_function)
+
+          loop_marker = "    if (relative.startsWith('packages/flow/src/') && forbiddenFlowRuntimeImport.test(content)) {"
+          inference_loop = """    if (\n      relative.startsWith('packages/inference/src/') &&\n      forbiddenInferenceRuntimeImport.test(content)\n    ) {\n      violations.push(\n        `${relative}: Inference core must not depend on parser, source, UI, server, mock, or execution runtimes`,\n      )\n    }\n\n"""
+          if 'Inference core must not depend' not in text:
+              text = text.replace(loop_marker, inference_loop + loop_marker)
+
+          dependency_marker = '    ...(await collectFlowDependencyViolations()),'
+          if 'collectInferenceDependencyViolations()),' not in text:
+              text = text.replace(
+                  dependency_marker,
+                  dependency_marker + '\n    ...(await collectInferenceDependencyViolations()),',
+              )
+          boundaries.write_text(text)
+          PY
+          pnpm exec prettier --write package.json packages/inference/src/index.ts tooling/scripts/check-workspace.mjs tooling/scripts/check-boundaries.mjs
+          rm .github/workflows/m2c-repository-gates.yml
+      - name: Commit repository gates and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json packages/inference/src/index.ts tooling/scripts/check-workspace.mjs tooling/scripts/check-boundaries.mjs .github/workflows/m2c-repository-gates.yml
+          git commit -m "ci: enforce inference package boundaries"
+          git push
