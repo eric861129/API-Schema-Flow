@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "id": "reservation-core",
+      "description": "Canonical reservation, bearer, array-selector, and generic-ID cases.",
+      "declaredLink": false,
+      "expectedPositiveMappings": [
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:get:/spaces/available",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        },
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:post:/reservations",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        },
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:get:/reservations/{id}",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        },
+        {
+          "sourceOperationKey": "operation:post:/reservations",
+          "targetOperationKey": "operation:get:/reservations/{id}",
+          "source": { "kind": "response-body", "pointer": "#/id" },
+          "target": { "kind": "path-parameter", "name": "id" },
+          "minimumBand": "high"
+        }
+      ],
+      "expectedNegativeMappings": [
+        {
+          "sourceOperationKey": "operation:post:/reservations",
+          "targetOperationKey": "operation:get:/users/{id}",
+          "source": { "kind": "response-body", "pointer": "#/id" },
+          "target": { "kind": "path-parameter", "name": "id" },
+          "reason": "generic-cross-resource-id"
+        },
+        {
+          "sourceOperationKey": "operation:get:/spaces/available",
+          "targetOperationKey": "operation:get:/reservations/{id}",
+          "source": { "kind": "response-body", "pointer": "#/id" },
+          "target": { "kind": "path-parameter", "name": "id" },
+          "reason": "array-selector-required"
+        },
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:get:/users/{id}",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "path-parameter", "name": "id" },
+          "reason": "secret-to-non-security-target"
+        }
+      ]
+    },
+    {
+      "id": "declared-suppression",
+      "description": "An OpenAPI Link declaration suppresses the equivalent inferred reservation mapping.",
+      "declaredLink": true,
+      "expectedPositiveMappings": [
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:get:/spaces/available",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        },
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:post:/reservations",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        },
+        {
+          "sourceOperationKey": "operation:post:/auth/login",
+          "targetOperationKey": "operation:get:/reservations/{id}",
+          "source": { "kind": "response-body", "pointer": "#/token" },
+          "target": { "kind": "header-parameter", "name": "Authorization" },
+          "minimumBand": "medium"
+        }
+      ],
+      "expectedNegativeMappings": [],
+      "expectedSuppressedMappings": [
+        {
+          "sourceOperationKey": "operation:post:/reservations",
+          "targetOperationKey": "operation:get:/reservations/{id}",
+          "source": { "kind": "response-body", "pointer": "#/id" },
+          "target": { "kind": "path-parameter", "name": "id" }
+        }
+      ]
+    }
+  ]
+}

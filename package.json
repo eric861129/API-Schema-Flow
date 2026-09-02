@@ -28,7 +28,9 @@
     "test:flow-fixtures": "pnpm --filter @api-schema-flow/flow test:integration",
     "workspace:check": "node tooling/scripts/check-workspace.mjs",
     "boundaries:check": "node tooling/scripts/check-boundaries.mjs",
-    "ci:verify": "pnpm workspace:check && pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm boundaries:check"
+    "ci:verify": "pnpm workspace:check && pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm boundaries:check",
+    "test:inference-benchmark": "pnpm --filter @api-schema-flow/inference test:integration -- benchmark.integration.test.ts",
+    "test:inference-performance": "pnpm --filter @api-schema-flow/inference test:integration -- performance.integration.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

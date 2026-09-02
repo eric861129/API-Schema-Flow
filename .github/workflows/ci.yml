@@ -44,4 +44,6 @@ jobs:
         run: pnpm ci:verify
 
       - name: Smoke-test CLI
-        run: node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml
+        run: |
+          node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml
+          node packages/cli/bin/schema-flow.mjs infer fixtures/inference/cli/openapi.yaml --json

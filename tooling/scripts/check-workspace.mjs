@@ -9,6 +9,7 @@ const requiredPackages = [
   'openapi',
   'arazzo',
   'flow',
+  'inference',
   'cli',
 ]
 
@@ -20,6 +21,8 @@ const requiredScripts = [
   'test',
   'test:integration',
   'test:flow-fixtures',
+  'test:inference-benchmark',
+  'test:inference-performance',
   'boundaries:check',
   'ci:verify',
 ]

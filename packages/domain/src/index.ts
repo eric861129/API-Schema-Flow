@@ -46,3 +46,14 @@ export {
   type SourceStandardRef,
 } from './flow-edge.js'
 export { FLOW_GRAPH_SCHEMA_VERSION, type FlowGraph, type FlowGraphKind } from './flow-graph.js'
+export {
+  CANDIDATE_FLOW_STATUS,
+  INFERENCE_SCHEMA_VERSION,
+  INFERRED_FLOW_PROVENANCE,
+  type InferenceCandidate,
+  type InferenceConfidenceBand,
+  type InferenceEvidence,
+  type InferenceEvidenceKind,
+  type InferenceMetrics,
+  type InferenceReport,
+} from './inference.js'

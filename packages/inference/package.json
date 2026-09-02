@@ -1,5 +1,5 @@
 {
-  "name": "@api-schema-flow/cli",
+  "name": "@api-schema-flow/inference",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,6 @@
     }
   },
   "files": [
-    "bin",
     "dist"
   ],
   "scripts": {
@@ -20,17 +19,9 @@
     "test": "vitest run tests/unit --passWithNoTests",
     "test:integration": "vitest run tests/integration --passWithNoTests"
   },
-  "bin": {
-    "schema-flow": "./bin/schema-flow.mjs"
-  },
   "dependencies": {
-    "@api-schema-flow/arazzo": "workspace:*",
     "@api-schema-flow/diagnostics": "workspace:*",
     "@api-schema-flow/domain": "workspace:*",
-    "@api-schema-flow/flow": "workspace:*",
-    "@api-schema-flow/inference": "workspace:*",
-    "@api-schema-flow/openapi": "workspace:*",
-    "@api-schema-flow/redaction": "workspace:*",
-    "@api-schema-flow/source-loader": "workspace:*"
+    "@api-schema-flow/flow": "workspace:*"
   }
 }

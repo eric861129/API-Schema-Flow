@@ -12,7 +12,7 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Proposed Arazzo-first workflow model and local-first architecture.
 - GitHub issue and pull request templates.
 - pnpm/Turborepo/TypeScript monorepo foundation with strict package boundaries.
-- Domain, diagnostics, redaction, config, source-loader, OpenAPI, Arazzo, Flow, and CLI packages.
+- Domain, diagnostics, redaction, config, source-loader, OpenAPI, Arazzo, Flow, Inference, and CLI packages.
 - Scalar OpenAPI parser adapter behind a parser-independent interface.
 - Deterministic OpenAPI 3.0/3.1 normalization and OpenAPI 3.2 compatibility diagnostics.
 - Local `schema-flow validate <file> [--json]` command with structured output and stable exit codes.
@@ -32,13 +32,21 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Cross-standard merging that retains both Arazzo and OpenAPI Link source references for equivalent mappings.
 - Parser-backed declared-flow Golden Fixtures with stable `memory://` source URIs and byte-for-byte integration checks.
 - Dedicated `test:flow-fixtures` verification and Flow package boundary checks that prohibit UI, layout, server, mock, and execution runtime dependencies.
+- Serializable inference candidate, evidence, blocker, confidence, metrics, configuration, and report contracts.
+- Deterministic inference indexing, candidate generation, hard blockers, evidence rules, scoring, confidence bands, stable SHA-256 candidate identities, ranking, and declared-mapping suppression.
+- Conservative inference safeguards for generic IDs, selectorless arrays, incompatible types, unsafe secret targets, same-operation mappings, and immediate-cycle risks.
+- Synthetic inference benchmark cases with high-confidence precision, full labeled-positive recall, generic-ID false-positive, declared-duplicate, determinism, and 500-operation performance gates.
+- `schema-flow infer <openapi-file-or-url> [--json]` with inference thresholds, Top-K and candidate limits, low-confidence inclusion, and existing source-policy controls.
+- CLI inference integration fixtures that exercise OpenAPI ingestion, declared graph projection, and candidate generation end to end.
 
 ### Changed
 
-- Project status now distinguishes the implemented M0, M1, M2-A, and M2-B slices from planned inference, visualization, execution, mock, and export capabilities.
+- Project status now distinguishes the implemented M0, M1, M2-A, M2-B, and M2-C slices from planned review decisions, visualization, execution, mock, and export capabilities.
 - OpenAPI and Arazzo packages are enforced as mutually independent parser boundaries, with the Flow package as their framework-free composition layer.
+- The Inference package consumes normalized OpenAPI plus the declared operation graph without depending on parser implementations, UI/layout, server, mock, or execution runtimes.
 - Public package declarations are checked to prevent Scalar and Zod implementation types from leaking across boundaries.
 - Declared graph artifacts store structural selectors and source pointers rather than runtime values.
+- Inference artifacts store structural selectors, deterministic evidence, confidence, and source pointers rather than schema examples, defaults, or runtime values.
 
 ### Deprecated
 
@@ -46,7 +54,8 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Removed
 
-- Temporary lockfile bootstrap, formatting-preview, Golden-generation, probe, and development-artifact workflows used during branch development.
+- Temporary lockfile bootstrap, formatting-preview, Golden-generation, inference-diagnostic, probe, and development-artifact workflows used during branch development.
+- Superseded duplicate M2-C inference design and implementation-plan documents that conflicted with the canonical `m2c-inference-core` architecture.
 
 ### Fixed
 
@@ -57,10 +66,12 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Secret-shaped schema examples, defaults, and media examples are redacted in normalized projections.
 - OpenAPI 3.2 `querystring` parameters are retained in compatibility mode.
 - Missing, ambiguous, unsupported, or conflicting declared flow targets produce stable `ASF-FLW-*` diagnostics instead of dangling or guessed edges.
+- Bearer-auth inference expectations and benchmark labels now match the approved scoring contract: explicit bearer evidence plus compatible schema evidence produces `0.88` Medium confidence rather than being incorrectly asserted as High confidence.
 
 ### Security
 
 - M1-A enables no remote URL loader or external-reference fetch plugin.
 - Authorization, cookie, API key, token, password, and secret-shaped values are redacted from CLI-visible diagnostics and normalized examples.
 - Declared flow projections contain mapping structure and provenance but never evaluate or persist runtime credentials.
+- Inference candidates never persist schema examples/defaults or runtime credentials, and token-like sources may target Authorization only when explicit security evidence is present.
 - CI installs from a committed frozen lockfile with read-only repository permissions and Turbo telemetry disabled.
