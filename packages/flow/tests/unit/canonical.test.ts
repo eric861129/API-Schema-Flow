@@ -20,9 +20,7 @@ const mapping = {
 
 describe('flow canonical identity', () => {
   test('canonicalizes object key order recursively', () => {
-    expect(canonicalizeJson({ b: 1, a: { d: 2, c: 3 } })).toBe(
-      '{"a":{"c":3,"d":2},"b":1}',
-    )
+    expect(canonicalizeJson({ b: 1, a: { d: 2, c: 3 } })).toBe('{"a":{"c":3,"d":2},"b":1}')
   })
 
   test('creates stable readable node and graph identifiers', () => {
