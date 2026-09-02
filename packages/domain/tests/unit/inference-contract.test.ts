@@ -12,7 +12,8 @@ import {
 
 const sourcePointer = {
   uri: 'memory://reservation.yaml',
-  pointer: '#/paths/~1reservations/post/responses/201/content/application~1json/schema/properties/id',
+  pointer:
+    '#/paths/~1reservations/post/responses/201/content/application~1json/schema/properties/id',
 }
 
 const mapping: FlowDataMapping = {
