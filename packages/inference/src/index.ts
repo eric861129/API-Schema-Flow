@@ -43,3 +43,10 @@ export type {
   NormalizedInferenceName,
   ResolvedInferenceConfig,
 } from './contracts.js'
+export {
+  evaluateInferenceBenchmark,
+  type InferenceBenchmarkCase,
+  type InferenceBenchmarkCaseResult,
+  type InferenceBenchmarkMapping,
+  type InferenceBenchmarkReport,
+} from './benchmark.js'

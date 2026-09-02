@@ -11,6 +11,23 @@ const openApiPackageImport = /@api-schema-flow\/openapi(?:['"/])/
 const arazzoPackageImport = /@api-schema-flow\/arazzo(?:['"/])/
 const forbiddenFlowRuntimeImport =
   /(?:from|import\()\s*['"](?:react|@xyflow\/react|elkjs|fastify|hono|msw|@api-schema-flow\/(?:mock-runtime|execution|web|ui))(?:['"/])/
+const forbiddenInferenceRuntimeImport =
+  /(?:from|import\()\s*['"](?:@api-schema-flow\/(?:openapi|arazzo|source-loader|mock-runtime|execution|web|ui)|react|@xyflow\/react|elkjs|fastify|hono|msw)(?:['"/])/
+const forbiddenInferenceDependencies = new Set([
+  '@api-schema-flow/openapi',
+  '@api-schema-flow/arazzo',
+  '@api-schema-flow/source-loader',
+  '@api-schema-flow/mock-runtime',
+  '@api-schema-flow/execution',
+  '@api-schema-flow/web',
+  '@api-schema-flow/ui',
+  'react',
+  '@xyflow/react',
+  'elkjs',
+  'fastify',
+  'hono',
+  'msw',
+])
 const forbiddenFlowDependencies = new Set([
   'react',
   '@xyflow/react',
@@ -57,6 +74,24 @@ async function collectDeclarationViolations(directory, pattern, message) {
   return violations
 }
 
+async function collectInferenceDependencyViolations() {
+  const packagePath = path.join(packagesDirectory, 'inference', 'package.json')
+  const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))
+  const dependencies = {
+    ...(packageJson.dependencies ?? {}),
+    ...(packageJson.optionalDependencies ?? {}),
+    ...(packageJson.peerDependencies ?? {}),
+  }
+
+  return Object.keys(dependencies)
+    .filter((dependency) => forbiddenInferenceDependencies.has(dependency))
+    .sort()
+    .map(
+      (dependency) =>
+        `packages/inference/package.json: forbidden Inference dependency ${dependency}`,
+    )
+}
+
 async function collectFlowDependencyViolations() {
   const packagePath = path.join(packagesDirectory, 'flow', 'package.json')
   const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))
@@ -100,6 +135,15 @@ async function main() {
       violations.push(`${relative}: OpenAPI package must not depend on Arazzo package`)
     }
 
+    if (
+      relative.startsWith('packages/inference/src/') &&
+      forbiddenInferenceRuntimeImport.test(content)
+    ) {
+      violations.push(
+        `${relative}: Inference core must not depend on parser, source, UI, server, mock, or execution runtimes`,
+      )
+    }
+
     if (relative.startsWith('packages/flow/src/') && forbiddenFlowRuntimeImport.test(content)) {
       violations.push(
         `${relative}: Flow core must not depend on UI, layout, server, mock, or execution runtimes`,
@@ -119,6 +163,7 @@ async function main() {
       'Zod type leaked through public declarations',
     )),
     ...(await collectFlowDependencyViolations()),
+    ...(await collectInferenceDependencyViolations()),
   )
 
   if (violations.length > 0) {
