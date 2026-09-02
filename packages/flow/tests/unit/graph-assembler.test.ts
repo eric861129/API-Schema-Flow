@@ -132,7 +132,7 @@ describe('flow graph assembler', () => {
 
   test('diagnoses conflicting duplicate node identities', () => {
     const conflict = { ...sourceNode, path: '/different' }
-    const result = assembleFlowGraph(input({ nodes: [sourceNode, conflict] }))
+    const result = assembleFlowGraph(input({ nodes: [sourceNode, conflict], edges: [] }))
 
     expect(result.graph.nodes).toEqual([sourceNode])
     expect(result.diagnostics).toEqual([
