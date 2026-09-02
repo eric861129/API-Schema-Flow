@@ -9,10 +9,7 @@ export {
   normalizeResourceSegment,
   resourceKeyForPath,
 } from './name-normalization.js'
-export {
-  extractOperationSourceFields,
-  extractOperationTargetFields,
-} from './schema-fields.js'
+export { extractOperationSourceFields, extractOperationTargetFields } from './schema-fields.js'
 export {
   createDeclaredMappingIndex,
   declaredMappingKey,

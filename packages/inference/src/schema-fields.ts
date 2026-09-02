@@ -15,10 +15,7 @@ import type {
   InferenceSourceField,
   InferenceTargetField,
 } from './contracts.js'
-import {
-  normalizeFieldName,
-  resourceKeyForPath,
-} from './name-normalization.js'
+import { normalizeFieldName, resourceKeyForPath } from './name-normalization.js'
 
 interface TraversalContext {
   readonly config: InferenceConfig
@@ -42,9 +39,7 @@ interface SchemaLeaf {
 function pointerForTokens(tokens: readonly string[]): string {
   return tokens.length === 0
     ? '#'
-    : `#/${tokens
-        .map((token) => token.replaceAll('~', '~0').replaceAll('/', '~1'))
-        .join('/')}`
+    : `#/${tokens.map((token) => token.replaceAll('~', '~0').replaceAll('/', '~1')).join('/')}`
 }
 
 function depthDiagnostic(
@@ -154,10 +149,7 @@ function traverseSchema(
   ancestors.delete(schema)
 }
 
-function extractLeaves(
-  schema: NormalizedSchema,
-  context: TraversalContext,
-): readonly SchemaLeaf[] {
+function extractLeaves(schema: NormalizedSchema, context: TraversalContext): readonly SchemaLeaf[] {
   const leaves: SchemaLeaf[] = []
   traverseSchema(schema, [], 0, false, false, 0, new Set(), context, leaves)
   const unique = new Map<string, SchemaLeaf>()
@@ -299,10 +291,7 @@ export function extractOperationSourceFields(
   }
 }
 
-function requestBodyTarget(
-  context: TraversalContext,
-  leaf: SchemaLeaf,
-): InferenceTargetField {
+function requestBodyTarget(context: TraversalContext, leaf: SchemaLeaf): InferenceTargetField {
   return targetField(context, {
     name: leaf.name,
     target: { kind: 'request-body', pointer: leaf.pointer },
@@ -352,7 +341,9 @@ export function extractOperationTargetFields(
   if (operation.requestBody !== undefined) {
     for (const media of operation.requestBody.content) {
       if (media.schema === undefined) continue
-      fields.push(...extractLeaves(media.schema, context).map((leaf) => requestBodyTarget(context, leaf)))
+      fields.push(
+        ...extractLeaves(media.schema, context).map((leaf) => requestBodyTarget(context, leaf)),
+      )
     }
   }
 

@@ -8,15 +8,9 @@ import {
   type InferenceReport,
 } from '@api-schema-flow/domain'
 import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
-import {
-  canonicalizeJson,
-  createMappingId,
-} from '@api-schema-flow/flow'
+import { canonicalizeJson, createMappingId } from '@api-schema-flow/flow'
 
-import {
-  createInferenceCandidateId,
-  createInferenceFingerprint,
-} from './canonical.js'
+import { createInferenceCandidateId, createInferenceFingerprint } from './canonical.js'
 import {
   DEFAULT_INFERENCE_CONFIG,
   INFERENCE_RULE_SET_VERSION,
@@ -29,10 +23,7 @@ import type {
   InferenceSourceField,
   InferenceTargetField,
 } from './contracts.js'
-import {
-  createDeclaredMappingIndex,
-  isDeclaredMapping,
-} from './declared-suppression.js'
+import { createDeclaredMappingIndex, isDeclaredMapping } from './declared-suppression.js'
 import {
   evaluateEvidenceRules,
   evaluateHardConstraints,
@@ -40,10 +31,7 @@ import {
   genericOnlyEvidence,
   plausibleInferencePair,
 } from './rules.js'
-import {
-  extractOperationSourceFields,
-  extractOperationTargetFields,
-} from './schema-fields.js'
+import { extractOperationSourceFields, extractOperationTargetFields } from './schema-fields.js'
 import { confidenceBand, confidenceForScore } from './scoring.js'
 
 function endpointNodeMap(input: InferFlowCandidatesInput): Map<string, EndpointFlowNode> {
@@ -82,18 +70,8 @@ function buildOperationIndex(
         })
         continue
       }
-      const sources = extractOperationSourceFields(
-        source.sourceId,
-        node,
-        operation,
-        config,
-      )
-      const targets = extractOperationTargetFields(
-        source.sourceId,
-        node,
-        operation,
-        config,
-      )
+      const sources = extractOperationSourceFields(source.sourceId, node, operation, config)
+      const targets = extractOperationTargetFields(source.sourceId, node, operation, config)
       sourceFields.push(...sources.fields)
       targetFields.push(...targets.fields)
       diagnostics.push(...sources.diagnostics, ...targets.diagnostics)
@@ -136,10 +114,9 @@ function candidateOrder(left: InferenceCandidate, right: InferenceCandidate): nu
 function mappingForPair(pair: InferencePair): FlowDataMapping {
   const id = createMappingId(pair.source.selector, pair.target.target)
   const pointers = new Map(
-    [pair.source.sourcePointer, pair.target.sourcePointer].map((pointer) => [
-      `${pointer.uri}\u0000${pointer.pointer}`,
-      pointer,
-    ] as const),
+    [pair.source.sourcePointer, pair.target.sourcePointer].map(
+      (pointer) => [`${pointer.uri}\u0000${pointer.pointer}`, pointer] as const,
+    ),
   )
   return {
     id,
@@ -189,10 +166,7 @@ function validateInput(input: InferFlowCandidatesInput): readonly Diagnostic[] {
   ]
 }
 
-function applyTopK(
-  candidates: readonly InferenceCandidate[],
-  topK: number,
-): InferenceCandidate[] {
+function applyTopK(candidates: readonly InferenceCandidate[], topK: number): InferenceCandidate[] {
   const counts = new Map<string, number>()
   const result: InferenceCandidate[] = []
   for (const candidate of [...candidates].sort(candidateOrder)) {
@@ -207,9 +181,7 @@ function applyTopK(
   return result
 }
 
-export function inferFlowCandidates(
-  input: InferFlowCandidatesInput,
-): InferenceReport<Diagnostic> {
+export function inferFlowCandidates(input: InferFlowCandidatesInput): InferenceReport<Diagnostic> {
   const startedAt = Date.now()
   const inputDiagnostics = validateInput(input)
   if (inputDiagnostics.length > 0) return emptyReport(inputDiagnostics)
@@ -268,10 +240,7 @@ export function inferFlowCandidates(
         continue
       }
 
-      const blockers = evaluateHardConstraints(
-        pair,
-        input.declaredOperationGraph,
-      )
+      const blockers = evaluateHardConstraints(pair, input.declaredOperationGraph)
       if (blockers.length > 0) {
         blockedPairCount += 1
         continue

@@ -1,8 +1,4 @@
-import type {
-  FlowGraph,
-  InferenceEvidence,
-  SourcePointer,
-} from '@api-schema-flow/domain'
+import type { FlowGraph, InferenceEvidence, SourcePointer } from '@api-schema-flow/domain'
 
 import type { InferencePair } from './contracts.js'
 import { wouldCreateDeclaredCycle } from './topology.js'
@@ -33,10 +29,7 @@ function fieldPointers(pair: InferencePair): readonly SourcePointer[] {
 }
 
 function numericCompatible(left: string, right: string): boolean {
-  return (
-    (left === 'integer' && right === 'number') ||
-    (left === 'number' && right === 'integer')
-  )
+  return (left === 'integer' && right === 'number') || (left === 'number' && right === 'integer')
 }
 
 export function schemaTypesCompatible(
@@ -46,8 +39,7 @@ export function schemaTypesCompatible(
   if (sourceTypes.length === 0 || targetTypes.length === 0) return true
   return sourceTypes.some((sourceType) =>
     targetTypes.some(
-      (targetType) =>
-        sourceType === targetType || numericCompatible(sourceType, targetType),
+      (targetType) => sourceType === targetType || numericCompatible(sourceType, targetType),
     ),
   )
 }
@@ -102,10 +94,7 @@ function meaningfulOperationOverlap(pair: InferencePair): boolean {
 export function plausibleInferencePair(pair: InferencePair): boolean {
   if (pair.source.normalizedName.signature === pair.target.normalizedName.signature) return true
   if (resourceIdRelation(pair)) return true
-  if (
-    pair.source.normalizedName.tokens.includes('token') &&
-    pair.target.bearerTarget
-  ) {
+  if (pair.source.normalizedName.tokens.includes('token') && pair.target.bearerTarget) {
     return true
   }
   return false
@@ -199,13 +188,7 @@ export function evaluateHardConstraints(
       ),
     )
   }
-  if (
-    wouldCreateDeclaredCycle(
-      graph,
-      pair.source.operationNodeId,
-      pair.target.operationNodeId,
-    )
-  ) {
+  if (wouldCreateDeclaredCycle(graph, pair.source.operationNodeId, pair.target.operationNodeId)) {
     blockers.push(
       evidence(
         'INF-CYCLE-RISK',
@@ -227,9 +210,7 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
   const targetLower = pair.target.name.toLowerCase()
 
   if (sourceLower === targetLower) {
-    result.push(
-      evidence('INF-NAME-EXACT', 'positive', 25, 'Field names match exactly.', pointers),
-    )
+    result.push(evidence('INF-NAME-EXACT', 'positive', 25, 'Field names match exactly.', pointers))
   }
   if (
     pair.source.normalizedName.signature.length > 0 &&
@@ -267,10 +248,7 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
       ),
     )
   }
-  if (
-    pair.source.format !== undefined &&
-    pair.source.format === pair.target.format
-  ) {
+  if (pair.source.format !== undefined && pair.source.format === pair.target.format) {
     result.push(
       evidence(
         'INF-SCHEMA-FORMAT',
@@ -281,10 +259,7 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
       ),
     )
   }
-  if (
-    pair.source.resourceKey.length > 0 &&
-    pair.source.resourceKey === pair.target.resourceKey
-  ) {
+  if (pair.source.resourceKey.length > 0 && pair.source.resourceKey === pair.target.resourceKey) {
     result.push(
       evidence(
         'INF-RESOURCE-PATH',
@@ -306,10 +281,7 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
       ),
     )
   }
-  if (
-    pair.source.normalizedName.tokens.includes('token') &&
-    pair.target.bearerTarget
-  ) {
+  if (pair.source.normalizedName.tokens.includes('token') && pair.target.bearerTarget) {
     result.push(
       evidence(
         'INF-AUTH-BEARER',
@@ -342,18 +314,9 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
       ),
     )
   }
-  if (
-    pair.source.normalizedName.genericId &&
-    pair.target.normalizedName.genericId
-  ) {
+  if (pair.source.normalizedName.genericId && pair.target.normalizedName.genericId) {
     result.push(
-      evidence(
-        'INF-GENERIC-ID',
-        'positive',
-        3,
-        'Both fields use the generic name id.',
-        pointers,
-      ),
+      evidence('INF-GENERIC-ID', 'positive', 3, 'Both fields use the generic name id.', pointers),
     )
   }
   if (pair.source.variant || pair.target.variant) {
@@ -387,18 +350,14 @@ export function evaluateEvidenceRules(pair: InferencePair): readonly InferenceEv
   return result.sort((left, right) => left.ruleId.localeCompare(right.ruleId))
 }
 
-export function genericOnlyEvidence(
-  evidenceValues: readonly InferenceEvidence[],
-): boolean {
+export function genericOnlyEvidence(evidenceValues: readonly InferenceEvidence[]): boolean {
   const strongRules = new Set([
     'INF-AUTH-BEARER',
     'INF-LIFECYCLE-CREATE-READ',
     'INF-RESOURCE-ID',
     'INF-RESOURCE-PATH',
   ])
-  return !evidenceValues.some(
-    ({ kind, ruleId }) => kind === 'positive' && strongRules.has(ruleId),
-  )
+  return !evidenceValues.some(({ kind, ruleId }) => kind === 'positive' && strongRules.has(ruleId))
 }
 
 export function evidenceScore(values: readonly InferenceEvidence[]): number {

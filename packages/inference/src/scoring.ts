@@ -14,9 +14,7 @@ export function confidenceForScore(
   return options.genericOnly === true ? Math.min(0.59, confidence) : confidence
 }
 
-export function confidenceBand(
-  confidence: number,
-): InferenceConfidenceBand | undefined {
+export function confidenceBand(confidence: number): InferenceConfidenceBand | undefined {
   if (confidence >= 0.9) return 'high'
   if (confidence >= 0.75) return 'medium'
   if (confidence >= 0.6) return 'low'

@@ -44,7 +44,10 @@ function splitWords(value: string): string[] {
 function secretLike(tokens: readonly string[]): boolean {
   const signature = tokens.join(':')
   return SECRET_TOKEN_SEQUENCES.some(
-    (secret) => signature === secret || signature.includes(`:${secret}`) || signature.startsWith(`${secret}:`),
+    (secret) =>
+      signature === secret ||
+      signature.includes(`:${secret}`) ||
+      signature.startsWith(`${secret}:`),
   )
 }
 
@@ -82,7 +85,9 @@ export function normalizeResourceSegment(value: string): string {
 
 export function meaningfulOperationTokens(value: string | undefined): readonly string[] {
   if (value === undefined) return []
-  return [...new Set(splitWords(value).filter((token) => !GENERIC_OPERATION_TOKENS.has(token)))].sort()
+  return [
+    ...new Set(splitWords(value).filter((token) => !GENERIC_OPERATION_TOKENS.has(token))),
+  ].sort()
 }
 
 export function resourceKeyForPath(path: string): string {

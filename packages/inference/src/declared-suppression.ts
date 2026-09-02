@@ -1,8 +1,4 @@
-import type {
-  FlowGraph,
-  FlowValueSelector,
-  FlowValueTarget,
-} from '@api-schema-flow/domain'
+import type { FlowGraph, FlowValueSelector, FlowValueTarget } from '@api-schema-flow/domain'
 import { canonicalizeJson } from '@api-schema-flow/flow'
 
 export function declaredMappingKey(
@@ -20,12 +16,7 @@ export function createDeclaredMappingIndex(graph: FlowGraph): ReadonlySet<string
     if (edge.kind !== 'data' || edge.provenance !== 'declared') continue
     for (const mapping of edge.mappings) {
       keys.add(
-        declaredMappingKey(
-          edge.sourceNodeId,
-          edge.targetNodeId,
-          mapping.source,
-          mapping.target,
-        ),
+        declaredMappingKey(edge.sourceNodeId, edge.targetNodeId, mapping.source, mapping.target),
       )
     }
   }

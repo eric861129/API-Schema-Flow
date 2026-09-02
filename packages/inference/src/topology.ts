@@ -9,10 +9,7 @@ export function wouldCreateDeclaredCycle(
 
   const outgoing = new Map<string, Set<string>>()
   for (const edge of graph.edges) {
-    if (
-      edge.provenance !== 'declared' ||
-      (edge.kind !== 'control' && edge.kind !== 'dependency')
-    ) {
+    if (edge.provenance !== 'declared' || (edge.kind !== 'control' && edge.kind !== 'dependency')) {
       continue
     }
     const values = outgoing.get(edge.sourceNodeId) ?? new Set<string>()

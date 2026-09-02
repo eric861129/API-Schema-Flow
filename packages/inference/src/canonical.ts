@@ -1,15 +1,8 @@
-import type {
-  FlowGraph,
-  FlowValueSelector,
-  FlowValueTarget,
-} from '@api-schema-flow/domain'
+import type { FlowGraph, FlowValueSelector, FlowValueTarget } from '@api-schema-flow/domain'
 import { canonicalizeJson } from '@api-schema-flow/flow'
 
 import { INFERENCE_RULE_SET_VERSION } from './config.js'
-import type {
-  InferenceSourceField,
-  InferenceTargetField,
-} from './contracts.js'
+import type { InferenceSourceField, InferenceTargetField } from './contracts.js'
 
 const FNV_OFFSET_BASIS = 0xcbf29ce484222325n
 const FNV_PRIME = 0x100000001b3n

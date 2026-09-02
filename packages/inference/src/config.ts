@@ -1,9 +1,6 @@
 import { DIAGNOSTIC_CODES, type Diagnostic } from '@api-schema-flow/diagnostics'
 
-import type {
-  InferenceConfig,
-  ResolvedInferenceConfig,
-} from './contracts.js'
+import type { InferenceConfig, ResolvedInferenceConfig } from './contracts.js'
 
 export const INFERENCE_RULE_SET_VERSION = 'm2c-v1' as const
 
