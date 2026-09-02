@@ -1,0 +1,38 @@
+name: Format M2-C CLI files
+
+on:
+  push:
+    branches:
+      - feat/m2c-inference-core
+    paths:
+      - .github/workflows/m2c-cli-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2c-inference-core
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write packages/cli/src/index.ts packages/cli/src/infer-command.ts packages/cli/src/run-cli.ts
+      - name: Commit formatting and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/cli/src/index.ts packages/cli/src/infer-command.ts packages/cli/src/run-cli.ts
+          git rm .github/workflows/m2c-cli-format.yml
+          git commit -m "style(cli): format inference command"
+          git push
