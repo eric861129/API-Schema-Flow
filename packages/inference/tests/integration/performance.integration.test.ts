@@ -60,7 +60,10 @@ function createOperation(index: number): NormalizedOperation {
           {
             mediaType: 'application/json',
             schema: responseSchema,
-            source: { uri: URI, pointer: `${operationPointer}/responses/201/content/application~1json` },
+            source: {
+              uri: URI,
+              pointer: `${operationPointer}/responses/201/content/application~1json`,
+            },
           },
         ],
         links: [],
