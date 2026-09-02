@@ -99,7 +99,9 @@ export function evaluateInferenceBenchmark(
     const negativeByKey = new Map(
       benchmarkCase.expectedNegativeMappings.map((mapping) => [mappingKey(mapping), mapping]),
     )
-    const candidateByKey = new Map(report.candidates.map((candidate) => [candidateKey(candidate), candidate]))
+    const candidateByKey = new Map(
+      report.candidates.map((candidate) => [candidateKey(candidate), candidate]),
+    )
 
     expectedPositiveCount += positives.size
     for (const [key, expected] of positives) {

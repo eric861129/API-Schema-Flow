@@ -2,10 +2,7 @@ import { readFile } from 'node:fs/promises'
 
 import { describe, expect, test } from 'vitest'
 
-import {
-  evaluateInferenceBenchmark,
-  type InferenceBenchmarkCase,
-} from '../../src/benchmark.js'
+import { evaluateInferenceBenchmark, type InferenceBenchmarkCase } from '../../src/benchmark.js'
 import { inferFlowCandidates } from '../../src/index.js'
 import { createInferenceInput } from '../helpers/fixture.js'
 
