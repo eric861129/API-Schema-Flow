@@ -61,7 +61,7 @@ describe('evidence-based inference pipeline', () => {
       ) ?? []
 
     expect(authCandidates.length).toBeGreaterThan(0)
-    expect(authCandidates.every(({ confidence }) => confidence === 0.95)).toBe(true)
+    expect(authCandidates.every(({ confidence }) => confidence === 0.88)).toBe(true)
     expect(
       authCandidates.every(({ evidence }) =>
         evidence.some(({ ruleId }) => ruleId === 'INF-AUTH-BEARER'),
