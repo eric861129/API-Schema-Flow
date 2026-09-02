@@ -35,12 +35,8 @@ export interface CliDependencies {
   readonly processArazzoSource?: (
     source: SourceDocument,
   ) => CliArazzoProcessResult | Promise<CliArazzoProcessResult>
-  readonly buildDeclaredFlowGraphs?: (
-    input: BuildDeclaredFlowGraphsInput,
-  ) => DeclaredFlowProjection
-  readonly inferFlowCandidates?: (
-    input: InferFlowCandidatesInput,
-  ) => InferenceReport<Diagnostic>
+  readonly buildDeclaredFlowGraphs?: (input: BuildDeclaredFlowGraphsInput) => DeclaredFlowProjection
+  readonly inferFlowCandidates?: (input: InferFlowCandidatesInput) => InferenceReport<Diagnostic>
   readonly resolvePath?: (...paths: string[]) => string
   readonly dirname?: (path: string) => string
   readonly cwd?: () => string

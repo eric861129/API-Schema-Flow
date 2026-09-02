@@ -5,10 +5,7 @@ export {
   type CliIo,
   type CliProcessResult,
 } from './run-cli.js'
-export {
-  executeInferCommand,
-  type InferenceCliReport,
-} from './infer-command.js'
+export { executeInferCommand, type InferenceCliReport } from './infer-command.js'
 export {
   INFER_USAGE,
   parseInferArguments,

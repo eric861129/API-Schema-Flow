@@ -1,10 +1,6 @@
 import path from 'node:path'
 
-import type {
-  InferenceCandidate,
-  InferenceMetrics,
-  InferenceReport,
-} from '@api-schema-flow/domain'
+import type { InferenceCandidate, InferenceMetrics, InferenceReport } from '@api-schema-flow/domain'
 import {
   formatDiagnostic,
   hasDiagnosticErrors,
