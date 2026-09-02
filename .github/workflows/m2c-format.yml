@@ -34,7 +34,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec prettier --write packages/domain packages/inference packages/cli tooling package.json .prettierignore
+      - name: Format existing M2-C paths
+        run: |
+          targets=(packages/domain packages/cli tooling package.json .prettierignore)
+          if [ -d packages/inference ]; then
+            targets+=(packages/inference)
+          fi
+          pnpm exec prettier --write "${targets[@]}"
       - name: Commit formatting
         run: |
           if git diff --quiet; then
@@ -42,6 +48,9 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/domain packages/inference packages/cli tooling package.json .prettierignore
+          git add packages/domain packages/cli tooling package.json .prettierignore
+          if [ -d packages/inference ]; then
+            git add packages/inference
+          fi
           git commit -m "style(inference): apply repository formatting"
           git push
