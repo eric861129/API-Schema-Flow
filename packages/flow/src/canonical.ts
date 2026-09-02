@@ -14,7 +14,8 @@ function normalizeCanonicalValue(value: unknown, seen: Set<object>): unknown {
   if (value === undefined) return undefined
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return value
   if (typeof value === 'number') {
-    if (!Number.isFinite(value)) throw new TypeError('Canonical JSON does not support non-finite numbers.')
+    if (!Number.isFinite(value))
+      throw new TypeError('Canonical JSON does not support non-finite numbers.')
     return Object.is(value, -0) ? 0 : value
   }
   if (typeof value === 'bigint' || typeof value === 'function' || typeof value === 'symbol') {

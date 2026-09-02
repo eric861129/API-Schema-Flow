@@ -91,12 +91,20 @@ function mergeMappings(
       })
     }
     const selected = [...group].sort((left, right) =>
-      canonicalizeJson(semanticMapping(left)).localeCompare(canonicalizeJson(semanticMapping(right))),
+      canonicalizeJson(semanticMapping(left)).localeCompare(
+        canonicalizeJson(semanticMapping(right)),
+      ),
     )[0]!
     result.push({
       ...selected,
-      aliases: uniqueByKey(group.flatMap(({ aliases }) => aliases), aliasKey),
-      sourcePointers: uniqueByKey(group.flatMap(({ sourcePointers }) => sourcePointers), sourceKey),
+      aliases: uniqueByKey(
+        group.flatMap(({ aliases }) => aliases),
+        aliasKey,
+      ),
+      sourcePointers: uniqueByKey(
+        group.flatMap(({ sourcePointers }) => sourcePointers),
+        sourceKey,
+      ),
     })
   }
   return result
@@ -170,7 +178,10 @@ function mergeEdges(edges: readonly FlowEdge[], diagnostics: Diagnostic[]): Flow
     }
     result.push({
       ...selected,
-      mappings: mergeMappings(group.flatMap(({ mappings }) => mappings), diagnostics),
+      mappings: mergeMappings(
+        group.flatMap(({ mappings }) => mappings),
+        diagnostics,
+      ),
       sourceStandardRefs: uniqueByKey(
         group.flatMap(({ sourceStandardRefs }) => sourceStandardRefs),
         standardRefKey,
@@ -187,10 +198,7 @@ export function assembleFlowGraph(input: AssembleFlowGraphInput): AssembleFlowGr
   const validEdges: FlowEdge[] = []
 
   for (const edge of input.edges) {
-    if (
-      edge.provenance !== DECLARED_FLOW_PROVENANCE ||
-      edge.status !== ACCEPTED_FLOW_STATUS
-    ) {
+    if (edge.provenance !== DECLARED_FLOW_PROVENANCE || edge.status !== ACCEPTED_FLOW_STATUS) {
       diagnostics.push({
         code: DIAGNOSTIC_CODES.FLOW_PROJECTION_UNSUPPORTED,
         severity: 'error',
