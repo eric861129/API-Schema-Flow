@@ -46,7 +46,14 @@ describe('OpenAPI Link projection', () => {
       ...operation,
       responses: operation.responses.map((response) => ({
         ...response,
-        links: response.links.map(({ resolvedOperationKey: _ignored, ...link }) => link),
+        links: response.links.map((link) => ({
+          name: link.name,
+          ...(link.description === undefined ? {} : { description: link.description }),
+          target: link.target,
+          parameters: link.parameters,
+          ...(link.requestBody === undefined ? {} : { requestBody: link.requestBody }),
+          source: link.source,
+        })),
       })),
     }))
 
