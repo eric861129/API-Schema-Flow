@@ -1,0 +1,28 @@
+{
+  "name": "@api-schema-flow/flow",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run tests/unit --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
+  },
+  "dependencies": {
+    "@api-schema-flow/arazzo": "workspace:*",
+    "@api-schema-flow/diagnostics": "workspace:*",
+    "@api-schema-flow/domain": "workspace:*",
+    "@api-schema-flow/openapi": "workspace:*"
+  }
+}

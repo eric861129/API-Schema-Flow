@@ -8,6 +8,7 @@ const requiredPackages = [
   'source-loader',
   'openapi',
   'arazzo',
+  'flow',
   'cli',
 ]
 
