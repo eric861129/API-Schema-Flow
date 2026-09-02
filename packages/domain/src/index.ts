@@ -25,11 +25,7 @@ export type {
   ParameterLocation,
 } from './operation.js'
 export type { NormalizedApiDocument, NormalizedApiInfo } from './document.js'
-export type {
-  EndpointFlowNode,
-  FlowNode,
-  WorkflowStepFlowNode,
-} from './flow-node.js'
+export type { EndpointFlowNode, FlowNode, WorkflowStepFlowNode } from './flow-node.js'
 export type {
   FlowDataMapping,
   FlowLiteralValue,
@@ -49,8 +45,4 @@ export {
   type SourceStandard,
   type SourceStandardRef,
 } from './flow-edge.js'
-export {
-  FLOW_GRAPH_SCHEMA_VERSION,
-  type FlowGraph,
-  type FlowGraphKind,
-} from './flow-graph.js'
+export { FLOW_GRAPH_SCHEMA_VERSION, type FlowGraph, type FlowGraphKind } from './flow-graph.js'
