@@ -1,0 +1,108 @@
+name: M3-A Bootstrap Dependencies
+
+on:
+  push:
+    branches:
+      - feat/m3a-read-only-web-workspace
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3a-bootstrap-dependencies
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out M3-A branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3a-read-only-web-workspace
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Resolve exact frontend and layout dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --no-frozen-lockfile
+          pnpm --filter @api-schema-flow/web add \
+            react \
+            react-dom \
+            @xyflow/react
+          pnpm --filter @api-schema-flow/web add -D \
+            @types/react \
+            @types/react-dom \
+            vite \
+            @vitejs/plugin-react \
+            tailwindcss \
+            @tailwindcss/vite \
+            vitest \
+            jsdom \
+            @testing-library/react \
+            @testing-library/jest-dom \
+            @testing-library/user-event \
+            @playwright/test \
+            @axe-core/playwright
+          pnpm --filter @api-schema-flow/layout add elkjs
+          pnpm install --frozen-lockfile
+
+      - name: Verify dependency-backed scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm workspace:check
+          pnpm --filter @api-schema-flow/layout build
+          pnpm --filter @api-schema-flow/layout typecheck
+          pnpm --filter @api-schema-flow/web typecheck
+          pnpm --filter @api-schema-flow/web build
+
+      - name: Commit locked dependencies and remove bootstrap workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3a-bootstrap-dependencies.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/web/package.json packages/layout/package.json pnpm-lock.yaml .github/workflows/m3a-bootstrap-dependencies.yml
+          git commit -m 'chore(web): lock M3-A frontend dependencies'
+          git push origin HEAD:feat/m3a-read-only-web-workspace
+
+      - name: Package dependency-ready workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=.git \
+            --exclude=.turbo \
+            --exclude='packages/*/.turbo' \
+            --exclude='packages/*/dist' \
+            --exclude='apps/*/.turbo' \
+            --exclude='apps/*/dist' \
+            --exclude='**/coverage' \
+            -czf /tmp/api-schema-flow-m3a-dependency-workspace.tgz .
+
+      - name: Upload dependency-ready workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-schema-flow-m3a-dependency-workspace
+          path: /tmp/api-schema-flow-m3a-dependency-workspace.tgz
+          retention-days: 1
+          if-no-files-found: error
