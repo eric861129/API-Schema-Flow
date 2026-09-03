@@ -30,9 +30,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function isReadOnlyWorkspaceSnapshot(
-  value: unknown,
-): value is ReadOnlyWorkspaceSnapshot {
+export function isReadOnlyWorkspaceSnapshot(value: unknown): value is ReadOnlyWorkspaceSnapshot {
   if (!isRecord(value) || value.schemaVersion !== READ_ONLY_WORKSPACE_SNAPSHOT_SCHEMA_VERSION) {
     return false
   }

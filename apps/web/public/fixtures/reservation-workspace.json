@@ -1,0 +1,521 @@
+{
+  "acceptedGraph": {
+    "edges": [
+      {
+        "id": "edge:reservation-to-get",
+        "kind": "data",
+        "mappings": [
+          {
+            "id": "mapping:reservation-to-get",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/reservationId"
+            },
+            "target": {
+              "kind": "operation-parameter",
+              "location": "path",
+              "name": "id",
+              "operationKey": "operation:get:/reservations/{id}"
+            }
+          }
+        ],
+        "provenance": "declared",
+        "sourceNodeId": "operation:post:/reservations",
+        "sourceStandardRefs": [
+          {
+            "source": {
+              "pointer": "#/paths",
+              "uri": "fixture://reservation/openapi.yaml"
+            },
+            "standard": "openapi-link"
+          }
+        ],
+        "status": "accepted",
+        "targetNodeId": "operation:get:/reservations/{id}"
+      },
+      {
+        "id": "edge:space-to-reservation",
+        "kind": "data",
+        "mappings": [
+          {
+            "id": "mapping:space-to-reservation",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/0/spaceId"
+            },
+            "target": {
+              "kind": "request-body",
+              "operationKey": "operation:post:/reservations",
+              "pointer": "#/spaceId"
+            }
+          }
+        ],
+        "provenance": "manual",
+        "review": {
+          "action": "edit",
+          "candidateId": "candidate:edge:space-to-reservation",
+          "evidenceRuleIds": [
+            "INF-RESOURCE-ID",
+            "INF-SCHEMA-TYPE"
+          ]
+        },
+        "sourceNodeId": "operation:get:/spaces/available",
+        "sourceStandardRefs": [],
+        "status": "accepted",
+        "targetNodeId": "operation:post:/reservations"
+      },
+      {
+        "id": "edge:token-to-auth",
+        "kind": "data",
+        "mappings": [
+          {
+            "id": "mapping:token-to-auth",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "operation-parameter",
+              "location": "header",
+              "name": "Authorization",
+              "operationKey": "operation:get:/spaces/available"
+            }
+          }
+        ],
+        "provenance": "inferred",
+        "review": {
+          "action": "accept",
+          "candidateId": "candidate:edge:token-to-auth",
+          "evidenceRuleIds": [
+            "INF-AUTH-BEARER",
+            "INF-SCHEMA-TYPE"
+          ]
+        },
+        "sourceNodeId": "operation:post:/auth/login",
+        "sourceStandardRefs": [],
+        "status": "accepted",
+        "targetNodeId": "operation:get:/spaces/available"
+      }
+    ],
+    "id": "graph:reservation",
+    "kind": "operation-topology",
+    "nodes": [
+      {
+        "id": "operation:get:/reservations/{id}",
+        "kind": "endpoint",
+        "operationKey": "operation:get:/reservations/{id}",
+        "source": {
+          "pointer": "#/paths/~1reservations~1{id}/get",
+          "uri": "fixture://reservation/openapi.yaml"
+        }
+      },
+      {
+        "id": "operation:get:/spaces/available",
+        "kind": "endpoint",
+        "operationKey": "operation:get:/spaces/available",
+        "source": {
+          "pointer": "#/paths/~1spaces~1available/get",
+          "uri": "fixture://reservation/openapi.yaml"
+        }
+      },
+      {
+        "id": "operation:post:/auth/login",
+        "kind": "endpoint",
+        "operationKey": "operation:post:/auth/login",
+        "source": {
+          "pointer": "#/paths/~1auth~1login/post",
+          "uri": "fixture://reservation/openapi.yaml"
+        }
+      },
+      {
+        "id": "operation:post:/reservations",
+        "kind": "endpoint",
+        "operationKey": "operation:post:/reservations",
+        "source": {
+          "pointer": "#/paths/~1reservations/post",
+          "uri": "fixture://reservation/openapi.yaml"
+        }
+      }
+    ],
+    "schemaVersion": "1.0",
+    "sourceIds": [
+      "fixture://reservation/openapi.yaml"
+    ],
+    "title": "Reservation API topology"
+  },
+  "apiDocument": {
+    "compatibilityMode": false,
+    "componentSchemas": [],
+    "info": {
+      "description": "Canonical read-only workspace fixture.",
+      "title": "Reservation API",
+      "version": "1.0.0"
+    },
+    "openapiVersion": "3.1.0",
+    "operations": [
+      {
+        "id": "operation:get:/reservations/{id}",
+        "method": "get",
+        "operationId": "getReservation",
+        "parameters": [
+          {
+            "location": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "source": {
+              "pointer": "#/paths/~1reservations~1{id}/get/parameters/0",
+              "uri": "fixture://reservation/openapi.yaml"
+            }
+          }
+        ],
+        "path": "/reservations/{id}",
+        "responses": [
+          {
+            "description": "Reservation found",
+            "headers": [],
+            "links": [],
+            "mediaTypes": [
+              {
+                "mediaType": "application/json",
+                "schema": {
+                  "properties": {
+                    "reservationId": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            ],
+            "statusCode": "200"
+          }
+        ],
+        "security": [
+          {
+            "requirementIndex": 0,
+            "schemeName": "bearerAuth",
+            "scopes": []
+          }
+        ],
+        "servers": [],
+        "source": {
+          "pointer": "#/paths/~1reservations~1{id}/get",
+          "uri": "fixture://reservation/openapi.yaml"
+        },
+        "summary": "Get one reservation",
+        "tags": [
+          "Reservations"
+        ]
+      },
+      {
+        "id": "operation:get:/spaces/available",
+        "method": "get",
+        "operationId": "listAvailableSpaces",
+        "parameters": [],
+        "path": "/spaces/available",
+        "responses": [
+          {
+            "description": "Available spaces",
+            "headers": [],
+            "links": [],
+            "mediaTypes": [
+              {
+                "mediaType": "application/json",
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            ],
+            "statusCode": "200"
+          }
+        ],
+        "security": [
+          {
+            "requirementIndex": 0,
+            "schemeName": "bearerAuth",
+            "scopes": []
+          }
+        ],
+        "servers": [],
+        "source": {
+          "pointer": "#/paths/~1spaces~1available/get",
+          "uri": "fixture://reservation/openapi.yaml"
+        },
+        "summary": "List spaces that can be reserved",
+        "tags": [
+          "Spaces"
+        ]
+      },
+      {
+        "id": "operation:post:/auth/login",
+        "method": "post",
+        "operationId": "login",
+        "parameters": [],
+        "path": "/auth/login",
+        "requestBody": {
+          "mediaTypes": [
+            {
+              "mediaType": "application/json",
+              "schema": {
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          ],
+          "required": true
+        },
+        "responses": [
+          {
+            "description": "Authenticated",
+            "headers": [],
+            "links": [],
+            "mediaTypes": [
+              {
+                "mediaType": "application/json",
+                "schema": {
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            ],
+            "statusCode": "200"
+          }
+        ],
+        "security": [],
+        "servers": [],
+        "source": {
+          "pointer": "#/paths/~1auth~1login/post",
+          "uri": "fixture://reservation/openapi.yaml"
+        },
+        "summary": "Sign in and receive an access token",
+        "tags": [
+          "Auth"
+        ]
+      },
+      {
+        "id": "operation:post:/reservations",
+        "method": "post",
+        "operationId": "createReservation",
+        "parameters": [],
+        "path": "/reservations",
+        "requestBody": {
+          "mediaTypes": [
+            {
+              "mediaType": "application/json",
+              "schema": {
+                "properties": {
+                  "spaceId": {
+                    "type": "string"
+                  },
+                  "startsAt": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "spaceId"
+                ],
+                "type": "object"
+              }
+            }
+          ],
+          "required": true
+        },
+        "responses": [
+          {
+            "description": "Reservation created",
+            "headers": [],
+            "links": [],
+            "mediaTypes": [
+              {
+                "mediaType": "application/json",
+                "schema": {
+                  "properties": {
+                    "reservationId": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            ],
+            "statusCode": "201"
+          }
+        ],
+        "security": [
+          {
+            "requirementIndex": 0,
+            "schemeName": "bearerAuth",
+            "scopes": []
+          }
+        ],
+        "servers": [],
+        "source": {
+          "pointer": "#/paths/~1reservations/post",
+          "uri": "fixture://reservation/openapi.yaml"
+        },
+        "summary": "Create a reservation",
+        "tags": [
+          "Reservations"
+        ]
+      }
+    ],
+    "schemaVersion": "1.0",
+    "servers": [],
+    "sourceUri": "fixture://reservation/openapi.yaml",
+    "tags": [
+      "Auth",
+      "Reservations",
+      "Spaces"
+    ]
+  },
+  "diagnostics": [],
+  "generatedBy": {
+    "milestone": "M3-A",
+    "package": "api-schema-flow"
+  },
+  "inferenceCandidates": [
+    {
+      "band": "high",
+      "blockers": [],
+      "confidence": 0.92,
+      "evidence": [
+        {
+          "details": {},
+          "kind": "positive",
+          "ruleId": "INF-RESOURCE-ID",
+          "sourcePointers": [],
+          "summary": "INF-RESOURCE-ID",
+          "weight": 20
+        },
+        {
+          "details": {},
+          "kind": "positive",
+          "ruleId": "INF-SCHEMA-TYPE",
+          "sourcePointers": [],
+          "summary": "INF-SCHEMA-TYPE",
+          "weight": 20
+        }
+      ],
+      "fingerprint": "edge:space-to-reservation",
+      "id": "candidate:edge:space-to-reservation",
+      "provenance": "inferred",
+      "ruleSetVersion": "m2c-v1",
+      "score": 92,
+      "source": {
+        "kind": "response-body",
+        "pointer": "#/0/spaceId"
+      },
+      "sourceOperationKey": "operation:get:/spaces/available",
+      "status": "candidate",
+      "target": {
+        "kind": "request-body",
+        "operationKey": "operation:post:/reservations",
+        "pointer": "#/spaceId"
+      },
+      "targetOperationKey": "operation:post:/reservations"
+    },
+    {
+      "band": "high",
+      "blockers": [],
+      "confidence": 0.92,
+      "evidence": [
+        {
+          "details": {},
+          "kind": "positive",
+          "ruleId": "INF-AUTH-BEARER",
+          "sourcePointers": [],
+          "summary": "INF-AUTH-BEARER",
+          "weight": 20
+        },
+        {
+          "details": {},
+          "kind": "positive",
+          "ruleId": "INF-SCHEMA-TYPE",
+          "sourcePointers": [],
+          "summary": "INF-SCHEMA-TYPE",
+          "weight": 20
+        }
+      ],
+      "fingerprint": "edge:token-to-auth",
+      "id": "candidate:edge:token-to-auth",
+      "provenance": "inferred",
+      "ruleSetVersion": "m2c-v1",
+      "score": 92,
+      "source": {
+        "kind": "response-body",
+        "pointer": "#/token"
+      },
+      "sourceOperationKey": "operation:post:/auth/login",
+      "status": "candidate",
+      "target": {
+        "kind": "operation-parameter",
+        "location": "header",
+        "name": "Authorization",
+        "operationKey": "operation:get:/spaces/available"
+      },
+      "targetOperationKey": "operation:get:/spaces/available"
+    }
+  ],
+  "project": {
+    "name": "Reservation System",
+    "openapiVersion": "3.1.0",
+    "sourceName": "Reservation API",
+    "sourceUri": "fixture://reservation/openapi.yaml"
+  },
+  "reviewOutcomes": [
+    {
+      "action": "accept",
+      "candidateId": "candidate:edge:token-to-auth",
+      "decisionId": "decision:edge:token-to-auth",
+      "diagnostics": [],
+      "edgeId": "edge:token-to-auth",
+      "state": "applied"
+    },
+    {
+      "action": "edit",
+      "candidateId": "candidate:edge:space-to-reservation",
+      "decisionId": "decision:edge:space-to-reservation",
+      "diagnostics": [],
+      "edgeId": "edge:space-to-reservation",
+      "state": "applied"
+    }
+  ],
+  "schemaVersion": "1.0"
+}
