@@ -72,7 +72,7 @@ replaceRequired(
           sources: [edge.sourceNodeId],
           targets: [edge.targetNodeId],
         })),
-      })) as unknown as ElkLayoutResult`,
+      }) as unknown as ElkLayoutResult`,
   'ELK layout result cast',
 )
 
