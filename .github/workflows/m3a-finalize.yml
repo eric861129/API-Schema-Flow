@@ -49,7 +49,7 @@ jobs:
           node tooling/scripts/scaffold-m3a-implementation.mjs
           mkdir -p apps/web/public/fixtures
 
-      - name: Remove all temporary publication machinery
+      - name: Remove temporary publication machinery from final tree
         shell: bash
         run: |
           set -euo pipefail
@@ -129,7 +129,17 @@ jobs:
           }
           NODE
 
-      - name: Commit and publish verified M3-A tree
+      - name: Prepare publishable source tree and final CI workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf apps/web/playwright-report apps/web/test-results
+          cp .github/workflows/ci.yml /tmp/m3a-final-ci.yml
+          test ! -e apps/web/playwright-report
+          test ! -e apps/web/test-results
+          git diff --check
+
+      - name: Commit and publish verified non-workflow tree
         id: publish
         shell: bash
         run: |
@@ -137,16 +147,27 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+          git reset -- .github/workflows
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
           git commit -m 'feat: complete M3-A read-only Web workspace'
           head_sha="$(git rev-parse HEAD)"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
           git push origin HEAD:feat/m3a-read-only-web-workspace
 
+      - name: Upload verified final CI workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3a-final-ci-workflow
+          path: /tmp/m3a-final-ci.yml
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Record publication evidence
         shell: bash
         run: |
           set -euo pipefail
-          gh pr comment 13 --repo "$GITHUB_REPOSITORY" --body "M3-A was materialized and passed the complete local runner gate before publication. Published head: \`${{ steps.publish.outputs.head_sha }}\`. Finalizer evidence: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Normal exact-head PR CI must pass before merge."
+          gh pr comment 13 --repo "$GITHUB_REPOSITORY" --body "M3-A passed the complete product gate and published its verified non-workflow tree at \`${{ steps.publish.outputs.head_sha }}\`. Finalizer evidence: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. The final CI workflow is attached to that run and will be applied through the GitHub connector before exact-head PR CI and merge."
 
       - name: Record stopped gate
         if: failure()
