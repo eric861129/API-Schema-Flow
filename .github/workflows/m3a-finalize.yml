@@ -1,0 +1,154 @@
+name: M3-A Finalize
+
+on:
+  push:
+    branches:
+      - feat/m3a-read-only-web-workspace
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: m3a-finalize
+  cancel-in-progress: false
+
+jobs:
+  materialize-verify-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TURBO_TELEMETRY_DISABLED: '1'
+      CI: '1'
+    steps:
+      - name: Check out M3-A branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3a-read-only-web-workspace
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Materialize complete M3-A implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tooling/scripts/fix-m3a-scaffold.mjs
+          node tooling/scripts/scaffold-m3a-implementation.mjs
+          mkdir -p apps/web/public/fixtures
+
+      - name: Remove all temporary publication machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .m3a-upload
+          find .github/workflows -maxdepth 1 -type f -name 'm3a-*.yml' -delete
+          rm -f \
+            tooling/scripts/fix-m3a-scaffold.mjs \
+            tooling/scripts/scaffold-m3a-implementation.mjs \
+            tooling/scripts/scaffold-m3a-tests-and-docs.mjs
+
+      - name: Regenerate and freeze dependency lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --no-frozen-lockfile
+          pnpm install --frozen-lockfile
+
+      - name: Build generators and create canonical fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm build
+          pnpm generate:web-fixture
+          pnpm format
+          pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run complete M0 through M3-A verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm workspace:check
+          pnpm format:check
+          pnpm lint
+          pnpm build
+          pnpm typecheck
+          pnpm test
+          pnpm test:integration
+          pnpm test:flow-fixtures
+          pnpm test:inference-benchmark
+          pnpm test:inference-performance
+          pnpm test:review
+          pnpm test:export-arazzo
+          pnpm test:review-export-fixtures
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+          pnpm test:web
+          pnpm test:web:e2e
+          pnpm boundaries:check
+          git diff --check
+
+      - name: Verify final product and repository invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .m3a-upload
+          test -z "$(find .github/workflows -maxdepth 1 -type f -name 'm3a-*.yml' -print)"
+          test ! -e tooling/scripts/fix-m3a-scaffold.mjs
+          test ! -e tooling/scripts/scaffold-m3a-implementation.mjs
+          test ! -e tooling/scripts/scaffold-m3a-tests-and-docs.mjs
+          test -f apps/web/public/fixtures/reservation-workspace.json
+          test "$(wc -c < apps/web/public/fixtures/reservation-workspace.json)" -lt 256000
+          ! grep -RniE 'synthetic-jwt-token|synthetic-password|Bearer[[:space:]]+[A-Za-z0-9._~-]{12,}' apps/web/public/fixtures/reservation-workspace.json apps/web/dist
+          ! grep -RniE '(/Users/|/home/runner/|[A-Za-z]:\\Users\\)' apps/web/public/fixtures/reservation-workspace.json
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const snapshot = JSON.parse(fs.readFileSync('apps/web/public/fixtures/reservation-workspace.json', 'utf8'))
+          if (snapshot.schemaVersion !== '1.0') throw new Error('Unexpected snapshot version')
+          if (snapshot.acceptedGraph.nodes.length !== 4) throw new Error('Expected four endpoint nodes')
+          if (snapshot.acceptedGraph.edges.length !== 3) throw new Error('Expected three accepted relationships')
+          if (snapshot.acceptedGraph.edges.some((edge) => edge.status !== 'accepted')) {
+            throw new Error('Non-accepted edge leaked into workspace')
+          }
+          NODE
+
+      - name: Commit and publish verified M3-A tree
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: complete M3-A read-only Web workspace'
+          head_sha="$(git rev-parse HEAD)"
+          echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
+          git push origin HEAD:feat/m3a-read-only-web-workspace
+
+      - name: Record publication evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr comment 13 --repo "$GITHUB_REPOSITORY" --body "M3-A was materialized and passed the complete local runner gate before publication. Published head: \`${{ steps.publish.outputs.head_sha }}\`. Finalizer evidence: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. Normal exact-head PR CI must pass before merge."
+
+      - name: Record stopped gate
+        if: failure()
+        shell: bash
+        run: |
+          gh pr comment 13 --repo "$GITHUB_REPOSITORY" --body "M3-A finalization stopped at a failing gate. No successful-completion claim or merge was made. Inspect https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
