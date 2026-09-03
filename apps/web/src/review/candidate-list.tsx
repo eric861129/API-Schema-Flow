@@ -25,6 +25,15 @@ function confidenceLabel(candidate: ReviewCandidateRow): string {
   return `${candidate.band[0]?.toUpperCase()}${candidate.band.slice(1)} · ${Math.round(candidate.confidence * 100)}%`
 }
 
+function candidateAccessibleLabel(candidate: ReviewCandidateRow): string {
+  const blockers =
+    candidate.blockerCount > 0
+      ? `; ${candidate.blockerCount} blocker${candidate.blockerCount === 1 ? '' : 's'}`
+      : ''
+
+  return `Source ${candidate.sourceLabel} ${candidate.sourceSelector}; target ${candidate.targetLabel} ${candidate.targetDescriptor}; ${confidenceLabel(candidate)}; ${STATE_LABELS[candidate.state]}; ${candidate.evidenceCount} evidence${blockers}`
+}
+
 export function CandidateList({
   candidates,
   selectedCandidateId,
@@ -59,6 +68,13 @@ export function CandidateList({
         event.preventDefault()
         focusCandidate(candidateIds.length - 1)
         break
+      case 'Enter':
+      case ' ': {
+        event.preventDefault()
+        const candidateId = candidateIds[index]
+        if (candidateId) onSelect(candidateId)
+        break
+      }
     }
   }
 
@@ -90,6 +106,7 @@ export function CandidateList({
             type="button"
             role="option"
             aria-selected={selected}
+            aria-label={candidateAccessibleLabel(candidate)}
             className="candidate-row"
             data-state={candidate.state}
             data-selected={selected ? 'true' : 'false'}

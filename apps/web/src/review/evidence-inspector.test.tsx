@@ -75,8 +75,10 @@ describe('EvidenceInspector', () => {
     expect(screen.getByText('+25')).toBeVisible()
     expect(screen.getByText('INF-CYCLE-RISK')).toBeVisible()
     expect(screen.getByText('-8')).toBeVisible()
-    expect(screen.getByText('fixture://reservation/openapi.yaml#/paths/~1reservations/post')).toBeVisible()
-    expect(screen.getByText(/candidate, not an authoritative/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByText('fixture://reservation/openapi.yaml#/paths/~1reservations/post'),
+    ).toBeVisible()
+    expect(screen.getByText(/candidate, not an authoritative/i)).toBeVisible()
     expect(screen.getByText('Candidate identity')).toBeVisible()
   })
 

@@ -46,14 +46,12 @@ describe('CandidateList', () => {
       />,
     )
 
-    expect(screen.getByRole('listbox')).toHaveAccessibleName(
-      'Inference candidates, 2 visible',
-    )
+    expect(screen.getByRole('listbox')).toHaveAccessibleName('Inference candidates, 2 visible')
     expect(screen.getByText('High · 94%')).toBeVisible()
     expect(screen.getByText('Pending')).toBeVisible()
     expect(screen.getByText('4 evidence')).toBeVisible()
     expect(screen.getByText('⚠ 1 blockers')).toBeVisible()
-    expect(screen.getByRole('option', { name: /POST \/reservations/i })).toHaveAttribute(
+    expect(screen.getByRole('option', { name: /^Source POST \/reservations/i })).toHaveAttribute(
       'aria-selected',
       'true',
     )
@@ -62,9 +60,7 @@ describe('CandidateList', () => {
   test('selects a candidate and supports Arrow, Home, and End focus movement', async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
-    render(
-      <CandidateList candidates={candidates} selectedCandidateId={null} onSelect={onSelect} />,
-    )
+    render(<CandidateList candidates={candidates} selectedCandidateId={null} onSelect={onSelect} />)
 
     const options = screen.getAllByRole('option')
     options[0]?.focus()

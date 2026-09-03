@@ -12,11 +12,7 @@ const GROUP_LABELS = {
   neutral: 'Supporting context',
 } as const
 
-export function EvidenceInspector({
-  candidate,
-  open,
-  onClose,
-}: EvidenceInspectorProps) {
+export function EvidenceInspector({ candidate, open, onClose }: EvidenceInspectorProps) {
   if (!candidate || !open) {
     return null
   }
@@ -52,8 +48,15 @@ export function EvidenceInspector({
         </div>
       </dl>
 
+      <p className="evidence-inspector__notice">
+        This inference is a candidate, not an authoritative workflow fact.
+      </p>
+
       {candidate.blockers.length > 0 ? (
-        <section className="evidence-group evidence-group--blockers" aria-labelledby="blocker-title">
+        <section
+          className="evidence-group evidence-group--blockers"
+          aria-labelledby="blocker-title"
+        >
           <h3 id="blocker-title">Blockers</h3>
           <ul>
             {candidate.blockers.map((blocker) => (

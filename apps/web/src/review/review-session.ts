@@ -23,18 +23,10 @@ export type ReviewIntent =
     }
 
 export type ReviewCandidateStateFilter =
-  | 'pending'
-  | 'accepted'
-  | 'rejected'
-  | 'edited'
-  | 'needs-attention'
-  | 'all'
+  'pending' | 'accepted' | 'rejected' | 'edited' | 'needs-attention' | 'all'
 
 export type ReviewCandidateSort =
-  | 'confidence-desc'
-  | 'source-endpoint'
-  | 'target-endpoint'
-  | 'review-state'
+  'confidence-desc' | 'source-endpoint' | 'target-endpoint' | 'review-state'
 
 export type ReviewConfidenceBand = 'high' | 'medium' | 'low' | 'hidden'
 
@@ -106,10 +98,7 @@ export function createInitialReviewSession(
   }
 }
 
-export function getNextReviewRevision(
-  state: ReviewSessionState,
-  candidateId: string,
-): number {
+export function getNextReviewRevision(state: ReviewSessionState, candidateId: string): number {
   let highestRevision = state.baselineRevisions[candidateId] ?? 0
 
   for (const intent of state.draftIntents) {

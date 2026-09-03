@@ -84,9 +84,9 @@ export function describeReviewCompatibility(
   return items
 }
 
-export function groupReviewEvidence(candidate: ReviewCandidateDetail): Readonly<
-  Record<ReviewEvidenceKind, readonly ReviewEvidenceDetail[]>
-> {
+export function groupReviewEvidence(
+  candidate: ReviewCandidateDetail,
+): Readonly<Record<ReviewEvidenceKind, readonly ReviewEvidenceDetail[]>> {
   const sorted = candidate.evidence.toSorted(
     (left, right) =>
       Math.abs(right.weight) - Math.abs(left.weight) || left.ruleId.localeCompare(right.ruleId),
