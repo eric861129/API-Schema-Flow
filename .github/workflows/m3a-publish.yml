@@ -1,118 +1,14 @@
 name: Publish verified M3-A implementation
 
 on:
-  push:
-    branches:
-      - feat/m3a-read-only-web-workspace
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: m3a-publish
-  cancel-in-progress: false
-
 jobs:
-  verify-and-publish:
-    if: github.actor != 'github-actions[bot]'
+  parked:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    env:
-      TURBO_TELEMETRY_DISABLED: "1"
     steps:
-      - name: Check out M3-A branch
-        uses: actions/checkout@v6
-        with:
-          ref: feat/m3a-read-only-web-workspace
-          fetch-depth: 0
-
-      - name: Reconstruct authenticated implementation patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp .m3a-upload/m3a.patch.gz /tmp/m3a.patch.gz
-          gzip --test /tmp/m3a.patch.gz
-          gzip --decompress --stdout /tmp/m3a.patch.gz > /tmp/m3a.patch
-          printf '%s  %s\n' \
-            '6e0703e89766d8d0ce7abe0fdc5c76388ff232471810b218f87631dd033459e3' \
-            '/tmp/m3a.patch' | sha256sum --check -
-          git apply --check /tmp/m3a.patch
-
-      - name: Apply implementation and remove temporary publication files
-        shell: bash
-        run: |
-          set -euo pipefail
-          git apply /tmp/m3a.patch
-          rm -rf .m3a-upload
-          rm -f \
-            .github/workflows/m3a-publish.yml \
-            .github/workflows/m3a-dev-workspace.yml \
-            .github/workflows/m3a-source-export.yml
-          git diff --check
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 11.24.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install frozen dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run complete core and Web verification
-        shell: bash
-        run: |
-          set -euo pipefail
-          pnpm ci:verify
-          pnpm test:flow-fixtures
-          pnpm test:inference-benchmark
-          pnpm test:inference-performance
-          pnpm test:review
-          pnpm test:export-arazzo
-          pnpm test:review-export-fixtures
-          pnpm check:web-fixture
-          pnpm build:web
-          pnpm check:web-bundle
-          git diff --check
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run browser, accessibility, and visual verification
-        run: pnpm test:web:e2e
-
-      - name: Commit and push verified M3-A tree
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'feat: complete M3-A read-only Web workspace'
-          git push origin HEAD:feat/m3a-read-only-web-workspace
-
-      - name: Upload browser evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: m3a-browser-evidence
-          path: |
-            apps/web/test-results
-            apps/web/playwright-report
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Report failure on Draft PR
-        if: failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          gh pr comment 13 --body "M3-A publication stopped before pushing the implementation. Inspect https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
+      - run: echo "Publisher is parked while the authenticated patch is staged."
