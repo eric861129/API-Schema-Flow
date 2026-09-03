@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - 'apps/web/src/review/**'
+      - 'apps/web/src/test/**'
       - 'packages/review/**'
       - 'docs/superpowers/specs/2026-09-03-m3b1-review-session-design.md'
       - 'docs/superpowers/plans/2026-09-03-m3b1-review-session.md'
@@ -36,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f apps/web/src/workspace/workspace-shell.tsx
+          test -f apps/web/src/app.tsx
           test -f apps/web/src/graph/flow-canvas.tsx
           test -f apps/web/src/outline/outline-view.tsx
           test -f apps/web/public/fixtures/reservation-workspace.json
@@ -74,12 +75,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm --filter @api-schema-flow/web test -- \
-            review-session.test.ts \
-            review-selectors.test.ts \
-            candidate-list.test.tsx \
-            review-detail.test.ts \
-            mapping-preview.test.tsx \
-            evidence-inspector.test.tsx
+          pnpm --filter @api-schema-flow/web exec vitest run \
+            src/review/review-session.test.ts \
+            src/review/review-selectors.test.ts \
+            src/review/candidate-list.test.tsx \
+            src/review/review-detail.test.ts \
+            src/review/mapping-preview.test.tsx \
+            src/review/evidence-inspector.test.tsx
           pnpm --filter @api-schema-flow/web typecheck
           pnpm --filter @api-schema-flow/web build
