@@ -17,7 +17,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{ts,tsx}'],
     rules: {
       'no-undef': 'off',
       '@typescript-eslint/consistent-type-imports': [
