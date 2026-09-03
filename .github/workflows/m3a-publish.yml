@@ -33,9 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           cp .m3a-upload/m3a.patch.gz /tmp/m3a.patch.gz
-          printf '%s  %s\n' \
-            'fc0ca8e85adf848efaa5de5b72b2e62e1dc25fb4c71e50bdab7151dc3a1035bf' \
-            '/tmp/m3a.patch.gz' | sha256sum --check -
+          gzip --test /tmp/m3a.patch.gz
           gzip --decompress --stdout /tmp/m3a.patch.gz > /tmp/m3a.patch
           printf '%s  %s\n' \
             '6e0703e89766d8d0ce7abe0fdc5c76388ff232471810b218f87631dd033459e3' \
