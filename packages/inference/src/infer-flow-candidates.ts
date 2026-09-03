@@ -6,6 +6,9 @@ import {
   type FlowDataMapping,
   type InferenceCandidate,
   type InferenceReport,
+  type NormalizedApiDocument,
+  type NormalizedSchema,
+  type SourcePointer,
 } from '@api-schema-flow/domain'
 import { DIAGNOSTIC_CODES, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
 import { canonicalizeJson, createMappingId } from '@api-schema-flow/flow'
@@ -28,8 +31,31 @@ import {
   genericOnlyEvidence,
   plausibleInferencePair,
 } from './rules.js'
-import { extractOperationSourceFields, extractOperationTargetFields } from './schema-fields.js'
+import {
+  extractOperationSourceFields,
+  extractOperationTargetFields,
+  type InferenceSchemaResolver,
+} from './schema-fields.js'
 import { confidenceBand, confidenceForScore } from './scoring.js'
+
+function sourcePointerKey(pointer: SourcePointer): string {
+  return `${pointer.uri}\u0000${pointer.pointer}`
+}
+
+function componentSchemaResolver(document: NormalizedApiDocument): InferenceSchemaResolver {
+  const schemas = new Map<string, NormalizedSchema>()
+  const visit = (schema: NormalizedSchema): void => {
+    const key = sourcePointerKey(schema.source)
+    if (schemas.has(key)) return
+    schemas.set(key, schema)
+    for (const nested of Object.values(schema.properties)) visit(nested)
+    if (schema.items !== undefined) visit(schema.items)
+    for (const nested of [...schema.allOf, ...schema.anyOf, ...schema.oneOf]) visit(nested)
+    if (typeof schema.additionalProperties === 'object') visit(schema.additionalProperties)
+  }
+  for (const component of document.componentSchemas) visit(component.schema)
+  return (reference) => schemas.get(sourcePointerKey(reference))
+}
 
 function endpointNodeMap(input: InferFlowCandidatesInput): Map<string, EndpointFlowNode> {
   return new Map(
@@ -53,6 +79,7 @@ function buildOperationIndex(
   for (const source of [...input.openApiSources].sort((left, right) =>
     left.sourceId.localeCompare(right.sourceId),
   )) {
+    const resolveSchema = componentSchemaResolver(source.document)
     for (const operation of [...source.document.operations].sort((left, right) =>
       left.id.localeCompare(right.id),
     )) {
@@ -67,8 +94,20 @@ function buildOperationIndex(
         })
         continue
       }
-      const sources = extractOperationSourceFields(source.sourceId, node, operation, config)
-      const targets = extractOperationTargetFields(source.sourceId, node, operation, config)
+      const sources = extractOperationSourceFields(
+        source.sourceId,
+        node,
+        operation,
+        config,
+        resolveSchema,
+      )
+      const targets = extractOperationTargetFields(
+        source.sourceId,
+        node,
+        operation,
+        config,
+        resolveSchema,
+      )
       sourceFields.push(...sources.fields)
       targetFields.push(...targets.fields)
       diagnostics.push(...sources.diagnostics, ...targets.diagnostics)

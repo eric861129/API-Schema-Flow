@@ -10,6 +10,8 @@ const requiredPackages = [
   'arazzo',
   'flow',
   'inference',
+  'review',
+  'exporter-arazzo',
   'cli',
 ]
 
@@ -23,6 +25,9 @@ const requiredScripts = [
   'test:flow-fixtures',
   'test:inference-benchmark',
   'test:inference-performance',
+  'test:review',
+  'test:export-arazzo',
+  'test:review-export-fixtures',
   'boundaries:check',
   'ci:verify',
 ]

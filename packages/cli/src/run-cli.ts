@@ -3,12 +3,22 @@ import type { InferenceReport, NormalizedApiDocument } from '@api-schema-flow/do
 import type { Diagnostic } from '@api-schema-flow/diagnostics'
 import type { BuildDeclaredFlowGraphsInput, DeclaredFlowProjection } from '@api-schema-flow/flow'
 import type { InferFlowCandidatesInput } from '@api-schema-flow/inference'
+import type { ArazzoExportArtifact, ExportArazzoInput } from '@api-schema-flow/exporter-arazzo'
+import type {
+  MaterializeReviewedGraphInput,
+  MaterializeReviewedGraphResult,
+  ParseReviewDecisionSetResult,
+} from '@api-schema-flow/review'
 import type { ProcessOpenApiLocationOptions } from '@api-schema-flow/openapi'
 import { redactText } from '@api-schema-flow/redaction'
 import type { SourceAcquirer, SourceDocument, SourceLocation } from '@api-schema-flow/source-loader'
 
+import { executeExportArazzoCommand } from './export-arazzo-command.js'
+import { EXPORT_ARAZZO_USAGE, parseExportArazzoArguments } from './export-arazzo-options.js'
 import { executeInferCommand } from './infer-command.js'
 import { INFER_USAGE, parseInferArguments } from './infer-options.js'
+import { executeReviewCommand } from './review-command.js'
+import { parseReviewArguments, REVIEW_USAGE } from './review-options.js'
 import { executeValidateCommand } from './validate-command.js'
 import { parseValidateArguments, VALIDATE_USAGE } from './validate-options.js'
 
@@ -37,6 +47,19 @@ export interface CliDependencies {
   ) => CliArazzoProcessResult | Promise<CliArazzoProcessResult>
   readonly buildDeclaredFlowGraphs?: (input: BuildDeclaredFlowGraphsInput) => DeclaredFlowProjection
   readonly inferFlowCandidates?: (input: InferFlowCandidatesInput) => InferenceReport<Diagnostic>
+  readonly readTextFile?: (path: string) => Promise<string>
+  readonly parseReviewDecisionSet?: (input: unknown) => ParseReviewDecisionSetResult
+  readonly materializeReviewedOperationGraph?: (
+    input: MaterializeReviewedGraphInput,
+  ) => MaterializeReviewedGraphResult
+  readonly exportArazzo?: (input: ExportArazzoInput) => Promise<ArazzoExportArtifact>
+  readonly writeTextFile?: (
+    path: string,
+    contents: string,
+    options?: { readonly flag?: string },
+  ) => Promise<void>
+  readonly renameFile?: (from: string, to: string) => Promise<void>
+  readonly removeFile?: (path: string) => Promise<void>
   readonly resolvePath?: (...paths: string[]) => string
   readonly dirname?: (path: string) => string
   readonly cwd?: () => string
@@ -69,7 +92,27 @@ export async function runCli(
       return await executeInferCommand(parsed.options, dependencies, io)
     }
 
-    io.stderr(`${VALIDATE_USAGE}\n${INFER_USAGE}\n`)
+    if (command === 'review') {
+      const parsed = parseReviewArguments(argv)
+      if (parsed.options === undefined) {
+        const messages = parsed.diagnostics.map(({ message }) => message).join('\n')
+        io.stderr(`${messages}\n${REVIEW_USAGE}\n`)
+        return 2
+      }
+      return await executeReviewCommand(parsed.options, dependencies, io)
+    }
+
+    if (command === 'export-arazzo') {
+      const parsed = parseExportArazzoArguments(argv)
+      if (parsed.options === undefined) {
+        const messages = parsed.diagnostics.map(({ message }) => message).join('\n')
+        io.stderr(`${messages}\n${EXPORT_ARAZZO_USAGE}\n`)
+        return 2
+      }
+      return await executeExportArazzoCommand(parsed.options, dependencies, io)
+    }
+
+    io.stderr(`${VALIDATE_USAGE}\n${INFER_USAGE}\n${REVIEW_USAGE}\n${EXPORT_ARAZZO_USAGE}\n`)
     return 2
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

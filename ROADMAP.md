@@ -55,6 +55,8 @@
 
 ## M2 — Arazzo and Evidence-based Inference
 
+> 狀態：**已完成（M2-A～M2-D）**。Headless Core 已涵蓋 Arazzo、Declared Graph、Inference Candidate、Review Decision、Accepted Graph 與 Canonical Arazzo Export。
+
 **目標：** 將端點資料提升為標準化、可解釋的 Workflow 候選。
 
 交付內容：

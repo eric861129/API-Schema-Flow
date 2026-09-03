@@ -30,7 +30,10 @@
     "boundaries:check": "node tooling/scripts/check-boundaries.mjs",
     "ci:verify": "pnpm workspace:check && pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm test:integration && pnpm boundaries:check",
     "test:inference-benchmark": "pnpm --filter @api-schema-flow/inference test:integration -- benchmark.integration.test.ts",
-    "test:inference-performance": "pnpm --filter @api-schema-flow/inference test:integration -- performance.integration.test.ts"
+    "test:inference-performance": "pnpm --filter @api-schema-flow/inference test:integration -- performance.integration.test.ts",
+    "test:review-export-fixtures": "pnpm --filter @api-schema-flow/exporter-arazzo test:integration -- review-export-fixtures.integration.test.ts",
+    "test:review": "pnpm --filter @api-schema-flow/review test",
+    "test:export-arazzo": "pnpm --filter @api-schema-flow/exporter-arazzo test && pnpm --filter @api-schema-flow/exporter-arazzo test:integration"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

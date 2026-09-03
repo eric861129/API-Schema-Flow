@@ -14,6 +14,15 @@ export interface SourceStandardRef {
   readonly source: SourcePointer
 }
 
+export interface FlowEdgeReviewMetadata {
+  readonly decisionId: string
+  readonly candidateId?: string
+  readonly candidateFingerprint?: string
+  readonly ruleSetVersion?: string
+  readonly derivedFromCandidateId?: string
+  readonly evidenceRuleIds: readonly string[]
+}
+
 export interface FlowEdge {
   readonly id: string
   readonly kind: FlowEdgeKind
@@ -23,4 +32,5 @@ export interface FlowEdge {
   readonly status: FlowEdgeStatus
   readonly mappings: readonly FlowDataMapping[]
   readonly sourceStandardRefs: readonly SourceStandardRef[]
+  readonly review?: FlowEdgeReviewMetadata
 }

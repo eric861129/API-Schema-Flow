@@ -1,0 +1,283 @@
+{
+  "graph": {
+    "schemaVersion": "1.0",
+    "id": "graph:operation-topology:cli",
+    "kind": "operation-topology",
+    "title": "Operation topology",
+    "sourceIds": [
+      "cli"
+    ],
+    "nodes": [
+      {
+        "kind": "endpoint",
+        "id": "endpoint:cli:operation:get:/reservations/{id}",
+        "sourceId": "cli",
+        "operationKey": "operation:get:/reservations/{id}",
+        "method": "get",
+        "path": "/reservations/{id}",
+        "operationId": "getReservation",
+        "source": {
+          "uri": "memory://review/reservation/openapi.yaml",
+          "pointer": "#/paths/~1reservations~1{id}/get"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:cli:operation:get:/spaces/available",
+        "sourceId": "cli",
+        "operationKey": "operation:get:/spaces/available",
+        "method": "get",
+        "path": "/spaces/available",
+        "operationId": "listAvailableSpaces",
+        "source": {
+          "uri": "memory://review/reservation/openapi.yaml",
+          "pointer": "#/paths/~1spaces~1available/get"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:cli:operation:post:/auth/login",
+        "sourceId": "cli",
+        "operationKey": "operation:post:/auth/login",
+        "method": "post",
+        "path": "/auth/login",
+        "operationId": "login",
+        "source": {
+          "uri": "memory://review/reservation/openapi.yaml",
+          "pointer": "#/paths/~1auth~1login/post"
+        }
+      },
+      {
+        "kind": "endpoint",
+        "id": "endpoint:cli:operation:post:/reservations",
+        "sourceId": "cli",
+        "operationKey": "operation:post:/reservations",
+        "method": "post",
+        "path": "/reservations",
+        "operationId": "createReservation",
+        "source": {
+          "uri": "memory://review/reservation/openapi.yaml",
+          "pointer": "#/paths/~1reservations/post"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge:data:47a1e751c609f0b0",
+        "kind": "data",
+        "sourceNodeId": "endpoint:cli:operation:post:/auth/login",
+        "targetNodeId": "endpoint:cli:operation:get:/reservations/{id}",
+        "provenance": "manual",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:6852e341a59800ae",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "header-parameter",
+              "name": "Authorization"
+            },
+            "aliases": [],
+            "sourcePointers": [
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1auth~1login/post/responses/200/content/application~1json/schema/properties/token"
+              },
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1reservations~1{id}/get/security"
+              }
+            ],
+            "transform": {
+              "kind": "template",
+              "raw": "Bearer {$steps.source.outputs.token}"
+            }
+          }
+        ],
+        "sourceStandardRefs": [],
+        "review": {
+          "decisionId": "decision:d5a7ea43148c2389",
+          "candidateId": "candidate:e5f15fe38fed7d6b",
+          "candidateFingerprint": "e5f15fe38fed7d6b",
+          "ruleSetVersion": "m2c-v1",
+          "derivedFromCandidateId": "candidate:e5f15fe38fed7d6b",
+          "evidenceRuleIds": [
+            "INF-AUTH-BEARER",
+            "INF-SCHEMA-TYPE"
+          ]
+        }
+      },
+      {
+        "id": "edge:data:c4bd88d4086d8460",
+        "kind": "data",
+        "sourceNodeId": "endpoint:cli:operation:post:/auth/login",
+        "targetNodeId": "endpoint:cli:operation:post:/reservations",
+        "provenance": "manual",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:6852e341a59800ae",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/token"
+            },
+            "target": {
+              "kind": "header-parameter",
+              "name": "Authorization"
+            },
+            "aliases": [],
+            "sourcePointers": [
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1auth~1login/post/responses/200/content/application~1json/schema/properties/token"
+              },
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1reservations/post/security"
+              }
+            ],
+            "transform": {
+              "kind": "template",
+              "raw": "Bearer {$steps.source.outputs.token}"
+            }
+          }
+        ],
+        "sourceStandardRefs": [],
+        "review": {
+          "decisionId": "decision:4fb73e9f1f807e17",
+          "candidateId": "candidate:95e032537a09646b",
+          "candidateFingerprint": "95e032537a09646b",
+          "ruleSetVersion": "m2c-v1",
+          "derivedFromCandidateId": "candidate:95e032537a09646b",
+          "evidenceRuleIds": [
+            "INF-AUTH-BEARER",
+            "INF-SCHEMA-TYPE"
+          ]
+        }
+      },
+      {
+        "id": "edge:data:f6aec3c266903faf",
+        "kind": "data",
+        "sourceNodeId": "endpoint:cli:operation:post:/reservations",
+        "targetNodeId": "endpoint:cli:operation:get:/reservations/{id}",
+        "provenance": "inferred",
+        "status": "accepted",
+        "mappings": [
+          {
+            "id": "mapping:26751498dd4bef7e",
+            "source": {
+              "kind": "response-body",
+              "pointer": "#/id"
+            },
+            "target": {
+              "kind": "path-parameter",
+              "name": "id"
+            },
+            "aliases": [],
+            "sourcePointers": [
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1reservations/post/responses/201/content/application~1json/schema/allOf/1/properties/id"
+              },
+              {
+                "uri": "memory://review/reservation/openapi.yaml",
+                "pointer": "#/paths/~1reservations~1{id}/get/parameters/0"
+              }
+            ]
+          }
+        ],
+        "sourceStandardRefs": [],
+        "review": {
+          "decisionId": "decision:e3cdb83857559346",
+          "candidateId": "candidate:be5d44220238b8a0",
+          "candidateFingerprint": "be5d44220238b8a0",
+          "ruleSetVersion": "m2c-v1",
+          "evidenceRuleIds": [
+            "INF-GENERIC-ID",
+            "INF-LIFECYCLE-CREATE-READ",
+            "INF-NAME-EXACT",
+            "INF-NAME-NORMALIZED",
+            "INF-OPERATION-NAME",
+            "INF-RESOURCE-ID",
+            "INF-RESOURCE-PATH",
+            "INF-SCHEMA-FORMAT",
+            "INF-SCHEMA-TYPE",
+            "INF-TAG-SAME"
+          ]
+        }
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "decisionId": "decision:4fb73e9f1f807e17",
+      "candidateId": "candidate:95e032537a09646b",
+      "state": "applied",
+      "edgeId": "edge:data:c4bd88d4086d8460"
+    },
+    {
+      "decisionId": "decision:a387a2ed9bd01c7f",
+      "candidateId": "candidate:a9e7af512f4fc6b9",
+      "state": "stale",
+      "reason": "Candidate fingerprint or rule-set version changed."
+    },
+    {
+      "decisionId": "decision:e3cdb83857559346",
+      "candidateId": "candidate:be5d44220238b8a0",
+      "state": "applied",
+      "edgeId": "edge:data:f6aec3c266903faf"
+    },
+    {
+      "decisionId": "decision:fcfcb328f11e962a",
+      "candidateId": "candidate:be5d44220238b8a0",
+      "state": "superseded",
+      "reason": "Superseded by revision 2."
+    },
+    {
+      "decisionId": "decision:4efd05aae08f1c38",
+      "candidateId": "candidate:c0648522d046b009",
+      "state": "rejected"
+    },
+    {
+      "decisionId": "decision:d5a7ea43148c2389",
+      "candidateId": "candidate:e5f15fe38fed7d6b",
+      "state": "applied",
+      "edgeId": "edge:data:47a1e751c609f0b0"
+    },
+    {
+      "decisionId": "decision:04c187a1cf245791",
+      "candidateId": "candidate:orphaned",
+      "state": "orphaned",
+      "reason": "The reviewed candidate is not present."
+    }
+  ],
+  "metrics": {
+    "appliedCount": 3,
+    "rejectedCount": 1,
+    "staleCount": 1,
+    "orphanedCount": 1,
+    "supersededCount": 1,
+    "alreadyPresentCount": 0
+  },
+  "diagnostics": [
+    {
+      "code": "ASF-REV-1003",
+      "severity": "warning",
+      "message": "Review decision \"decision:a387a2ed9bd01c7f\" is stale for the current candidate.",
+      "details": {
+        "candidateId": "candidate:a9e7af512f4fc6b9"
+      }
+    },
+    {
+      "code": "ASF-REV-1004",
+      "severity": "warning",
+      "message": "Review decision \"decision:04c187a1cf245791\" references an absent candidate.",
+      "details": {
+        "candidateId": "candidate:orphaned"
+      }
+    }
+  ]
+}
