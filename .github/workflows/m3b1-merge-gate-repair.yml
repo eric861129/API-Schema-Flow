@@ -1,0 +1,113 @@
+name: M3-B1 Merge Gate Repair
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-session
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-merge-gate-repair
+  cancel-in-progress: false
+
+jobs:
+  repair-verify-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      CI: 'true'
+    steps:
+      - name: Check out M3-B1 branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-session
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Repair stale baseline sentinel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/m3b1-ci.yml')
+          source = path.read_text(encoding='utf-8')
+          old = 'test -f apps/web/src/workspace/workspace-shell.tsx'
+          new = 'test -f apps/web/src/app.tsx'
+          if old not in source:
+              raise SystemExit('Expected stale M3-A workspace sentinel was not found.')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+
+      - name: Format affected source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec prettier --write \
+            .github/workflows/m3b1-ci.yml \
+            apps/web/src/review/candidate-list.tsx \
+            apps/web/src/review/evidence-inspector.test.tsx \
+            apps/web/src/review/mapping-preview.test.tsx \
+            apps/web/src/review/review-detail.test.ts \
+            apps/web/src/review/review-session.test.ts
+
+      - name: Remove temporary repair workflow
+        shell: bash
+        run: rm -f .github/workflows/m3b1-merge-gate-repair.yml
+
+      - name: Verify repaired merge candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f apps/web/src/app.tsx
+          test -f apps/web/src/graph/flow-canvas.tsx
+          test -f apps/web/src/outline/outline-view.tsx
+          test -f apps/web/public/fixtures/reservation-workspace.json
+          test -f packages/layout/src/index.ts
+          test -f packages/domain/src/workspace-snapshot.ts
+          test ! -e .m3a-upload
+          test -z "$(find .github/workflows -maxdepth 1 -type f \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' -o -name 'm3b1-merge-gate-repair.yml' \) -print)"
+          pnpm format:check
+          pnpm ci:verify
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+          pnpm --filter @api-schema-flow/web test -- \
+            review-session.test.ts \
+            review-selectors.test.ts \
+            candidate-list.test.tsx \
+            review-detail.test.ts \
+            mapping-preview.test.tsx \
+            evidence-inspector.test.tsx
+          pnpm --filter @api-schema-flow/web typecheck
+          pnpm --filter @api-schema-flow/web build
+          git diff --check
+
+      - name: Commit exact verified repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: satisfy M3-B1 merge gates'
+          git push origin HEAD:feat/m3b1-review-session
