@@ -39,6 +39,7 @@ export {
   ACCEPTED_FLOW_STATUS,
   DECLARED_FLOW_PROVENANCE,
   type FlowEdge,
+  type FlowEdgeReviewMetadata,
   type FlowEdgeKind,
   type FlowEdgeProvenance,
   type FlowEdgeStatus,
@@ -57,3 +58,12 @@ export {
   type InferenceMetrics,
   type InferenceReport,
 } from './inference.js'
+
+export {
+  REVIEW_DECISION_SCHEMA_VERSION,
+  type ReviewDecision,
+  type ReviewDecisionAction,
+  type ReviewDecisionOutcome,
+  type ReviewDecisionOutcomeState,
+  type ReviewDecisionSet,
+} from './review-decision.js'

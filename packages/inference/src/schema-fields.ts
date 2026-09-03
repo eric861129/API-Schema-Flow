@@ -18,6 +18,8 @@ import type {
 } from './contracts.js'
 import { normalizeFieldName, resourceKeyForPath } from './name-normalization.js'
 
+export type InferenceSchemaResolver = (reference: SourcePointer) => NormalizedSchema | undefined
+
 interface TraversalContext {
   readonly config: InferenceConfig
   readonly diagnostics: Diagnostic[]
@@ -25,6 +27,7 @@ interface TraversalContext {
   readonly sourceId: string
   readonly operationNodeId: string
   readonly resourceKey: string
+  readonly resolveSchema?: InferenceSchemaResolver
 }
 
 interface SchemaLeaf {
@@ -77,6 +80,23 @@ function traverseSchema(
   }
   if (ancestors.has(schema)) return
   ancestors.add(schema)
+
+  if (schema.resolvedRef !== undefined && context.resolveSchema !== undefined) {
+    const resolved = context.resolveSchema(schema.resolvedRef)
+    if (resolved !== undefined && resolved !== schema) {
+      traverseSchema(
+        resolved,
+        tokens,
+        arrayDepth,
+        variant,
+        required,
+        depth + 1,
+        ancestors,
+        context,
+        leaves,
+      )
+    }
+  }
 
   const properties = Object.entries(schema.properties).sort(([left], [right]) =>
     left.localeCompare(right),
@@ -263,6 +283,7 @@ export function extractOperationSourceFields(
   node: EndpointFlowNode,
   operation: NormalizedOperation,
   config: InferenceConfig,
+  resolveSchema?: InferenceSchemaResolver,
 ): InferenceFieldExtractionResult<InferenceSourceField> {
   const diagnostics: Diagnostic[] = []
   const context: TraversalContext = {
@@ -272,6 +293,7 @@ export function extractOperationSourceFields(
     sourceId,
     operationNodeId: node.id,
     resourceKey: resourceKeyForPath(operation.path),
+    ...(resolveSchema === undefined ? {} : { resolveSchema }),
   }
   const fields: InferenceSourceField[] = []
   for (const response of successResponses(operation)) {
@@ -313,6 +335,7 @@ export function extractOperationTargetFields(
   node: EndpointFlowNode,
   operation: NormalizedOperation,
   config: InferenceConfig,
+  resolveSchema?: InferenceSchemaResolver,
 ): InferenceFieldExtractionResult<InferenceTargetField> {
   const diagnostics: Diagnostic[] = []
   const context: TraversalContext = {
@@ -322,6 +345,7 @@ export function extractOperationTargetFields(
     sourceId,
     operationNodeId: node.id,
     resourceKey: resourceKeyForPath(operation.path),
+    ...(resolveSchema === undefined ? {} : { resolveSchema }),
   }
   const fields = operation.parameters.map((parameter) =>
     targetField(context, {

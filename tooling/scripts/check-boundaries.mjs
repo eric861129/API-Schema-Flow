@@ -13,6 +13,10 @@ const forbiddenFlowRuntimeImport =
   /(?:from|import\()\s*['"](?:react|@xyflow\/react|elkjs|fastify|hono|msw|@api-schema-flow\/(?:mock-runtime|execution|web|ui))(?:['"/])/
 const forbiddenInferenceRuntimeImport =
   /(?:from|import\()\s*['"](?:@api-schema-flow\/(?:openapi|arazzo|source-loader|mock-runtime|execution|web|ui)|react|@xyflow\/react|elkjs|fastify|hono|msw)(?:['"/])/
+const forbiddenReviewRuntimeImport =
+  /(?:from\s+|import\s*\(\s*|import\s+)['"](?:@api-schema-flow\/(?:openapi|arazzo|source-loader|inference|exporter-arazzo|cli|mock-runtime|execution|web|ui)|react|@xyflow\/react|elkjs|fastify|hono|msw)(?:['"/])/
+const forbiddenExporterRuntimeImport =
+  /(?:from\s+|import\s*\(\s*|import\s+)['"](?:@api-schema-flow\/(?:openapi|inference|review|exporter-mermaid|exporter-report|cli|mock-runtime|execution|web|ui)|react|@xyflow\/react|elkjs|fastify|hono|msw)(?:['"/])/
 const forbiddenInferenceDependencies = new Set([
   '@api-schema-flow/openapi',
   '@api-schema-flow/arazzo',
@@ -27,6 +31,19 @@ const forbiddenInferenceDependencies = new Set([
   'fastify',
   'hono',
   'msw',
+])
+const allowedReviewDependencies = new Set([
+  '@api-schema-flow/diagnostics',
+  '@api-schema-flow/domain',
+  '@api-schema-flow/flow',
+])
+const allowedExporterDependencies = new Set([
+  '@api-schema-flow/arazzo',
+  '@api-schema-flow/diagnostics',
+  '@api-schema-flow/domain',
+  '@api-schema-flow/flow',
+  '@api-schema-flow/source-loader',
+  'yaml',
 ])
 const forbiddenFlowDependencies = new Set([
   'react',
@@ -107,6 +124,24 @@ async function collectFlowDependencyViolations() {
     .map((dependency) => `packages/flow/package.json: forbidden Flow dependency ${dependency}`)
 }
 
+async function collectAllowedDependencyViolations(packageName, allowedDependencies) {
+  const packagePath = path.join(packagesDirectory, packageName, 'package.json')
+  const packageJson = JSON.parse(await readFile(packagePath, 'utf8'))
+  const dependencies = {
+    ...(packageJson.dependencies ?? {}),
+    ...(packageJson.optionalDependencies ?? {}),
+    ...(packageJson.peerDependencies ?? {}),
+  }
+
+  return Object.keys(dependencies)
+    .filter((dependency) => !allowedDependencies.has(dependency))
+    .sort()
+    .map(
+      (dependency) =>
+        `packages/${packageName}/package.json: forbidden ${packageName} dependency ${dependency}`,
+    )
+}
+
 async function main() {
   const packageFiles = await walk(packagesDirectory)
   const violations = []
@@ -149,6 +184,19 @@ async function main() {
         `${relative}: Flow core must not depend on UI, layout, server, mock, or execution runtimes`,
       )
     }
+
+    if (relative.startsWith('packages/review/src/') && forbiddenReviewRuntimeImport.test(content)) {
+      violations.push(`${relative}: Review core must only depend on Domain, Diagnostics, and Flow`)
+    }
+
+    if (
+      relative.startsWith('packages/exporter-arazzo/src/') &&
+      forbiddenExporterRuntimeImport.test(content)
+    ) {
+      violations.push(
+        `${relative}: Arazzo exporter must not depend on parser implementations, inference, review, UI, server, mock, or execution runtimes`,
+      )
+    }
   }
 
   violations.push(
@@ -164,6 +212,8 @@ async function main() {
     )),
     ...(await collectFlowDependencyViolations()),
     ...(await collectInferenceDependencyViolations()),
+    ...(await collectAllowedDependencyViolations('review', allowedReviewDependencies)),
+    ...(await collectAllowedDependencyViolations('exporter-arazzo', allowedExporterDependencies)),
   )
 
   if (violations.length > 0) {

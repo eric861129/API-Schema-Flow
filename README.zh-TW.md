@@ -4,24 +4,28 @@
 
 API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha**。目前 Repository 已完成 M0 Foundation、M1 OpenAPI Ingestion Core、M2-A Arazzo Core、M2-B Declared Flow Graph Foundation 與 M2-C Evidence-based Inference Core。`validate` 指令可自動辨識 OpenAPI 或 Arazzo，`infer` 則可從 OpenAPI 產生決定性、可審核的 Inference Candidate。Review Decision、視覺化 Workspace、Stateful Mock、Workflow Executor 與 Exporter 仍在 Roadmap 中，目前尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。目前 Repository 已完成 M0 Foundation、M1 OpenAPI Ingestion Core，以及完整的 Headless M2 Workflow Layer：Arazzo Parse、Declared Graph、Evidence-based Inference、明確 Review Decision、Accepted Graph Materialization 與決定性 Arazzo Export。CLI 已提供 `validate`、`infer`、`review` 與 `export-arazzo`。視覺化 Workspace、Stateful Mock、Workflow Executor、Live Trace 與非 Arazzo Exporter 仍在 Roadmap 中，目前尚未發布 npm 套件。
 
 ## 現在已經能做什麼？
 
 目前版本已具備：
 
 - pnpm、Turborepo 與 TypeScript Strict Monorepo；
-- Parser-independent 的 Domain、Diagnostics、Redaction、Project Config、Source Loader、OpenAPI、Arazzo、Flow、Inference 與 CLI Package；
+- Parser-independent 的 Domain、Diagnostics、Redaction、Project Config、Source Loader、OpenAPI、Arazzo、Flow、Inference、Review、Arazzo Exporter 與 CLI Package；
 - 受 Policy 控制的本機與 HTTPS Source Loading，包含路徑、Symlink、Protocol、DNS/IP、Redirect、Timeout、大小、文件數量與 Reference Depth 限制；
 - OpenAPI 3.0／3.1 決定性 Normalization、3.2 Compatibility Diagnostic、Multi-file `$ref` Graph、Fingerprint 與 Link Object；
 - Arazzo 1.1.x JSON／YAML Parse／Preserve、Semantic Validation、Typed Runtime Expression AST、Dependency Analysis、Source URI Resolution、抽象 Operation Binding 與 Support Analysis；
 - 將 OpenAPI Link 與 Arazzo Workflow 轉換成版本化 Declared Graph，包括 Endpoint Node、Workflow Step Node、Control Edge、Dependency Edge 與 Structural Data Mapping；
 - 決定性的 Node、Edge、Mapping、Graph 與 Inference Candidate ID，並保留 Source Provenance 與跨標準宣告合併資訊；
 - 保守的 Evidence-based Inference Engine，具備有界 Structural Index、Hard Blocker、可解釋 Scoring、Confidence Band、Declared-edge Suppression、Top-K Ranking、Benchmark Metrics，且永不自動接受 Candidate；
+- Immutable 的 `accept`、`reject`、`edit` Review Decision，支援決定性 Identity、Revision Supersession、Stale／Orphaned 說明，以及 Accepted Inferred／Manual Edge Materialization；
+- 明確 Workflow Plan 與決定性 Arazzo 1.1 YAML／JSON Export，具備 Canonical Ordering、精確 SHA-256 Content Hash、Parser Self-validation，且不會輸出 Candidate／Rejected Edge；
 - 可自動辨識 OpenAPI 或 Arazzo 的 `schema-flow validate <file-or-url> [--json]`；
 - 可組合 OpenAPI Ingestion、Declared Operation Graph 與 Inference 的 `schema-flow infer <openapi-file-or-url> [--json]`；
+- 以 Decision Set 產生 Accepted-only Graph 的 `schema-flow review <openapi-file-or-url> --decisions <decision-set.json> [--json]`；
+- 將明確排序的 Accepted Subset 輸出成 Arazzo 的 `schema-flow export-arazzo <openapi-file-or-url> --decisions <decision-set.json> --workflow <workflow-plan.json>`；
 - Structured Diagnostic、Stable Source Pointer、敏感資料遮罩與穩定 Exit Code；
-- 由正式 Parser 驗證的 OpenAPI、Arazzo、Declared Flow 與 Inference Fixture，以及 Unit、Integration、Conformance、Security、Performance、Benchmark 與 Boundary Test；
+- 由正式 Parser 驗證的 OpenAPI、Arazzo、Declared Flow、Inference、Review 與 Export Fixture，以及 Unit、Integration、Conformance、Security、Performance、Benchmark、Golden 與 Boundary Test；
 - 使用 Frozen Lockfile 的 GitHub Actions 驗證流程。
 
 ## 執行目前的垂直切片
@@ -72,6 +76,27 @@ node packages/cli/bin/schema-flow.mjs \
 
 Inference 可使用 `--minimum-confidence <0..1>`、`--top-k <n>`、`--max-candidates <n>` 與 `--include-low` 調整輸出，也可沿用 `--allow-path`、`--allow-http`、`--allow-private-network` 與 Retrieval Budget 等既有 Source Policy 參數。
 
+套用 Canonical Review Decision 並檢視 Accepted Graph：
+
+```bash
+node packages/cli/bin/schema-flow.mjs \
+  review fixtures/review/reservation/openapi.yaml \
+  --decisions fixtures/review/reservation/decision-set.json \
+  --json
+```
+
+將明確排序的 Accepted Subset 匯出成 Canonical Arazzo YAML：
+
+```bash
+node packages/cli/bin/schema-flow.mjs \
+  export-arazzo fixtures/review/reservation/openapi.yaml \
+  --decisions fixtures/review/reservation/decision-set.json \
+  --workflow fixtures/review/reservation/workflow-plan.json \
+  --format yaml
+```
+
+使用 `--output <path>` 寫入檔案；除非明確提供 `--force`，否則不會覆寫既有檔案。`--format json` 代表輸出 Arazzo JSON，`--json` 則代表輸出機器可讀的 CLI Report。
+
 執行 Repository 品質檢查：
 
 ```bash
@@ -79,6 +104,9 @@ pnpm ci:verify
 pnpm test:flow-fixtures
 pnpm test:inference-benchmark
 pnpm test:inference-performance
+pnpm test:review
+pnpm test:export-arazzo
+pnpm test:review-export-fixtures
 ```
 
 成功驗證 OpenAPI 時會得到：
@@ -113,7 +141,7 @@ Support: supported
 Validation completed successfully.
 ```
 
-Inference 輸出會包含 Candidate 數量、Confidence Band、已評估與被阻擋的 Pair、被 Declared Mapping 抑制的數量、Evidence Rule ID、Diagnostic 與決定性的 Candidate 資料。所有輸出都固定維持 `provenance: inferred`、`status: candidate`，直到未來 Review Decision Layer 明確接受、拒絕或修改為止。
+Inference 輸出會包含 Candidate 數量、Confidence Band、已評估與被阻擋的 Pair、被 Declared Mapping 抑制的數量、Evidence Rule ID、Diagnostic 與決定性的 Candidate 資料。每個 Inference 結果都固定維持 `provenance: inferred`、`status: candidate`。只有明確且有效的 M2-D Decision 能改變 Authoritative Graph：`accept` 形成 `inferred + accepted`、`edit` 形成 `manual + accepted`；`reject`、Stale、Orphaned、Superseded、Conflict 或 Invalid Decision 都不會建立 Edge。
 
 ## 為什麼需要這個專案？
 
@@ -132,15 +160,15 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 |---|---|---|
 | OpenAPI 匯入 | 本機／HTTPS YAML 與 JSON、受 Policy 控制的 Multi-file `$ref`、決定性 Fingerprint | 擴充公開 Conformance Corpus 與 Browser Source Adapter |
 | OpenAPI Normalization | Stable ID、Source Pointer、Schema、Security、Server、Link Object、Compatibility 與 Ambiguity Diagnostic | 持續提供正規化欄位給 Flow 與 Inference Layer |
-| Arazzo Core | Arazzo 1.1.x Parse／Preserve、Semantic Validation、Runtime Expression AST、DAG Analysis、URI 與抽象 Operation Resolution、Support Profile | 編輯、Export Round-trip 與支援子集合執行 |
+| Arazzo Core | Arazzo 1.1.x Parse／Preserve、Semantic Validation、Runtime Expression AST、DAG Analysis、URI 與抽象 Operation Resolution、Support Profile | 視覺編輯與支援子集合執行 |
 | Declared Flow Graph | OpenAPI Link 與 Arazzo Step Order、`dependsOn`、Runtime Expression Mapping 已轉成版本化 `declared + accepted` Graph | 作為 Inference、Review UI、Export、Execution 與 Change Impact 的共同輸入 |
-| Evidence-based Inference | 已實作 Deterministic Candidate Generation、Blocker、Evidence、Scoring、Confidence Band、Stable ID、Declared Suppression、Benchmark 與 Performance Budget | Review Decision、Edited Mapping、Persistence、Invalidation 與 Accepted Inferred／Manual Edge |
-| CLI | 已有 `validate <file-or-url> [--json]` 與 `infer <openapi-file-or-url> [--json]` | 預計增加 `open`、`review`、`mock`、`run`、`export` |
+| Evidence-based Inference | 已實作 Candidate、明確 Accept／Reject／Edit、Stale／Orphan Detection、Revision Supersession 與 Accepted Inferred／Manual Edge Materialization | Web Workspace 的互動式 Review 與 Project File Persistence |
+| CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
 | 視覺拓撲 | 目前只有設計規格與概念圖 | React Flow 節點與連線，使用 ELK Layered Layout |
-| 依賴推導 | Declared Relationship 與 Evidence-based Inferred Candidate 都已實作；Candidate 不會自動接受 | Human Review、Decision Persistence 與 Accepted Graph Materialization |
+| 依賴推導 | Declared Relationship、Inferred Candidate、Immutable Review Decision 與 Accepted-only Graph Materialization 都已實作；Candidate 不會自動接受 | 互動式 Review UI 與 Durable Project Snapshot Persistence |
 | Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
 | Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
-| Live Trace 與 Export | 尚未實作 | Live Trace、Arazzo、Mermaid、Project JSON 與執行報告 |
+| Live Trace 與 Export | 已實作決定性、可由 Parser 驗證的 Arazzo 1.1 YAML／JSON Export | Live Trace、Mermaid、Project JSON 與執行報告 |
 | 變更影響 | Post-MVP | Flow-aware OpenAPI Diff 與 GitHub 整合 |
 
 ## 目標使用體驗
@@ -170,7 +198,7 @@ API Schema Flow 不會把所有自動產生的連線都視為事實。每條 Edg
 - **Inferred**：由確定性規則推導，包含 Confidence 與 Evidence Breakdown。
 - **Observed**：保留給未來從 Trace、HAR、OpenTelemetry 或 Proxy Traffic 取得的證據。
 
-M2-B 只產生標準明確宣告的 `declared + accepted` Edge。M2-C 只產生 `inferred + candidate`：先套用安全 Hard Constraint，弱 Generic ID 證據會被限制在可見 Confidence 以下，而且 Candidate 絕不會被系統自行轉成正式 Accepted Graph Truth。
+M2-B 只產生標準明確宣告的 `declared + accepted` Edge。M2-C 只產生 `inferred + candidate`：先套用安全 Hard Constraint，弱 Generic ID 證據會被限制在可見 Confidence 以下，而且 Candidate 絕不會被系統自行轉成正式 Accepted Graph Truth。M2-D 加入明確的人工作業邊界，將有效 Decision Materialize 成 Accepted Inferred／Manual Edge，並且只會把明確排序的 Accepted Subset 輸出成 Arazzo。
 
 ## 架構摘要
 
@@ -194,7 +222,7 @@ flowchart LR
     RUN --> TRACE[Live Trace / Run Report]
 ```
 
-目前已完成的 Core 會將 Framework 與 Parser 細節封裝在 Package Boundary 之後，讓 Domain、Diagnostics、Redaction、Config、Source Loading、OpenAPI Normalization、Arazzo Normalization、Declared Graph Projection、Evidence-based Inference 與 CLI 不直接依賴未來的 React、Fastify、MSW 或 ELK Adapter。OpenAPI 與 Arazzo Parser Package 維持雙向獨立；`@api-schema-flow/flow` 負責組合已宣告的標準語意，而 `@api-schema-flow/inference` 則消費 Normalized OpenAPI 與 Declared Operation Graph，不依賴 UI、Server、Mock 或 Execution Runtime。
+目前已完成的 Core 會將 Framework 與 Parser 細節封裝在 Package Boundary 之後，讓 Domain、Diagnostics、Redaction、Config、Source Loading、OpenAPI Normalization、Arazzo Normalization、Declared Graph Projection、Evidence-based Inference、Review Materialization、Arazzo Export 與 CLI 不直接依賴未來的 React、Fastify、MSW 或 ELK Adapter。OpenAPI 與 Arazzo Parser Package 維持雙向獨立；`@api-schema-flow/flow` 組合標準已宣告語意、`@api-schema-flow/inference` 產生 Candidate、`@api-schema-flow/review` 套用明確 Decision，而 `@api-schema-flow/exporter-arazzo` 只序列化 Accepted Graph Truth。
 
 ## 目前的 Repository 結構
 
@@ -209,6 +237,8 @@ packages/
   arazzo/
   flow/
   inference/
+  review/
+  exporter-arazzo/
   cli/
 examples/
   reservation/
@@ -217,6 +247,7 @@ fixtures/
   arazzo/
   flow/
   inference/
+  review/
 docs/
   adr/
   design/
@@ -262,12 +293,15 @@ MVP 不會嘗試成為：
 - [M2-B Declared Flow Graph Plan](docs/superpowers/plans/2026-09-02-m2b-declared-flow-graph.md)
 - [M2-C Evidence-Based Inference Design](docs/superpowers/specs/2026-09-02-m2c-inference-core-design.md)
 - [M2-C Evidence-Based Inference Plan](docs/superpowers/plans/2026-09-02-m2c-inference-core.md)
+- [M2-D Review 與 Arazzo Export Design](docs/superpowers/specs/2026-09-03-m2d-review-arazzo-export-design.md)
+- [M2-D Review 與 Arazzo Export Plan](docs/superpowers/plans/2026-09-03-m2d-review-arazzo-export.md)
+- [M2-D 驗證報告](docs/reports/m2d-review-arazzo-export-verification.md)
 
 English: [README.md](README.md)
 
 ## 安全與隱私
 
-本專案採 Local-first，預設不傳送 Telemetry。Remote OpenAPI Source 必須經過 M1-B Retrieval Policy：預設僅允許 HTTPS 與 Public-network IP、限制 Canonical Local Root、每次 Redirect 重新驗證、限制資源用量，且不自動帶入憑證。OpenAPI、Arazzo、Flow 與 Inference Diagnostic 在進入外部輸出前都會執行敏感資料遮罩；Declared Graph 與 Inference Artifact 只儲存 Structural Selector、Evidence、Confidence 與 Source Pointer，不會保存 Runtime Secret Value、Schema Example 或 Default。詳見 [SECURITY.md](SECURITY.md) 與 [安全威脅模型](docs/19-SECURITY-THREAT-MODEL.md)。
+本專案採 Local-first，預設不傳送 Telemetry。Remote OpenAPI Source 必須經過 M1-B Retrieval Policy：預設僅允許 HTTPS 與 Public-network IP、限制 Canonical Local Root、每次 Redirect 重新驗證、限制資源用量，且不自動帶入憑證。OpenAPI、Arazzo、Flow、Inference、Review 與 Export Diagnostic 在進入外部輸出前都會執行敏感資料遮罩；Declared／Reviewed Graph 只儲存 Structural Selector、Evidence Identifier 與 Source Pointer，不會保存 Runtime Secret Value。Candidate、Rejected、Stale、Orphaned、Superseded 與 Invalid Decision 不會進入 Arazzo Output；帶有 Credential 的 Source URL 與 Credential-shaped Generated Value 會被阻擋。詳見 [SECURITY.md](SECURITY.md) 與 [安全威脅模型](docs/19-SECURITY-THREAT-MODEL.md)。
 
 ## License
 

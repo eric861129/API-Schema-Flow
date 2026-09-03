@@ -25,3 +25,23 @@ export {
   type SpecificationKind,
 } from './specification-kind.js'
 export { createMemoizedSourceAcquirer } from './memoized-source-acquirer.js'
+
+export {
+  parseReviewArguments,
+  REVIEW_USAGE,
+  type ParseReviewArgumentsResult,
+  type ReviewCommandOptions,
+} from './review-options.js'
+export {
+  EXPORT_ARAZZO_USAGE,
+  parseExportArazzoArguments,
+  type ExportArazzoCommandOptions,
+  type ParseExportArazzoArgumentsResult,
+} from './export-arazzo-options.js'
+export {
+  executeReviewCommand,
+  runReviewPipeline,
+  type ReviewCliReport,
+  type ReviewPipelineResult,
+} from './review-command.js'
+export { executeExportArazzoCommand, type ExportArazzoCliReport } from './export-arazzo-command.js'

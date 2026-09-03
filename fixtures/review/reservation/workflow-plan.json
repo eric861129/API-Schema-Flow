@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "workflowId": "createReservation",
+  "summary": "Authenticate, create a reservation, and retrieve it",
+  "sourceDescriptions": [
+    {
+      "sourceId": "cli",
+      "name": "reservationApi",
+      "url": "./openapi.yaml"
+    }
+  ],
+  "steps": [
+    {
+      "stepId": "login",
+      "operationNodeId": "endpoint:cli:operation:post:/auth/login"
+    },
+    {
+      "stepId": "createReservation",
+      "operationNodeId": "endpoint:cli:operation:post:/reservations"
+    },
+    {
+      "stepId": "getReservation",
+      "operationNodeId": "endpoint:cli:operation:get:/reservations/{id}"
+    }
+  ]
+}

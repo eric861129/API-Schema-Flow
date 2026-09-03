@@ -2,7 +2,7 @@
 
 > 狀態：草案，待專案負責人審閱  
 > 文件版本：0.1.0  
-> 最後更新：2026-09-01  
+> 最後更新：2026-09-03
 > 適用範圍：API Schema Flow MVP
 
 ## 1. 文件目的
@@ -86,18 +86,26 @@
 | `CHANGELOG.md` | 版本變更紀錄 |
 | `FILE-MANIFEST.md` | 文件用途、行數與交付雜湊清單 |
 
-## 5. 文件狀態規則
+## 5. 已完成實作切片
+
+| Slice | Design／Plan／Evidence |
+|---|---|
+| M2-B Declared Flow Graph | [Design](superpowers/specs/2026-09-02-m2b-declared-flow-graph-design.md) · [Plan](superpowers/plans/2026-09-02-m2b-declared-flow-graph.md) |
+| M2-C Evidence-based Inference | [Design](superpowers/specs/2026-09-02-m2c-inference-core-design.md) · [Plan](superpowers/plans/2026-09-02-m2c-inference-core.md) |
+| M2-D Review and Arazzo Export | [Design](superpowers/specs/2026-09-03-m2d-review-arazzo-export-design.md) · [Plan](superpowers/plans/2026-09-03-m2d-review-arazzo-export.md) · [Verification](reports/m2d-review-arazzo-export-verification.md) |
+
+## 6. 文件狀態規則
 
 - **Draft**：內容完整，但尚未由 Owner 接受。
 - **Accepted**：已成為目前專案基準；改動需更新文件或 ADR。
 - **Superseded**：已被新文件或 ADR 取代，保留歷史。
 - **Deprecated**：仍可讀，但不應用於新實作。
 
-## 6. 規範用語
+## 7. 規範用語
 
 文件中的 `MUST`、`MUST NOT`、`SHOULD`、`SHOULD NOT`、`MAY` 分別表示必要、禁止、建議、不建議與可選。中文段落也會使用「必須、不得、應、可」表達同樣強度。
 
-## 7. 一致性原則
+## 8. 一致性原則
 
 - PRD 定義「為什麼」與「做什麼」；
 - Spec 定義「可觀察行為、邊界與驗收」；

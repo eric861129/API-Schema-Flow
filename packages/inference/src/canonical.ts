@@ -22,7 +22,6 @@ function schemaFingerprint(field: InferenceSourceField | InferenceTargetField): 
     canonicalizeJson({
       schemaTypes: field.schemaTypes,
       format: field.format ?? null,
-      source: field.sourcePointer,
       arrayDepth: field.arrayDepth,
       variant: field.variant,
       readOnly: field.readOnly,

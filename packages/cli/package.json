@@ -31,6 +31,8 @@
     "@api-schema-flow/inference": "workspace:*",
     "@api-schema-flow/openapi": "workspace:*",
     "@api-schema-flow/redaction": "workspace:*",
-    "@api-schema-flow/source-loader": "workspace:*"
+    "@api-schema-flow/source-loader": "workspace:*",
+    "@api-schema-flow/exporter-arazzo": "workspace:*",
+    "@api-schema-flow/review": "workspace:*"
   }
 }

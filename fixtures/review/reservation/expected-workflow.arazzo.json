@@ -1,0 +1,66 @@
+{
+  "arazzo": "1.1.0",
+  "info": {
+    "title": "Reservation API workflows",
+    "version": "1.0.0"
+  },
+  "sourceDescriptions": [
+    {
+      "name": "reservationApi",
+      "url": "./openapi.yaml",
+      "type": "openapi"
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "createReservation",
+      "summary": "Authenticate, create a reservation, and retrieve it",
+      "steps": [
+        {
+          "stepId": "login",
+          "operationId": "login",
+          "outputs": {
+            "token": "$response.body#/token"
+          }
+        },
+        {
+          "stepId": "createReservation",
+          "operationId": "createReservation",
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "value": "Bearer {$steps.login.outputs.token}"
+            }
+          ],
+          "outputs": {
+            "id": "$response.body#/id"
+          },
+          "dependsOn": [
+            "login"
+          ]
+        },
+        {
+          "stepId": "getReservation",
+          "operationId": "getReservation",
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "value": "Bearer {$steps.login.outputs.token}"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "value": "$steps.createReservation.outputs.id"
+            }
+          ],
+          "dependsOn": [
+            "login",
+            "createReservation"
+          ]
+        }
+      ]
+    }
+  ]
+}

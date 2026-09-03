@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "1.0",
+  "revision": 2,
+  "decisions": [
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:be5d44220238b8a0",
+      "candidateFingerprint": "be5d44220238b8a0",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "reject",
+      "decidedAt": "2026-09-01T00:00:00.000Z",
+      "id": "decision:fcfcb328f11e962a"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:be5d44220238b8a0",
+      "candidateFingerprint": "be5d44220238b8a0",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 2,
+      "action": "accept",
+      "decidedAt": "2026-09-02T00:00:00.000Z",
+      "id": "decision:e3cdb83857559346"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:95e032537a09646b",
+      "candidateFingerprint": "95e032537a09646b",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "edit",
+      "editedMapping": {
+        "id": "mapping:25a6c833e25aa024",
+        "source": {
+          "kind": "response-body",
+          "pointer": "#/token"
+        },
+        "target": {
+          "kind": "header-parameter",
+          "name": "Authorization"
+        },
+        "aliases": [],
+        "sourcePointers": [
+          {
+            "uri": "memory://review/reservation/openapi.yaml",
+            "pointer": "#/paths/~1auth~1login/post/responses/200/content/application~1json/schema/properties/token"
+          },
+          {
+            "uri": "memory://review/reservation/openapi.yaml",
+            "pointer": "#/paths/~1reservations/post/security"
+          }
+        ],
+        "transform": {
+          "kind": "template",
+          "raw": "Bearer {$steps.source.outputs.token}"
+        }
+      },
+      "decidedAt": "2026-09-02T00:00:01.000Z",
+      "id": "decision:4fb73e9f1f807e17"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:e5f15fe38fed7d6b",
+      "candidateFingerprint": "e5f15fe38fed7d6b",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "edit",
+      "editedMapping": {
+        "id": "mapping:25a6c833e25aa024",
+        "source": {
+          "kind": "response-body",
+          "pointer": "#/token"
+        },
+        "target": {
+          "kind": "header-parameter",
+          "name": "Authorization"
+        },
+        "aliases": [],
+        "sourcePointers": [
+          {
+            "uri": "memory://review/reservation/openapi.yaml",
+            "pointer": "#/paths/~1auth~1login/post/responses/200/content/application~1json/schema/properties/token"
+          },
+          {
+            "uri": "memory://review/reservation/openapi.yaml",
+            "pointer": "#/paths/~1reservations~1{id}/get/security"
+          }
+        ],
+        "transform": {
+          "kind": "template",
+          "raw": "Bearer {$steps.source.outputs.token}"
+        }
+      },
+      "decidedAt": "2026-09-02T00:00:02.000Z",
+      "id": "decision:d5a7ea43148c2389"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:c0648522d046b009",
+      "candidateFingerprint": "c0648522d046b009",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "reject",
+      "decidedAt": "2026-09-02T00:00:03.000Z",
+      "id": "decision:4efd05aae08f1c38"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:a9e7af512f4fc6b9",
+      "candidateFingerprint": "stale-a9e7af512f4fc6b9",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "accept",
+      "decidedAt": "2026-09-02T00:00:04.000Z",
+      "id": "decision:a387a2ed9bd01c7f"
+    },
+    {
+      "schemaVersion": "1.0",
+      "candidateId": "candidate:orphaned",
+      "candidateFingerprint": "orphaned-fingerprint",
+      "ruleSetVersion": "m2c-v1",
+      "revision": 1,
+      "action": "reject",
+      "decidedAt": "2026-09-02T00:00:05.000Z",
+      "id": "decision:04c187a1cf245791"
+    }
+  ],
+  "manualEdges": []
+}
