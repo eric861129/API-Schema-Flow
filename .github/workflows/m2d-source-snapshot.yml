@@ -1,0 +1,43 @@
+name: M2-D Source Snapshot
+
+on:
+  push:
+    branches:
+      - feat/m2d-review-export
+    paths:
+      - .github/workflows/m2d-source-snapshot.yml
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/m2d-review-export
+      - name: Create source archive
+        run: |
+          tar \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=.turbo \
+            --exclude=dist \
+            -czf /tmp/api-schema-flow-m2d-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-schema-flow-m2d-source
+          path: /tmp/api-schema-flow-m2d-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+      - name: Remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/m2d-source-snapshot.yml
+          git commit -m "chore: remove temporary M2-D source snapshot workflow"
+          git push
