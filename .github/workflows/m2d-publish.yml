@@ -1,0 +1,116 @@
+name: Publish verified M2-D implementation
+
+on:
+  push:
+    branches:
+      - feat/m2d-review-export
+    paths:
+      - .github/workflows/m2d-publish.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m2d-publish
+  cancel-in-progress: false
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  publish:
+    name: Reconstruct, verify, and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out M2-D branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and authenticate verified patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .m2d-upload/part-* > /tmp/m2d.patch.gz.b64
+          base64 --decode /tmp/m2d.patch.gz.b64 > /tmp/m2d.patch.gz
+          printf '%s  %s\n' \
+            'c294ec67acbb799a7df1641f76c5f005ce11fe6e23925cb97dd1c1a1b3308fb7' \
+            '/tmp/m2d.patch.gz' | sha256sum --check -
+          gzip --decompress --stdout /tmp/m2d.patch.gz > /tmp/m2d.patch
+          printf '%s  %s\n' \
+            '54c2c9c2de159d5bfab4f52b3a8b5632d0f32997c63cbade18c05b00c843f925' \
+            '/tmp/m2d.patch' | sha256sum --check -
+          git apply --check /tmp/m2d.patch
+
+      - name: Apply exact verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply /tmp/m2d.patch
+          rm -rf .m2d-upload
+          rm -f .github/workflows/m2d-publish.yml
+          git diff --check
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run complete repository verification
+        run: pnpm ci:verify
+
+      - name: Verify M2-D Golden artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm test:review-export-fixtures
+          printf '%s  %s\n' \
+            '16f3dcf51ad299db687bac61cf5f6c4ad5ee9e22a52d1daa69c87a767b2d527d' \
+            'fixtures/review/reservation/expected-workflow.arazzo.yaml' | sha256sum --check -
+          printf '%s  %s\n' \
+            'e1aa6e35a1b6298bccca0a66c13e9b30d137c2bddefef083d372783a618579d7' \
+            'fixtures/review/reservation/expected-workflow.arazzo.json' | sha256sum --check -
+
+      - name: Smoke-test review and export commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          node packages/cli/bin/schema-flow.mjs review \
+            fixtures/review/reservation/openapi.yaml \
+            --decisions fixtures/review/reservation/decision-set.json \
+            --json > /tmp/review.json
+          node packages/cli/bin/schema-flow.mjs export-arazzo \
+            fixtures/review/reservation/openapi.yaml \
+            --decisions fixtures/review/reservation/decision-set.json \
+            --workflow fixtures/review/reservation/workflow-plan.json \
+            --format yaml > /tmp/workflow.arazzo.yaml
+          node packages/cli/bin/schema-flow.mjs export-arazzo \
+            fixtures/review/reservation/openapi.yaml \
+            --decisions fixtures/review/reservation/decision-set.json \
+            --workflow fixtures/review/reservation/workflow-plan.json \
+            --format json > /tmp/workflow.arazzo.json
+          cmp /tmp/workflow.arazzo.yaml fixtures/review/reservation/expected-workflow.arazzo.yaml
+          cmp /tmp/workflow.arazzo.json fixtures/review/reservation/expected-workflow.arazzo.json
+
+      - name: Commit and push verified M2-D tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .m2d-upload
+          test ! -e .github/workflows/m2d-publish.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: complete M2-D review decisions and Arazzo export'
+          git push origin HEAD:feat/m2d-review-export
