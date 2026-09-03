@@ -124,9 +124,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm --filter @api-schema-flow/web test -- \
-            candidate-list.test.tsx \
-            evidence-inspector.test.tsx
+          pnpm --filter @api-schema-flow/web exec vitest run \
+            src/review/candidate-list.test.tsx \
+            src/review/evidence-inspector.test.tsx
 
       - name: Verify repaired merge candidate
         shell: bash
@@ -145,13 +145,13 @@ jobs:
           pnpm check:web-fixture
           pnpm build:web
           pnpm check:web-bundle
-          pnpm --filter @api-schema-flow/web test -- \
-            review-session.test.ts \
-            review-selectors.test.ts \
-            candidate-list.test.tsx \
-            review-detail.test.ts \
-            mapping-preview.test.tsx \
-            evidence-inspector.test.tsx
+          pnpm --filter @api-schema-flow/web exec vitest run \
+            src/review/review-session.test.ts \
+            src/review/review-selectors.test.ts \
+            src/review/candidate-list.test.tsx \
+            src/review/review-detail.test.ts \
+            src/review/mapping-preview.test.tsx \
+            src/review/evidence-inspector.test.tsx
           pnpm --filter @api-schema-flow/web typecheck
           pnpm --filter @api-schema-flow/web build
           git diff --check
