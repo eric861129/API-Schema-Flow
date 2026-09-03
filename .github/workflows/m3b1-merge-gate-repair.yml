@@ -17,7 +17,7 @@ jobs:
   repair-verify-publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       TURBO_TELEMETRY_DISABLED: '1'
       CI: 'true'
@@ -53,22 +53,20 @@ jobs:
           source = path.read_text(encoding='utf-8')
           old = 'test -f apps/web/src/workspace/workspace-shell.tsx'
           new = 'test -f apps/web/src/app.tsx'
-          if old not in source:
-              raise SystemExit('Expected stale M3-A workspace sentinel was not found.')
-          path.write_text(source.replace(old, new), encoding='utf-8')
+          if old in source:
+              source = source.replace(old, new)
+          elif new not in source:
+              raise SystemExit('Neither the stale nor corrected M3-A workspace sentinel was found.')
+          path.write_text(source, encoding='utf-8')
           PY
 
-      - name: Format affected source and tests
+      - name: Format complete Review module
         shell: bash
         run: |
           set -euo pipefail
           pnpm exec prettier --write \
             .github/workflows/m3b1-ci.yml \
-            apps/web/src/review/candidate-list.tsx \
-            apps/web/src/review/evidence-inspector.test.tsx \
-            apps/web/src/review/mapping-preview.test.tsx \
-            apps/web/src/review/review-detail.test.ts \
-            apps/web/src/review/review-session.test.ts
+            apps/web/src/review
 
       - name: Remove temporary repair workflow
         shell: bash
