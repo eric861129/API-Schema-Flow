@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: m3a-finalize
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   materialize-verify-publish:
@@ -67,13 +67,14 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm install --frozen-lockfile
 
-      - name: Build generators and create canonical fixture
+      - name: Format sources, build generators, and create canonical fixture
         shell: bash
         run: |
           set -euo pipefail
+          pnpm format
           pnpm build
           pnpm generate:web-fixture
-          pnpm format
+          pnpm check:web-fixture
           pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
