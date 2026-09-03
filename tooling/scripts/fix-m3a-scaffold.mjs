@@ -76,9 +76,17 @@ replaceRequired(
   'ELK layout result cast',
 )
 
+replaceRequired(
+  `await page.getByRole('button', { name: /Outgoing/i }).click()`,
+  `await page.getByRole('button', { name: /^Outgoing response-body /i }).click()`,
+  'Playwright outgoing relationship selector',
+)
+
 if (fixed === source) {
   throw new Error('The M3-A scaffold did not change.')
 }
 
 await writeFile(path, fixed, 'utf8')
-console.log('Applied GitHub Actions escaping and ELK result-boundary fixes to M3-A scaffold.')
+console.log(
+  'Applied GitHub Actions escaping, ELK result-boundary, and Playwright selector fixes to M3-A scaffold.',
+)
