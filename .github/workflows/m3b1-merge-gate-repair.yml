@@ -1,4 +1,4 @@
-name: M3-B1 Merge Gate Repair
+name: M3-B1 Source Repair
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: m3b1-merge-gate-repair
+  group: m3b1-source-repair
   cancel-in-progress: false
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
       - name: Install exact dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Repair merge-gate and interaction defects
+      - name: Repair Review interaction defects
         shell: bash
         run: |
           set -euo pipefail
@@ -57,12 +57,6 @@ jobs:
                       return
                   raise SystemExit(f'Expected patch marker was not found in {path}')
               file.write_text(source.replace(old, new, 1), encoding='utf-8')
-
-          replace_once(
-              '.github/workflows/m3b1-ci.yml',
-              'test -f apps/web/src/workspace/workspace-shell.tsx',
-              'test -f apps/web/src/app.tsx',
-          )
 
           replace_once(
               'apps/web/src/test/setup.ts',
@@ -107,18 +101,13 @@ jobs:
           )
           PY
 
-      - name: Format complete affected surface
+      - name: Format affected source
         shell: bash
         run: |
           set -euo pipefail
           pnpm exec prettier --write \
-            .github/workflows/m3b1-ci.yml \
             apps/web/src/review \
             apps/web/src/test/setup.ts
-
-      - name: Remove temporary repair workflow
-        shell: bash
-        run: rm -f .github/workflows/m3b1-merge-gate-repair.yml
 
       - name: Verify repaired interaction tests
         shell: bash
@@ -128,7 +117,7 @@ jobs:
             src/review/candidate-list.test.tsx \
             src/review/evidence-inspector.test.tsx
 
-      - name: Verify repaired merge candidate
+      - name: Verify complete merge candidate
         shell: bash
         run: |
           set -euo pipefail
@@ -139,7 +128,7 @@ jobs:
           test -f packages/layout/src/index.ts
           test -f packages/domain/src/workspace-snapshot.ts
           test ! -e .m3a-upload
-          test -z "$(find .github/workflows -maxdepth 1 -type f \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' -o -name 'm3b1-merge-gate-repair.yml' \) -print)"
+          test -z "$(find .github/workflows -maxdepth 1 -type f \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' \) -print)"
           pnpm format:check
           pnpm ci:verify
           pnpm check:web-fixture
@@ -156,12 +145,12 @@ jobs:
           pnpm --filter @api-schema-flow/web build
           git diff --check
 
-      - name: Commit exact verified repair
+      - name: Commit verified source repair
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'fix: satisfy M3-B1 merge gates'
+          git add apps/web/src/review apps/web/src/test/setup.ts
+          git commit -m 'fix: satisfy M3-B1 review interaction gates'
           git push origin HEAD:feat/m3b1-review-session
