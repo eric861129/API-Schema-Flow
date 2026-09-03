@@ -77,7 +77,7 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm --filter @api-schema-flow/web exec playwright install --with-deps chromium
 
       - name: Run complete M0 through M3-A verification
         shell: bash
