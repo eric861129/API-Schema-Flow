@@ -1,0 +1,147 @@
+name: M3-A Guarded Finalization Gate
+
+on:
+  push:
+    branches:
+      - feat/m3a-read-only-web-workspace
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: m3a-finalize-verified-implementation
+  cancel-in-progress: false
+
+jobs:
+  finalize-and-ready:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      CI: 'true'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out latest M3-A branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3a-read-only-web-workspace
+          fetch-depth: 0
+
+      - name: Materialize implementation when staged patch remains
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d .m3a-upload ]; then
+            shopt -s nullglob
+            parts=(.m3a-upload/part-*)
+            if [ "${#parts[@]}" -eq 0 ]; then
+              echo 'The staged upload directory exists without patch parts.' >&2
+              exit 1
+            fi
+
+            printf '%s\n' "${parts[@]}" | sort -V > /tmp/m3a-parts.txt
+            while IFS= read -r part; do
+              cat "$part"
+            done < /tmp/m3a-parts.txt > /tmp/m3a-payload
+
+            if base64 --decode /tmp/m3a-payload > /tmp/m3a-decoded 2>/dev/null; then
+              if gzip --test /tmp/m3a-decoded 2>/dev/null; then
+                gzip --decompress --stdout /tmp/m3a-decoded > /tmp/m3a.patch
+              else
+                cp /tmp/m3a-decoded /tmp/m3a.patch
+              fi
+            else
+              cp /tmp/m3a-payload /tmp/m3a.patch
+            fi
+
+            grep -q '^diff --git ' /tmp/m3a.patch
+            git apply --check /tmp/m3a.patch
+            git apply /tmp/m3a.patch
+          fi
+
+          test -f apps/web/src/workspace/workspace-shell.tsx
+          test -f apps/web/src/graph/flow-canvas.tsx
+          test -f apps/web/src/outline/outline-view.tsx
+          test -f apps/web/public/fixtures/reservation-workspace.json
+
+      - name: Remove every temporary M3-A transport artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .m3a-upload
+          find .github/workflows -maxdepth 1 -type f \
+            \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' \) -delete
+          git diff --check
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run full monorepo and Web verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm ci:verify
+          pnpm test:flow-fixtures
+          pnpm test:inference-benchmark
+          pnpm test:inference-performance
+          pnpm test:review
+          pnpm test:export-arazzo
+          pnpm test:review-export-fixtures
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+          pnpm test:web
+          pnpm boundaries:check
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser and accessibility verification
+        run: pnpm test:web:e2e
+
+      - name: Verify final repository shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .m3a-upload
+          if find .github/workflows -maxdepth 1 -type f \
+            \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' \) | grep -q .; then
+            echo 'A temporary M3-A workflow would enter the merge tree.' >&2
+            exit 1
+          fi
+          git diff --check
+
+      - name: Commit and push exact verified tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'feat: complete M3-A read-only Web workspace'
+            git push origin HEAD:feat/m3a-read-only-web-workspace
+          fi
+          echo "verified_head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        id: publish
+
+      - name: Mark PR 13 ready only after the complete gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr ready 13 --repo "$GITHUB_REPOSITORY"
+          gh pr comment 13 --repo "$GITHUB_REPOSITORY" --body "M3-A guarded finalization passed on exact head \`${{ steps.publish.outputs.verified_head }}\`. The staged transport files and temporary workflows were removed before verification. Full monorepo, deterministic fixture, production bundle, Playwright, responsive, and accessibility gates passed."
