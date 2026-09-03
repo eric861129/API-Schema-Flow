@@ -11,5 +11,5 @@ docs/
 *.webp
 pnpm-lock.yaml
 fixtures/flow/declared/**/*.json
-
 fixtures/review/**/*.json
+apps/web/public/fixtures/reservation-workspace.json

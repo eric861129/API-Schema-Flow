@@ -13,6 +13,7 @@ const requiredPackages = [
   'review',
   'exporter-arazzo',
   'cli',
+  'layout',
 ]
 
 const requiredScripts = [
@@ -30,6 +31,13 @@ const requiredScripts = [
   'test:review-export-fixtures',
   'boundaries:check',
   'ci:verify',
+  'dev:web',
+  'build:web',
+  'test:web',
+  'test:web:e2e',
+  'check:web-bundle',
+  'generate:web-fixture',
+  'check:web-fixture',
 ]
 
 async function main() {
@@ -40,6 +48,9 @@ async function main() {
       throw new Error(`Missing root script: ${script}`)
     }
   }
+
+  await access(new URL('../../apps/web/package.json', import.meta.url))
+  await access(new URL('../../apps/web/src/main.tsx', import.meta.url))
 
   for (const packageName of requiredPackages) {
     await access(new URL(`../../packages/${packageName}/package.json`, import.meta.url))

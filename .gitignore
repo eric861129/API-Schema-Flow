@@ -9,3 +9,5 @@ coverage/
 .DS_Store
 Thumbs.db
 .worktrees/
+apps/web/playwright-report/
+apps/web/test-results/

@@ -1,10 +1,10 @@
 name: CI
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,15 +13,12 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  TURBO_TELEMETRY_DISABLED: '1'
-
 jobs:
   verify:
-    name: Verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -43,7 +40,17 @@ jobs:
       - name: Verify workspace
         run: pnpm ci:verify
 
-      - name: Smoke-test CLI
+      - name: Verify deterministic Web fixture and bundle
         run: |
-          node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml
-          node packages/cli/bin/schema-flow.mjs infer fixtures/inference/cli/openapi.yaml --json
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+
+      - name: Install Chromium
+        run: pnpm --filter @api-schema-flow/web exec playwright install --with-deps chromium
+
+      - name: Verify browser workspace
+        run: pnpm test:web:e2e
+
+      - name: Smoke-test CLI
+        run: node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml --json

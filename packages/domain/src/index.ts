@@ -67,3 +67,9 @@ export {
   type ReviewDecisionOutcomeState,
   type ReviewDecisionSet,
 } from './review-decision.js'
+export {
+  READ_ONLY_WORKSPACE_SNAPSHOT_SCHEMA_VERSION,
+  isReadOnlyWorkspaceSnapshot,
+  type ReadOnlyWorkspaceProject,
+  type ReadOnlyWorkspaceSnapshot,
+} from './workspace-snapshot.js'

@@ -1,0 +1,256 @@
+import type {
+  EdgeValue,
+  OperationValue,
+  SchemaValue,
+  SelectedElement,
+  WorkspaceSnapshot,
+} from '../data/types'
+import { MethodBadge } from '../components/operations-panel'
+
+function schemaText(schema: SchemaValue | undefined): string {
+  if (!schema) return 'No schema declared'
+  if (schema.type === 'array') return 'array of ' + schemaText(schema.items)
+  const properties = Object.keys(schema.properties ?? {})
+  return properties.length > 0
+    ? (schema.type ?? 'object') + ' · ' + properties.join(', ')
+    : schema.format
+      ? (schema.type ?? 'value') + ' · ' + schema.format
+      : (schema.type ?? 'unknown')
+}
+
+function selectorText(value: Readonly<Record<string, unknown>>): string {
+  if (typeof value.pointer === 'string') return String(value.kind) + ' ' + value.pointer
+  if (typeof value.name === 'string') return String(value.location ?? value.kind) + '.' + value.name
+  return String(value.kind ?? 'value')
+}
+
+function NodeInspector({
+  operation,
+  snapshot,
+  onSelect,
+}: {
+  readonly operation: OperationValue
+  readonly snapshot: WorkspaceSnapshot
+  readonly onSelect: (selected: SelectedElement) => void
+}) {
+  const node = snapshot.acceptedGraph.nodes.find((item) => item.operationKey === operation.id)
+  const connections = snapshot.acceptedGraph.edges.filter(
+    (edge) => edge.sourceNodeId === node?.id || edge.targetNodeId === node?.id,
+  )
+  return (
+    <>
+      <div className="inspector-title">
+        <MethodBadge method={operation.method} />
+        <code>{operation.path}</code>
+      </div>
+      <p className="inspector-summary">{operation.summary ?? operation.operationId}</p>
+      <section>
+        <h3>Overview</h3>
+        <dl>
+          <div>
+            <dt>Operation ID</dt>
+            <dd>{operation.operationId ?? 'Not declared'}</dd>
+          </div>
+          <div>
+            <dt>Tags</dt>
+            <dd>{operation.tags.join(', ') || 'Untagged'}</dd>
+          </div>
+          <div>
+            <dt>Security</dt>
+            <dd>{operation.security.length > 0 ? 'Required' : 'Public'}</dd>
+          </div>
+          <div>
+            <dt>Source</dt>
+            <dd>
+              <code>{operation.source.pointer}</code>
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section>
+        <h3>Request</h3>
+        {operation.parameters.length === 0 && !operation.requestBody ? (
+          <p className="muted">No request payload.</p>
+        ) : null}
+        {operation.parameters.map((parameter) => (
+          <div className="schema-line" key={parameter.location + parameter.name}>
+            <strong>
+              {parameter.location}.{parameter.name}
+            </strong>
+            <span>{schemaText(parameter.schema)}</span>
+          </div>
+        ))}
+        {operation.requestBody?.mediaTypes.map((media) => (
+          <div className="schema-line" key={media.mediaType}>
+            <strong>{media.mediaType}</strong>
+            <span>{schemaText(media.schema)}</span>
+          </div>
+        ))}
+      </section>
+      <section>
+        <h3>Responses</h3>
+        {operation.responses.map((response) => (
+          <div className="response-line" key={response.statusCode}>
+            <strong>{response.statusCode}</strong>
+            <span>{response.description}</span>
+            <small>
+              {response.mediaTypes.map((media) => schemaText(media.schema)).join(' · ')}
+            </small>
+          </div>
+        ))}
+      </section>
+      <section>
+        <h3>Connections</h3>
+        {connections.length === 0 ? (
+          <p className="muted">No accepted relationships.</p>
+        ) : (
+          connections.map((edge) => (
+            <button
+              className="connection-row"
+              key={edge.id}
+              onClick={() => onSelect({ kind: 'edge', id: edge.id })}
+            >
+              <span>{edge.sourceNodeId === node?.id ? 'Outgoing' : 'Incoming'}</span>
+              <strong>
+                {edge.mappings[0]
+                  ? selectorText(edge.mappings[0].source) +
+                    ' → ' +
+                    selectorText(edge.mappings[0].target)
+                  : edge.kind}
+              </strong>
+              <small>{edge.provenance}</small>
+            </button>
+          ))
+        )}
+      </section>
+    </>
+  )
+}
+
+function EdgeInspector({
+  edge,
+  snapshot,
+}: {
+  readonly edge: EdgeValue
+  readonly snapshot: WorkspaceSnapshot
+}) {
+  const operationByNode = new Map(
+    snapshot.acceptedGraph.nodes.map((node) => [
+      node.id,
+      snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
+    ]),
+  )
+  const source = operationByNode.get(edge.sourceNodeId)
+  const target = operationByNode.get(edge.targetNodeId)
+  return (
+    <>
+      <div className="edge-heading">
+        <span className={'provenance-token provenance-' + edge.provenance}>
+          {edge.provenance === 'inferred'
+            ? 'Accepted inferred'
+            : edge.provenance === 'manual'
+              ? 'Manual'
+              : 'Declared'}
+        </span>
+        <span className="accepted-token">Accepted</span>
+      </div>
+      <section>
+        <h3>Source</h3>
+        <strong>
+          {source?.method.toUpperCase()} {source?.path}
+        </strong>
+        <code className="block-code">
+          {edge.mappings[0] ? selectorText(edge.mappings[0].source) : 'No mapping'}
+        </code>
+      </section>
+      <section>
+        <h3>Target</h3>
+        <strong>
+          {target?.method.toUpperCase()} {target?.path}
+        </strong>
+        <code className="block-code">
+          {edge.mappings[0] ? selectorText(edge.mappings[0].target) : 'No mapping'}
+        </code>
+      </section>
+      <section>
+        <h3>Review evidence</h3>
+        {edge.review ? (
+          <>
+            <dl>
+              <div>
+                <dt>Action</dt>
+                <dd>{edge.review.action}</dd>
+              </div>
+              <div>
+                <dt>Candidate</dt>
+                <dd>
+                  <code>{edge.review.candidateId}</code>
+                </dd>
+              </div>
+            </dl>
+            <ul className="evidence-list">
+              {edge.review.evidenceRuleIds.map((rule) => (
+                <li key={rule}>✓ {rule}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="muted">Declared by the source specification.</p>
+        )}
+      </section>
+      <section>
+        <h3>Relationship ID</h3>
+        <code className="block-code">{edge.id}</code>
+      </section>
+    </>
+  )
+}
+
+export function InspectorPanel({
+  snapshot,
+  selected,
+  onClose,
+  onSelect,
+}: {
+  readonly snapshot: WorkspaceSnapshot
+  readonly selected: Exclude<SelectedElement, null>
+  readonly onClose: () => void
+  readonly onSelect: (selected: SelectedElement) => void
+}) {
+  const node =
+    selected.kind === 'node'
+      ? snapshot.acceptedGraph.nodes.find((item) => item.id === selected.id)
+      : undefined
+  const operation = node
+    ? snapshot.apiDocument.operations.find((item) => item.id === node.operationKey)
+    : undefined
+  const edge =
+    selected.kind === 'edge'
+      ? snapshot.acceptedGraph.edges.find((item) => item.id === selected.id)
+      : undefined
+  return (
+    <aside
+      className="inspector-panel"
+      aria-label={selected.kind === 'node' ? 'Endpoint inspector' : 'Relationship inspector'}
+    >
+      <header className="panel-heading">
+        <div>
+          <span className="eyebrow">INSPECTOR</span>
+          <strong>{selected.kind === 'node' ? 'Endpoint' : 'Relationship'}</strong>
+        </div>
+        <button className="icon-button" onClick={onClose} aria-label="Close inspector">
+          ×
+        </button>
+      </header>
+      <div className="inspector-scroll">
+        {operation ? (
+          <NodeInspector operation={operation} snapshot={snapshot} onSelect={onSelect} />
+        ) : edge ? (
+          <EdgeInspector edge={edge} snapshot={snapshot} />
+        ) : (
+          <p>Selection is no longer available.</p>
+        )}
+      </div>
+    </aside>
+  )
+}

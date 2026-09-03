@@ -33,7 +33,14 @@
     "test:inference-performance": "pnpm --filter @api-schema-flow/inference test:integration -- performance.integration.test.ts",
     "test:review-export-fixtures": "pnpm --filter @api-schema-flow/exporter-arazzo test:integration -- review-export-fixtures.integration.test.ts",
     "test:review": "pnpm --filter @api-schema-flow/review test",
-    "test:export-arazzo": "pnpm --filter @api-schema-flow/exporter-arazzo test && pnpm --filter @api-schema-flow/exporter-arazzo test:integration"
+    "test:export-arazzo": "pnpm --filter @api-schema-flow/exporter-arazzo test && pnpm --filter @api-schema-flow/exporter-arazzo test:integration",
+    "dev:web": "pnpm --filter @api-schema-flow/web dev",
+    "build:web": "pnpm --filter @api-schema-flow/web build",
+    "test:web": "pnpm --filter @api-schema-flow/web test",
+    "test:web:e2e": "pnpm --filter @api-schema-flow/web test:e2e",
+    "check:web-bundle": "node tooling/scripts/check-web-bundle.mjs apps/web/dist",
+    "generate:web-fixture": "node tooling/scripts/generate-web-workspace.mjs",
+    "check:web-fixture": "node tooling/scripts/check-web-workspace.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
