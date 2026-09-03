@@ -1,0 +1,49 @@
+name: M3-B1 Source Export
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-session
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-source-export
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out M3-B1 branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-session
+          fetch-depth: 0
+
+      - name: Package source-only workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude='**/node_modules' \
+            --exclude=.turbo \
+            --exclude='**/.turbo' \
+            --exclude='**/dist' \
+            --exclude='**/coverage' \
+            --exclude='**/playwright-report' \
+            --exclude='**/test-results' \
+            -czf /tmp/api-schema-flow-m3b1-source.tgz .
+
+      - name: Upload source-only workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-schema-flow-m3b1-source
+          path: /tmp/api-schema-flow-m3b1-source.tgz
+          retention-days: 1
+          if-no-files-found: error
