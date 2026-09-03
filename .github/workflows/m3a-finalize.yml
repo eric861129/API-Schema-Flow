@@ -1,0 +1,129 @@
+name: M3-A Finalize Verified Implementation
+
+on:
+  push:
+    branches:
+      - feat/m3a-read-only-web-workspace
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3a-finalize-verified-implementation
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      CI: 'true'
+    steps:
+      - name: Check out M3-A branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3a-read-only-web-workspace
+          fetch-depth: 0
+
+      - name: Reconstruct staged implementation patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          parts=(.m3a-upload/part-*)
+          if [ "${#parts[@]}" -eq 0 ]; then
+            echo 'No staged M3-A patch parts were found.' >&2
+            exit 1
+          fi
+
+          printf '%s\n' "${parts[@]}" | sort -V > /tmp/m3a-parts.txt
+          while IFS= read -r part; do
+            cat "$part"
+          done < /tmp/m3a-parts.txt > /tmp/m3a-payload
+
+          if base64 --decode /tmp/m3a-payload > /tmp/m3a-decoded 2>/dev/null; then
+            if gzip --test /tmp/m3a-decoded 2>/dev/null; then
+              gzip --decompress --stdout /tmp/m3a-decoded > /tmp/m3a.patch
+            else
+              cp /tmp/m3a-decoded /tmp/m3a.patch
+            fi
+          else
+            cp /tmp/m3a-payload /tmp/m3a.patch
+          fi
+
+          grep -q '^diff --git ' /tmp/m3a.patch
+          git apply --check /tmp/m3a.patch
+          sha256sum /tmp/m3a.patch
+
+      - name: Apply implementation and remove temporary publication machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply /tmp/m3a.patch
+          rm -rf .m3a-upload
+          find .github/workflows -maxdepth 1 -type f \
+            \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' \) -delete
+          git diff --check
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run complete repository verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm ci:verify
+          pnpm test:flow-fixtures
+          pnpm test:inference-benchmark
+          pnpm test:inference-performance
+          pnpm test:review
+          pnpm test:export-arazzo
+          pnpm test:review-export-fixtures
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+          pnpm test:web
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser, responsive, visual, and accessibility gates
+        run: pnpm test:web:e2e
+
+      - name: Audit final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .m3a-upload
+          test ! -e .github/workflows/m3a-finalize.yml
+          if find .github/workflows -maxdepth 1 -type f \
+            \( -name 'm3a-*.yml' -o -name 'm3a-*.yaml' \) | grep -q .; then
+            echo 'Temporary M3-A workflow remains in the final tree.' >&2
+            exit 1
+          fi
+          git diff --check
+          git status --short
+
+      - name: Commit and push verified M3-A tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: complete M3-A read-only Web workspace'
+          git push origin HEAD:feat/m3a-read-only-web-workspace
