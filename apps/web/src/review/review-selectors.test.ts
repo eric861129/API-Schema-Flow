@@ -122,6 +122,33 @@ describe('review candidate selectors', () => {
     )
   })
 
+  test('filters and sorts 1,000 candidates within the 100 ms interaction budget', () => {
+    const synthetic = Array.from({ length: 1_000 }, (_, index) => ({
+      ...candidates[index % candidates.length]!,
+      id: `candidate:synthetic:${String(index).padStart(4, '0')}`,
+      sourceOperationKey: `operation:get:/source/${index}`,
+      sourceLabel: `GET /source/${index}`,
+      targetOperationKey: `operation:post:/target/${index % 50}`,
+      targetLabel: `POST /target/${index % 50}`,
+    }))
+    const durations = Array.from({ length: 5 }, () => {
+      const startedAt = performance.now()
+      const result = filterAndSortReviewCandidates(synthetic, {
+        filters: {
+          query: 'target',
+          confidenceBands: ['high', 'medium', 'low', 'hidden'],
+          reviewState: 'all',
+          hasBlockersOnly: false,
+        },
+        sort: 'confidence-desc',
+      })
+      expect(result).toHaveLength(1_000)
+      return performance.now() - startedAt
+    })
+
+    expect(Math.max(...durations)).toBeLessThan(100)
+  })
+
   test('does not mutate the supplied candidate order', () => {
     const originalIds = candidates.map(({ id }) => id)
     filterAndSortReviewCandidates(candidates, {
