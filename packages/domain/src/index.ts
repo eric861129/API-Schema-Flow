@@ -73,3 +73,9 @@ export {
   type ReadOnlyWorkspaceProject,
   type ReadOnlyWorkspaceSnapshot,
 } from './workspace-snapshot.js'
+export {
+  REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION,
+  isReviewWorkspaceSnapshot,
+  type ReviewWorkspaceContext,
+  type ReviewWorkspaceSnapshot,
+} from './review-workspace-snapshot.js'
