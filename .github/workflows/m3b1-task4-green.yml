@@ -76,6 +76,9 @@ jobs:
             apps/web/src/outline/outline-view.tsx
           git diff --check
 
+      - name: Build workspace dependency graph
+        run: pnpm build
+
       - name: Verify restored Review browser boundary
         shell: bash
         run: |
