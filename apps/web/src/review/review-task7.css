@@ -44,7 +44,7 @@
   background: #0c1927;
   color: var(--secondary);
 }
-.review-filter-pill[aria-pressed="true"] {
+.review-filter-pill[aria-pressed='true'] {
   border-color: rgb(49 199 212 / 0.65);
   background: rgb(49 199 212 / 0.11);
   color: #b6f5f8;
@@ -74,7 +74,7 @@
   color: var(--primary);
   text-align: left;
 }
-.candidate-row[data-selected="true"] {
+.candidate-row[data-selected='true'] {
   border-color: rgb(49 199 212 / 0.7);
   box-shadow: inset 3px 0 0 var(--accent);
 }
