@@ -21,9 +21,6 @@ jobs:
     env:
       CI: 'true'
       TURBO_TELEMETRY_DISABLED: '1'
-      PREREQ_PATCH_GZIP_BASE64: 'H4sICFhSmmoCA20zYjEtcHJlcmVxLWxpbnQucGF0Y2gArVVLb9s4EL7rV8wCBWzDelhJaicGvMll97RFi2TRXgo0lDSKWUuUQFJxXEP/fYcSpSip8zCwOkjkcJ7ffBwlPE3B8+64BhawslTBFqNAyThImGZBVrDE2xZyo0oWo69RaV8riN6t6nCR4ANchBdhPEt9f3Y6n4fnDMLZbH525nied0RcZzqdHhP76gq80F3A1LyurhzgeVlIDXtIUMWSR+gCPpQYaxeMDdSQyiKH0T0325EDA5NYItN4jfcct9+6UH/zB11J7A19PzCWgWzUHlPy0lZx5Hi9Q5N07+hGsFKtC0qkF/1D539JWchH788KHTnTt7zpXYnHuaSa00rEmhcCfqpCXKMqC6FwfM+yCpdQiY0otsIFpZmuFKzgZDabLJtIRQop6ngNewcAJFLJApjaiRjGE1j96SRDuumiyLi4C0wrSq2CeI3xxrPQRbLYKpReVIkkQz//aVh3pIUl3yz8GJ3ME9+PFywM09lT8h3rs+XgsVaGiudzw8XmTdsWlh7qnHFBGDXAmQebNnFBKIvYANv27RJuP+ybMz9Hpdgd1t9FJyHdeAOXlzAa1bewhBstKcdxczhpHcfUSk3B5AYltS4lhL7IYs0jYnzyqRGPrWNrwVMYW/0/Vitqf4JkhYnJ1Wtz1WsqGARu2yTHt48uob0wYCGhi1cieRDxziaxhA/7dlXfTpzp/+vQNfeWVYpo2+JZ26JqZxCnOXIa6av8vEOBkmaAR7NnMG0OU/NlZcvKaHGSnLIT348+xqchhX2Vla+4O0zIVwwMF88WbkhkpM/FATKamXBdCc1zbDnZnygmuOa/8IYIn7Oxaj6WtoYprQBWT5liJ0EvoSHjdVy0LMIHlpcZNeqHXbmtnCxYlemv7fD5MdxajVIWJUrNUVkB0STv1izLPqfdWuz6dSHwUZ4k3BTHsi/PXfm+L2mem01N16WtzrDU5j4MbuPakDaaDXQ4Ruf+me9rTDP6J/kJZqjR6u/GRtOFkYVnNHlbdQgW6cNgKNs5YxNwG04sFmY+zS/cc0OJd7S8fvKz6PQ+YcLZv/Q3oEFiV3ZWdKD93mtb/VNEevMh4G8qvhe9l7HodgfJTBN4X9Ns7TJZvoRPPXGd/wCDBtl8XgkAAA=='
-      TASK5_RED_PATCH_GZIP_BASE64: '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'
-      TASK5_GREEN_PATCH_GZIP_BASE64: 'H4sICFhSmmoCA20zYjEtdGFzazUtZ3JlZW4ucGF0Y2gAtT3vd9s2kt/zV6DZvKW4kWg73TiJro7T2smer03SZ+faD662pkXIZk2RWpKy61O1f/sNMPgNkJK7SV6eLQGDwWAwmBkMBnCWz2ZkNLrKW5LupItFs3NHL3cW6fQmvaLJb01Vkstw+aO8zOjv5PnL/b2Xz58lyd70a0qfvyR7u7v7f//7o9Fo1IXx0dOnTzuxvnlDRntfD1+Rp/Bzb5e8efOIsH+PFzW9zend4zF5fJu3lMjvrHo9ZD8fZ3RBgahymtMG4FaPRrzlm3SRj5rpNZ2no1lR3e1k1TzNS4bprqpvGuifjv/2eCg68sHz9KqsmjafNn6bp5+liyK9r5bt1tg1K4LYf78XUOmU45ymbVpUV2MFsaFmBNRbtY+yoJg09VSQspPRad7kVTmaQfuqvk/axpzifshHJb0js7ygZF5lVEoQytcu/ksSmr643P/6ay5YgOR2p1wWhStKG/phwrU73AXZGj7fY6L1NJ8vqroFUQFOn7796eTtz78evz06OTv5+OHXs6P/fvv+219/envKvvLJaO8XlJyUM1qDlNGjtMzyLG2prjvlnR+LvrvKz2gLVWsyq6s5iTqEJ9LUkSnMS0ttJCcZ6cQgeHBZV3cNrQGTwsWpWQl6TsqWlq1Ck4h2o4Y2rAfejv7O282W5bSFMpLROr+l36UNLfKSk8RAmwEbaqbHNw4OOWbFaVaVxf[... ELLIPSIZATION ...]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'
     steps:
       - name: Check out integration branch
         uses: actions/checkout@v6
@@ -44,9 +41,9 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode .m3b1-task4-green.patch.gz.b64 | gzip --decompress > /tmp/m3b1-task4-green.patch
-          git apply --check /tmp/m3b1-task4-green.patch
-          git apply /tmp/m3b1-task4-green.patch
-          pnpm install --frozen-lockfile
+          git apply --check --verbose /tmp/m3b1-task4-green.patch
+          git apply --verbose /tmp/m3b1-task4-green.patch
+          pnpm install --frozen-lockfile --reporter=append-only
           pnpm exec prettier --write \
             package.json \
             apps/web/package.json \
@@ -71,9 +68,9 @@ jobs:
             apps/web/src/graph/flow-canvas.tsx \
             apps/web/src/inspector/inspector-panel.tsx \
             apps/web/src/outline/outline-view.tsx
-          printf '%s' "$PREREQ_PATCH_GZIP_BASE64" | base64 --decode | gzip --decompress > /tmp/m3b1-prereq-lint.patch
-          git apply --check /tmp/m3b1-prereq-lint.patch
-          git apply /tmp/m3b1-prereq-lint.patch
+          gzip --decompress --stdout .m3b1-prereq-lint.patch.gz > /tmp/m3b1-prereq-lint.patch
+          git apply --check --verbose /tmp/m3b1-prereq-lint.patch
+          git apply --verbose /tmp/m3b1-prereq-lint.patch
           git diff --check
 
       - name: Verify recovered browser and Snapshot boundaries
@@ -124,13 +121,13 @@ jobs:
           git diff --cached --check
           git commit -m 'fix(web): restore validated review snapshot boundary'
 
-      - name: Apply Task 5 RED tests
+      - name: Apply and prove Task 5 RED contracts
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s' "$TASK5_RED_PATCH_GZIP_BASE64" | base64 --decode | gzip --decompress > /tmp/m3b1-task5-red.patch
-          git apply --check /tmp/m3b1-task5-red.patch
-          git apply /tmp/m3b1-task5-red.patch
+          gzip --decompress --stdout .m3b1-task5-red.patch.gz > /tmp/m3b1-task5-red.patch
+          git apply --check --verbose /tmp/m3b1-task5-red.patch
+          git apply --verbose /tmp/m3b1-task5-red.patch
           pnpm exec prettier --write \
             apps/web/src/review/decision-factory.test.ts \
             apps/web/src/review/review-engine.test.ts \
@@ -138,11 +135,7 @@ jobs:
             apps/web/src/review/review-session.test.ts \
             apps/web/src/review/review-selectors.test.ts
           git diff --check
-
-      - name: Prove Task 5 RED fails for missing integration modules
-        shell: bash
-        run: |
-          set -uo pipefail
+          set +e
           pnpm --filter @api-schema-flow/web exec vitest run \
             src/review/decision-factory.test.ts \
             src/review/review-engine.test.ts \
@@ -151,18 +144,13 @@ jobs:
             src/review/review-selectors.test.ts \
             > /tmp/m3b1-task5-red.log 2>&1
           status=$?
+          set -e
           cat /tmp/m3b1-task5-red.log
-          if [ "$status" -eq 0 ]; then
-            echo 'Task 5 RED tests unexpectedly passed before production modules existed.' >&2
-            exit 1
-          fi
-          if ! grep -Eiq 'decision-factory|review-engine|review-workspace-adapter|Cannot find module|Failed to resolve import' /tmp/m3b1-task5-red.log; then
-            echo 'Task 5 RED did not fail for the expected missing composition modules.' >&2
-            exit 1
-          fi
-          echo 'Task 5 RED confirmed: composition contracts fail before implementation.'
+          test "$status" -ne 0
+          grep -Eiq 'decision-factory|review-engine|review-workspace-adapter|Cannot find module|Failed to resolve import' /tmp/m3b1-task5-red.log
+          echo 'Task 5 RED confirmed: composition modules are required.'
 
-      - name: Commit Task 5 RED contract tests
+      - name: Commit Task 5 RED tests
         shell: bash
         run: |
           set -euo pipefail
@@ -179,10 +167,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s' "$TASK5_GREEN_PATCH_GZIP_BASE64" | base64 --decode | gzip --decompress > /tmp/m3b1-task5-green.patch
-          git apply --check /tmp/m3b1-task5-green.patch
-          git apply /tmp/m3b1-task5-green.patch
-          pnpm install --frozen-lockfile
+          gzip --decompress --stdout .m3b1-task5-green.patch.gz > /tmp/m3b1-task5-green.patch
+          git apply --check --verbose /tmp/m3b1-task5-green.patch
+          git apply --verbose /tmp/m3b1-task5-green.patch
+          pnpm install --frozen-lockfile --reporter=append-only
           pnpm exec prettier --write \
             apps/web/package.json \
             pnpm-lock.yaml \
@@ -192,12 +180,15 @@ jobs:
             apps/web/src/review/review-workspace-adapter.test.ts
           git diff --check
 
-      - name: Remove temporary delivery infrastructure before verification
+      - name: Remove temporary delivery infrastructure
         shell: bash
         run: |
           set -euo pipefail
           rm -f .github/workflows/m3b1-task5-finalize.yml
           rm -f .m3b1-task4-green.patch.gz.b64
+          rm -f .m3b1-prereq-lint.patch.gz
+          rm -f .m3b1-task5-red.patch.gz
+          rm -f .m3b1-task5-green.patch.gz
           find .github/workflows -maxdepth 1 -type f -printf '%f\n' | sort > /tmp/m3b1-final-workflows.txt
           cat /tmp/m3b1-final-workflows.txt
           diff -u <(printf '%s\n' ci.yml m3b1-ci.yml m3b1-source-export.yml) /tmp/m3b1-final-workflows.txt
@@ -233,7 +224,12 @@ jobs:
             apps/web/src/review/review-engine.ts \
             apps/web/src/review/review-workspace-adapter.ts \
             apps/web/src/review/review-workspace-adapter.test.ts
-          git add -u -- .github/workflows .m3b1-task4-green.patch.gz.b64
+          git add -u -- \
+            .github/workflows/m3b1-task5-finalize.yml \
+            .m3b1-task4-green.patch.gz.b64 \
+            .m3b1-prereq-lint.patch.gz \
+            .m3b1-task5-red.patch.gz \
+            .m3b1-task5-green.patch.gz
           git diff --cached --check
           git commit -m 'feat(web): compose review decisions and workspace projections'
           test -z "$(git status --porcelain)"
