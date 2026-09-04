@@ -1,0 +1,167 @@
+name: M3-B1 Task 4 GREEN
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-task4-green
+  cancel-in-progress: false
+
+jobs:
+  green:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Apply Task 3 restoration and Task 4 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .m3b1-task4-green.patch.gz.b64 | gzip --decompress > /tmp/m3b1-task4-green.patch
+          git apply --check /tmp/m3b1-task4-green.patch
+          git apply /tmp/m3b1-task4-green.patch
+          pnpm install --frozen-lockfile
+
+      - name: Format implementation files
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec prettier --write \
+            package.json \
+            apps/web/package.json \
+            pnpm-lock.yaml \
+            packages/review/package.json \
+            packages/review/src/browser.ts \
+            packages/review/tests/unit/browser-entry.test.ts \
+            packages/review/tests/integration/browser-parity.integration.test.ts \
+            tooling/scripts/check-review-browser-bundle.mjs \
+            tooling/scripts/check-boundaries.mjs \
+            apps/web/src/data/types.ts \
+            apps/web/src/data/load-workspace.ts \
+            apps/web/src/data/load-workspace.test.ts \
+            apps/web/src/test/review-workspace-fixture.ts \
+            apps/web/src/app.tsx \
+            apps/web/src/app.test.tsx \
+            apps/web/src/components/operations-panel.tsx \
+            apps/web/src/workspace/operation-view-model.ts \
+            apps/web/src/workspace/operation-view-model.test.ts \
+            apps/web/src/graph/flow-canvas.tsx \
+            apps/web/src/inspector/inspector-panel.tsx \
+            apps/web/src/outline/outline-view.tsx
+          git diff --check
+
+      - name: Verify restored Review browser boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @api-schema-flow/review build
+          pnpm --filter @api-schema-flow/review test
+          pnpm --filter @api-schema-flow/review test:integration
+          pnpm check:review-browser-bundle
+
+      - name: Verify typed Snapshot 1.1 loader boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @api-schema-flow/web exec vitest run \
+            src/data/load-workspace.test.ts \
+            src/app.test.tsx \
+            src/workspace/operation-view-model.test.ts
+          pnpm --filter @api-schema-flow/web test
+          pnpm --filter @api-schema-flow/web typecheck
+          pnpm --filter @api-schema-flow/web build
+          pnpm check:web-bundle
+          pnpm check:web-fixture
+
+      - name: Verify unsafe casts and duplicated Web Domain models are gone
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RFn 'as unknown as WorkspaceSnapshot' apps/web/src; then
+            echo 'Unsafe WorkspaceSnapshot force-cast remains.' >&2
+            exit 1
+          fi
+          if grep -Eq '^export interface (OperationValue|EdgeValue|SchemaValue|WorkspaceSnapshot)' apps/web/src/data/types.ts; then
+            echo 'Duplicated Domain model remains in apps/web/src/data/types.ts.' >&2
+            exit 1
+          fi
+          grep -Fq 'isReviewWorkspaceSnapshot' apps/web/src/data/load-workspace.ts
+          grep -Fq 'ReviewWorkspaceSnapshot<Diagnostic>' apps/web/src/data/types.ts
+
+      - name: Run complete repository regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm ci:verify
+          pnpm check:web-fixture
+          pnpm build:web
+          pnpm check:web-bundle
+
+      - name: Commit restored Task 3 browser boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            package.json \
+            packages/review/package.json \
+            packages/review/src/browser.ts \
+            packages/review/tests/unit/browser-entry.test.ts \
+            packages/review/tests/integration/browser-parity.integration.test.ts \
+            tooling/scripts/check-review-browser-bundle.mjs \
+            tooling/scripts/check-boundaries.mjs
+          git diff --cached --check
+          git commit -m 'feat(review): expose browser-safe review semantics'
+
+      - name: Commit Task 4 and remove temporary delivery files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3b1-task4-green.yml
+          rm -f .m3b1-task4-green.patch.gz.b64
+          git add \
+            apps/web/package.json \
+            pnpm-lock.yaml \
+            apps/web/src/data/types.ts \
+            apps/web/src/data/load-workspace.ts \
+            apps/web/src/data/load-workspace.test.ts \
+            apps/web/src/test/review-workspace-fixture.ts \
+            apps/web/src/app.tsx \
+            apps/web/src/app.test.tsx \
+            apps/web/src/components/operations-panel.tsx \
+            apps/web/src/workspace/operation-view-model.ts \
+            apps/web/src/workspace/operation-view-model.test.ts \
+            apps/web/src/graph/flow-canvas.tsx \
+            apps/web/src/inspector/inspector-panel.tsx \
+            apps/web/src/outline/outline-view.tsx
+          git add -u -- .github/workflows .m3b1-task4-green.patch.gz.b64
+          git diff --cached --check
+          git commit -m 'fix(web): validate typed review workspace snapshots'
+          git push origin HEAD:feat/m3b1-review-workspace-integration
