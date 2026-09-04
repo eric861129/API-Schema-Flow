@@ -43,3 +43,11 @@ jobs:
         run: >-
           pnpm --filter @api-schema-flow/domain test --
           review-workspace-snapshot-contract.test.ts
+
+      - name: Run Domain regression, typecheck, and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @api-schema-flow/domain test
+          pnpm --filter @api-schema-flow/domain typecheck
+          pnpm --filter @api-schema-flow/domain build
