@@ -163,13 +163,36 @@ jobs:
           git diff --cached --check
           git commit -m 'test(web): define Task 5 review composition contracts'
 
-      - name: Apply Task 5 GREEN implementation
+      - name: Apply Task 5 GREEN implementation and optimize deterministic selectors
         shell: bash
         run: |
           set -euo pipefail
           gzip --decompress --stdout .m3b1-task5-green.patch.gz > /tmp/m3b1-task5-green.patch
           git apply --check --verbose /tmp/m3b1-task5-green.patch
           git apply --verbose /tmp/m3b1-task5-green.patch
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/web/src/review/review-selectors.ts')
+          text = path.read_text()
+
+          old = "return value.normalize('NFKC').trim().toLocaleLowerCase()"
+          new = "return value.normalize('NFKC').trim().toLowerCase()"
+          if old not in text:
+              raise SystemExit('Expected locale lowercase selector implementation was not found')
+          text = text.replace(old, new, 1)
+
+          old = """function compareText(left: string, right: string): number {
+            return left.localeCompare(right, 'en', { sensitivity: 'base' })
+          }"""
+          new = """function compareText(left: string, right: string): number {
+            if (left === right) return 0
+            return left < right ? -1 : 1
+          }"""
+          if old not in text:
+              raise SystemExit('Expected locale comparator implementation was not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
           pnpm install --frozen-lockfile --reporter=append-only
           pnpm exec prettier --write \
             apps/web/package.json \
@@ -177,7 +200,8 @@ jobs:
             apps/web/src/review/decision-factory.ts \
             apps/web/src/review/review-engine.ts \
             apps/web/src/review/review-workspace-adapter.ts \
-            apps/web/src/review/review-workspace-adapter.test.ts
+            apps/web/src/review/review-workspace-adapter.test.ts \
+            apps/web/src/review/review-selectors.ts
           git diff --check
 
       - name: Remove temporary delivery infrastructure
@@ -185,6 +209,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f .github/workflows/m3b1-task5-finalize.yml
+          rm -f .github/workflows/m3b1-task5-source-inspect.yml
           rm -f .m3b1-task4-green.patch.gz.b64
           rm -f .m3b1-prereq-lint.patch.gz
           rm -f .m3b1-task5-red.patch.gz
@@ -223,9 +248,11 @@ jobs:
             apps/web/src/review/decision-factory.ts \
             apps/web/src/review/review-engine.ts \
             apps/web/src/review/review-workspace-adapter.ts \
-            apps/web/src/review/review-workspace-adapter.test.ts
+            apps/web/src/review/review-workspace-adapter.test.ts \
+            apps/web/src/review/review-selectors.ts
           git add -u -- \
             .github/workflows/m3b1-task5-finalize.yml \
+            .github/workflows/m3b1-task5-source-inspect.yml \
             .m3b1-task4-green.patch.gz.b64 \
             .m3b1-prereq-lint.patch.gz \
             .m3b1-task5-red.patch.gz \
