@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@api-schema-flow/domain": "workspace:*",
+    "@api-schema-flow/diagnostics": "workspace:*",
     "@api-schema-flow/layout": "workspace:*",
     "@xyflow/react": "catalog:",
     "react": "catalog:",

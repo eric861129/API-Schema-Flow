@@ -2,21 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { App } from './app'
+import { createReviewWorkspaceFixture } from './test/review-workspace-fixture'
 
-const snapshot = {
-  schemaVersion: '1.0',
-  project: {
-    name: 'Reservation System',
-    sourceName: 'Reservation API',
-    sourceUri: 'fixture://reservation/openapi.yaml',
-    openapiVersion: '3.1.0',
-  },
-  apiDocument: { operations: [] },
-  acceptedGraph: { id: 'graph', nodes: [], edges: [] },
-  inferenceCandidates: [],
-  reviewOutcomes: [],
-  diagnostics: [],
-}
+const snapshot = createReviewWorkspaceFixture({ operations: [], nodes: [] })
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -31,7 +19,7 @@ beforeEach(() => {
   )
 })
 
-test('renders a concrete empty state after loading a valid empty workspace', async () => {
+test('renders a concrete empty state after loading a valid empty review workspace', async () => {
   render(<App />)
   expect(screen.getByText('Loading Reservation workspace…')).toBeInTheDocument()
   await waitFor(() =>

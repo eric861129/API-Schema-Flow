@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react'
 
-import type { HttpMethod } from '../data/types'
+import type { HttpMethod } from '@api-schema-flow/domain'
 import {
   filterOperationViewModels,
   groupOperationViewModels,

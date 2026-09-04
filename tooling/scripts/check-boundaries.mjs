@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const packagesDirectory = fileURLToPath(new URL('../../packages/', import.meta.url))
+const webReviewDirectory = fileURLToPath(new URL('../../apps/web/src/review/', import.meta.url))
 const forbiddenDeepImport = /from\s+['"]@api-schema-flow\/[^'"]+\/src\//
 const scalarTypeLeak = /@scalar\/openapi-parser/
 const zodTypeLeak = /(?:from|import\()\s*['"]zod['"]/
@@ -45,6 +46,20 @@ const allowedExporterDependencies = new Set([
   '@api-schema-flow/source-loader',
   'yaml',
 ])
+const allowedWebReviewRuntimeImport = '@api-schema-flow/review/browser'
+const forbiddenWebReviewPackages = [
+  '@api-schema-flow/openapi',
+  '@api-schema-flow/arazzo',
+  '@api-schema-flow/source-loader',
+  '@api-schema-flow/inference',
+  '@api-schema-flow/cli',
+  '@api-schema-flow/mock-runtime',
+  '@api-schema-flow/execution',
+  'fastify',
+  'hono',
+  'msw',
+]
+
 const forbiddenFlowDependencies = new Set([
   'react',
   '@xyflow/react',
@@ -122,6 +137,51 @@ async function collectFlowDependencyViolations() {
     .filter((dependency) => forbiddenFlowDependencies.has(dependency))
     .sort()
     .map((dependency) => `packages/flow/package.json: forbidden Flow dependency ${dependency}`)
+}
+
+function isPackageOrSubpath(specifier, packageName) {
+  return specifier === packageName || specifier.startsWith(`${packageName}/`)
+}
+
+async function collectWebReviewImportViolations() {
+  const files = [
+    ...(await walk(webReviewDirectory, { extension: '.ts' })),
+    ...(await walk(webReviewDirectory, { extension: '.tsx' })),
+  ]
+  const violations = []
+
+  for (const file of files) {
+    const content = await readFile(file, 'utf8')
+    const relative = path.relative(root, file)
+    const importSpecifierPattern = /(?:from\s+|import\s*\(\s*|import\s+)['"]([^'"]+)['"]/g
+
+    for (const match of content.matchAll(importSpecifierPattern)) {
+      const specifier = match[1]
+      if (specifier === undefined) continue
+
+      if (isPackageOrSubpath(specifier, '@api-schema-flow/review')) {
+        if (specifier !== allowedWebReviewRuntimeImport) {
+          violations.push(
+            `${relative}: Web Review must import Review semantics only from ${allowedWebReviewRuntimeImport} (found ${specifier})`,
+          )
+        }
+        continue
+      }
+
+      if (
+        forbiddenWebReviewPackages.some((packageName) =>
+          isPackageOrSubpath(specifier, packageName),
+        ) ||
+        specifier.startsWith('@api-schema-flow/exporter-')
+      ) {
+        violations.push(
+          `${relative}: Web Review must not import parser, source, inference, CLI, exporter, server, mock, or execution package ${specifier}`,
+        )
+      }
+    }
+  }
+
+  return violations
 }
 
 async function collectAllowedDependencyViolations(packageName, allowedDependencies) {
@@ -210,6 +270,7 @@ async function main() {
       zodTypeLeak,
       'Zod type leaked through public declarations',
     )),
+    ...(await collectWebReviewImportViolations()),
     ...(await collectFlowDependencyViolations()),
     ...(await collectInferenceDependencyViolations()),
     ...(await collectAllowedDependencyViolations('review', allowedReviewDependencies)),

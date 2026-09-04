@@ -47,17 +47,9 @@ async function loadRuntime() {
 function sanitizeSchema(schema) {
   if (schema === undefined) return undefined
 
-  const {
-    example: _example,
-    defaultValue: _defaultValue,
-    properties,
-    items,
-    allOf,
-    anyOf,
-    oneOf,
-    additionalProperties,
-    ...rest
-  } = schema
+  const { properties, items, allOf, anyOf, oneOf, additionalProperties, ...rest } = schema
+  Reflect.deleteProperty(rest, 'example')
+  Reflect.deleteProperty(rest, 'defaultValue')
 
   return {
     ...rest,
@@ -77,7 +69,8 @@ function sanitizeSchema(schema) {
 }
 
 function sanitizeMediaType(mediaType) {
-  const { example: _example, schema, ...rest } = mediaType
+  const { schema, ...rest } = mediaType
+  Reflect.deleteProperty(rest, 'example')
   return {
     ...rest,
     ...(schema === undefined ? {} : { schema: sanitizeSchema(schema) }),
@@ -163,9 +156,7 @@ function createCandidate(flow, input) {
       mapping: {
         source: input.mapping.source,
         target: input.mapping.target,
-        ...(input.mapping.transform === undefined
-          ? {}
-          : { transform: input.mapping.transform }),
+        ...(input.mapping.transform === undefined ? {} : { transform: input.mapping.transform }),
       },
     }),
   )
@@ -276,7 +267,10 @@ export async function buildReservationSnapshot() {
     byteLength: Buffer.byteLength(contents),
   })
 
-  if (parsed.document === undefined || parsed.diagnostics.some(({ severity }) => severity === 'error')) {
+  if (
+    parsed.document === undefined ||
+    parsed.diagnostics.some(({ severity }) => severity === 'error')
+  ) {
     throw new Error(
       `Canonical Reservation OpenAPI could not be normalized: ${parsed.diagnostics
         .map(({ code, message }) => `${code} ${message}`)
@@ -317,12 +311,7 @@ export async function buildReservationSnapshot() {
       pointer('#/paths/~1reservations~1{id}/get/parameters/0'),
     ],
   )
-  const declaredGraph = createDeclaredGraph(
-    flow,
-    operations,
-    nodes,
-    declaredReservationMapping,
-  )
+  const declaredGraph = createDeclaredGraph(flow, operations, nodes, declaredReservationMapping)
 
   const tokenMapping = createMapping(
     flow,
@@ -534,9 +523,10 @@ function stableArrayKey(item) {
     return `decision:${item.candidateId ?? ''}:${item.decisionId}:${item.state ?? ''}`
   }
   if (typeof item.code === 'string') {
-    const source = item.source && typeof item.source === 'object'
-      ? `${item.source.uri ?? ''}${item.source.pointer ?? ''}`
-      : ''
+    const source =
+      item.source && typeof item.source === 'object'
+        ? `${item.source.uri ?? ''}${item.source.pointer ?? ''}`
+        : ''
     return `diagnostic:${item.severity ?? ''}:${item.code}:${source}`
   }
   if (typeof item.ruleId === 'string') return `rule:${item.ruleId}`

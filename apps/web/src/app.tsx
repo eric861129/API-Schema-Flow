@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import '@xyflow/react/dist/style.css'
 
+import type { HttpMethod } from '@api-schema-flow/domain'
 import type { FlowLayoutDirection, PositionedFlowGraph } from '@api-schema-flow/layout'
 
 import { OperationsPanel } from './components/operations-panel'
 import { DiagnosticsDrawer } from './diagnostics/diagnostics-drawer'
 import { loadWorkspaceSnapshot, WorkspaceLoadError } from './data/load-workspace'
-import type { HttpMethod, SelectedElement, WorkspaceSnapshot } from './data/types'
+import type { SelectedElement, WorkspaceSnapshot } from './data/types'
 import { FlowCanvas } from './graph/flow-canvas'
 import { InspectorPanel } from './inspector/inspector-panel'
 import { OutlineView } from './outline/outline-view'
@@ -69,7 +70,7 @@ export function App() {
     let cancelled = false
     import('@api-schema-flow/layout')
       .then(({ createElkFlowLayoutEngine }) =>
-        createElkFlowLayoutEngine().layout(snapshot.acceptedGraph as never, { direction }),
+        createElkFlowLayoutEngine().layout(snapshot.acceptedGraph, { direction }),
       )
       .then((result) => {
         if (!cancelled) setLayout(result)

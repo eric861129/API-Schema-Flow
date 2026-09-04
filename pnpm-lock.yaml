@@ -92,6 +92,9 @@ importers:
       '@api-schema-flow/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@api-schema-flow/diagnostics':
+        specifier: workspace:*
+        version: link:../../packages/diagnostics
       '@api-schema-flow/layout':
         specifier: workspace:*
         version: link:../../packages/layout
