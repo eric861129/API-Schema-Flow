@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
+import { deriveBaselineRevisions } from './decision-factory'
 import {
   createInitialReviewSession,
   getNextReviewRevision,
@@ -62,6 +63,41 @@ describe('review session', () => {
         reason: 'wrong-field',
       },
     ])
+  })
+
+  test('uses maximum derived baseline revisions when allocating the next intent', () => {
+    const baselineRevisions = deriveBaselineRevisions({
+      schemaVersion: '1.0',
+      revision: 3,
+      decisions: [
+        {
+          schemaVersion: '1.0',
+          id: 'decision:v1',
+          candidateId: 'candidate:one',
+          candidateFingerprint: 'fingerprint:one',
+          ruleSetVersion: '1.0.0',
+          revision: 1,
+          action: 'reject',
+        },
+        {
+          schemaVersion: '1.0',
+          id: 'decision:v3',
+          candidateId: 'candidate:one',
+          candidateFingerprint: 'fingerprint:one',
+          ruleSetVersion: '1.0.0',
+          revision: 3,
+          action: 'accept',
+        },
+      ],
+      manualEdges: [],
+    })
+    const state = createInitialReviewSession({
+      projectFingerprint: 'project:reservation',
+      sourceRevision: 'revision:1',
+      baselineRevisions,
+    })
+
+    expect(getNextReviewRevision(state, 'candidate:one')).toBe(4)
   })
 
   test('requires a note only for the Other reject reason', () => {
