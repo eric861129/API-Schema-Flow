@@ -1,0 +1,64 @@
+name: M3-B1 Task 6 Dev Environment Export
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-task6-dev-env-export
+  cancel-in-progress: true
+
+jobs:
+  export:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out exact integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.24.0
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile --reporter=append-only
+
+      - name: Package portable Task 6 environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .task6-tools
+          cp "$(command -v node)" .task6-tools/node
+          cp -a "$(npm root --global)/pnpm" .task6-tools/pnpm
+          tar \
+            --ignore-failed-read \
+            -czf /tmp/api-schema-flow-task6-dev-env.tgz \
+            .task6-tools \
+            node_modules \
+            apps/web/node_modules \
+            packages/*/node_modules
+
+      - name: Upload portable Task 6 environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-schema-flow-task6-dev-env
+          path: /tmp/api-schema-flow-task6-dev-env.tgz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
