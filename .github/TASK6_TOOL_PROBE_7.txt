@@ -1,0 +1,1 @@
+Temporary Task 6 connector capability probe; remove before completion.
