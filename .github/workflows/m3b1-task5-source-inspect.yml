@@ -25,39 +25,27 @@ jobs:
           ref: feat/m3b1-review-workspace-integration
           fetch-depth: 0
 
-      - name: Apply prerequisite, Task 4, and Task 5 payloads
+      - name: Package exact Task 4 and Task 5 payloads
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .m3b1-task4-green.patch.gz.b64 | gzip --decompress > /tmp/task4.patch
-          git apply --check /tmp/task4.patch
-          git apply /tmp/task4.patch
-          gzip --decompress --stdout .m3b1-prereq-lint.patch.gz > /tmp/prereq.patch
-          git apply --check /tmp/prereq.patch
-          git apply /tmp/prereq.patch
-          gzip --decompress --stdout .m3b1-task5-red.patch.gz > /tmp/task5-red.patch
-          git apply --check /tmp/task5-red.patch
-          git apply /tmp/task5-red.patch
-          gzip --decompress --stdout .m3b1-task5-green.patch.gz > /tmp/task5-green.patch
-          git apply --check /tmp/task5-green.patch
-          git apply /tmp/task5-green.patch
+          sha256sum \
+            .m3b1-task4-green.patch.gz.b64 \
+            .m3b1-prereq-lint.patch.gz \
+            .m3b1-task5-red.patch.gz \
+            .m3b1-task5-green.patch.gz \
+            > /tmp/SHA256SUMS.txt
+          tar -czf /tmp/m3b1-task5-payloads.tgz \
+            .m3b1-task4-green.patch.gz.b64 \
+            .m3b1-prereq-lint.patch.gz \
+            .m3b1-task5-red.patch.gz \
+            .m3b1-task5-green.patch.gz \
+            /tmp/SHA256SUMS.txt
 
-      - name: Package Task 5 review sources
-        shell: bash
-        run: |
-          set -euo pipefail
-          tar -czf /tmp/m3b1-task5-sources.tgz \
-            apps/web/src/review \
-            apps/web/src/data \
-            apps/web/src/test/review-workspace-fixture.ts \
-            apps/web/package.json \
-            packages/review/src \
-            packages/domain/src
-
-      - name: Upload Task 5 sources
+      - name: Upload exact Task 5 payloads
         uses: actions/upload-artifact@v4
         with:
-          name: m3b1-task5-sources
-          path: /tmp/m3b1-task5-sources.tgz
+          name: m3b1-task5-payloads
+          path: /tmp/m3b1-task5-payloads.tgz
           retention-days: 1
           if-no-files-found: error
