@@ -1,0 +1,63 @@
+name: M3-B1 Task 5 Source Inspect
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-task5-source-inspect
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Apply prerequisite, Task 4, and Task 5 payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .m3b1-task4-green.patch.gz.b64 | gzip --decompress > /tmp/task4.patch
+          git apply --check /tmp/task4.patch
+          git apply /tmp/task4.patch
+          gzip --decompress --stdout .m3b1-prereq-lint.patch.gz > /tmp/prereq.patch
+          git apply --check /tmp/prereq.patch
+          git apply /tmp/prereq.patch
+          gzip --decompress --stdout .m3b1-task5-red.patch.gz > /tmp/task5-red.patch
+          git apply --check /tmp/task5-red.patch
+          git apply /tmp/task5-red.patch
+          gzip --decompress --stdout .m3b1-task5-green.patch.gz > /tmp/task5-green.patch
+          git apply --check /tmp/task5-green.patch
+          git apply /tmp/task5-green.patch
+
+      - name: Package Task 5 review sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -czf /tmp/m3b1-task5-sources.tgz \
+            apps/web/src/review \
+            apps/web/src/data \
+            apps/web/src/test/review-workspace-fixture.ts \
+            apps/web/package.json \
+            packages/review/src \
+            packages/domain/src
+
+      - name: Upload Task 5 sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3b1-task5-sources
+          path: /tmp/m3b1-task5-sources.tgz
+          retention-days: 1
+          if-no-files-found: error
