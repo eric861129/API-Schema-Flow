@@ -1,0 +1,535 @@
+name: M3-B1 Task 4 Snapshot Boundary
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-task4-snapshot-boundary
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write Task 4 loader tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > apps/web/src/data/load-workspace.test.ts <<'EOF'
+          import { describe, expect, test } from 'vitest'
+
+          import reservationWorkspace from '../../public/fixtures/reservation-workspace.json'
+          import { loadWorkspaceSnapshot } from './load-workspace'
+
+          const workspaceUrl = '/fixtures/reservation-workspace.json'
+
+          function cloneFixture(): Record<string, unknown> {
+            return structuredClone(reservationWorkspace) as Record<string, unknown>
+          }
+
+          function jsonResponse(value: unknown, status = 200): typeof fetch {
+            return async () =>
+              new Response(JSON.stringify(value), {
+                status,
+                headers: { 'content-type': 'application/json' },
+              })
+          }
+
+          function textResponse(value: string, status = 200): typeof fetch {
+            return async () => new Response(value, { status })
+          }
+
+          describe('loadWorkspaceSnapshot', () => {
+            test('returns a typed Review Workspace Snapshot 1.1 after validating the JSON boundary', async () => {
+              const snapshot = await loadWorkspaceSnapshot(workspaceUrl, jsonResponse(cloneFixture()))
+
+              expect(snapshot.schemaVersion).toBe('1.1')
+              expect(snapshot.reviewContext.projectFingerprint).toBeTruthy()
+              expect(snapshot.inferenceCandidates[0]?.mapping).toBeDefined()
+              expect(snapshot.reviewDecisionSet.decisions).toHaveLength(2)
+              expect(snapshot.reviewOutcomes[0]?.state).toBeTruthy()
+              expect(snapshot.declaredGraph.edges).toHaveLength(1)
+            })
+
+            test('maps a fetch exception to a network error', async () => {
+              const fetcher: typeof fetch = async () => {
+                throw new TypeError('offline')
+              }
+
+              await expect(loadWorkspaceSnapshot(workspaceUrl, fetcher)).rejects.toMatchObject({
+                code: 'network',
+                url: workspaceUrl,
+              })
+            })
+
+            test('maps a non-OK response to a network error', async () => {
+              await expect(
+                loadWorkspaceSnapshot(workspaceUrl, textResponse('not found', 404)),
+              ).rejects.toMatchObject({
+                code: 'network',
+                status: 404,
+                url: workspaceUrl,
+              })
+            })
+
+            test('maps malformed JSON to invalid-json', async () => {
+              await expect(loadWorkspaceSnapshot(workspaceUrl, textResponse('{'))).rejects.toMatchObject({
+                code: 'invalid-json',
+                url: workspaceUrl,
+              })
+            })
+
+            test('rejects Snapshot 1.0 with a concrete 1.1 requirement', async () => {
+              const value = cloneFixture()
+              value.schemaVersion = '1.0'
+              value.generatedBy = { package: 'api-schema-flow', milestone: 'M3-A' }
+
+              await expect(loadWorkspaceSnapshot(workspaceUrl, jsonResponse(value))).rejects.toMatchObject({
+                code: 'unsupported',
+                expectedVersion: '1.1',
+                receivedVersion: '1.0',
+              })
+            })
+
+            test('rejects an unknown future snapshot version as unsupported', async () => {
+              const value = cloneFixture()
+              value.schemaVersion = '9.0'
+
+              await expect(loadWorkspaceSnapshot(workspaceUrl, jsonResponse(value))).rejects.toMatchObject({
+                code: 'unsupported',
+                expectedVersion: '1.1',
+                receivedVersion: '9.0',
+              })
+            })
+
+            test('rejects a Snapshot 1.1 that is missing the review decision set', async () => {
+              const value = cloneFixture()
+              delete value.reviewDecisionSet
+
+              await expect(loadWorkspaceSnapshot(workspaceUrl, jsonResponse(value))).rejects.toMatchObject({
+                code: 'invalid-shape',
+                expectedVersion: '1.1',
+              })
+            })
+
+            test('rejects a Snapshot 1.1 with an invalid declared operation graph', async () => {
+              const value = cloneFixture()
+              value.declaredGraph = {
+                ...(value.declaredGraph as Record<string, unknown>),
+                kind: 'workflow-instance',
+              }
+
+              await expect(loadWorkspaceSnapshot(workspaceUrl, jsonResponse(value))).rejects.toMatchObject({
+                code: 'invalid-shape',
+                expectedVersion: '1.1',
+              })
+            })
+          })
+          EOF
+
+      - name: Verify RED for the unsafe legacy boundary
+        shell: bash
+        run: |
+          set -uo pipefail
+          pnpm --filter @api-schema-flow/web exec vitest run src/data/load-workspace.test.ts > /tmp/task4-red.log 2>&1
+          status=$?
+          cat /tmp/task4-red.log
+          if [ "$status" -eq 0 ]; then
+            echo 'Task 4 RED unexpectedly passed before the Snapshot 1.1 boundary was implemented.' >&2
+            exit 1
+          fi
+          if ! grep -Eiq '1\.1|reviewContext|reviewDecisionSet|invalid-shape|unsupported|expectedVersion|declaredGraph|loadWorkspaceSnapshot' /tmp/task4-red.log; then
+            echo 'Task 4 RED failed for an unrelated reason.' >&2
+            exit 1
+          fi
+          echo 'Task 4 RED confirmed: the legacy loader does not enforce the Review Workspace Snapshot 1.1 contract.'
+
+      - name: Replace duplicated Web snapshot types with Domain aliases
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('apps/web/src/data/types.ts')
+          text = path.read_text()
+
+          if 'ReviewWorkspaceSnapshot' not in text:
+              text = "import type { ReviewWorkspaceSnapshot } from '@api-schema-flow/domain'\n\n" + text
+
+          match = re.search(r'export\s+interface\s+WorkspaceSnapshot\s*\{', text)
+          if match:
+              start = match.start()
+              brace = text.find('{', match.start())
+              depth = 0
+              end = None
+              for index in range(brace, len(text)):
+                  if text[index] == '{':
+                      depth += 1
+                  elif text[index] == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  raise SystemExit('Could not find the end of WorkspaceSnapshot')
+              while end < len(text) and text[end] in ' \t\r\n;':
+                  end += 1
+              text = text[:start] + text[end:]
+          else:
+              text, count = re.subn(
+                  r'export\s+type\s+WorkspaceSnapshot\s*=.*?(?:;|\n)',
+                  '',
+                  text,
+                  count=1,
+                  flags=re.S,
+              )
+              if count == 0:
+                  raise SystemExit('WorkspaceSnapshot declaration was not found')
+
+          if not re.search(r'export\s+(?:interface|type)\s+DiagnosticValue\b', text):
+              text += "\nexport interface DiagnosticValue {\n  readonly code: string\n  readonly severity: 'info' | 'warning' | 'error'\n  readonly message: string\n  readonly source?: { readonly uri: string; readonly pointer: string }\n  readonly details?: Readonly<Record<string, unknown>>\n}\n"
+
+          text = text.rstrip() + '\n\nexport type WorkspaceSnapshot = ReviewWorkspaceSnapshot<DiagnosticValue>\n'
+          path.write_text(text)
+          PY
+
+          cp apps/web/src/data/types.ts /tmp/task4-types-before-domain-aliases.ts
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('apps/web/src/data/types.ts')
+          text = path.read_text()
+          replacements = []
+
+          for match in re.finditer(r'export\s+interface\s+(\w+)\s*\{', text):
+              name = match.group(1)
+              brace = text.find('{', match.start())
+              depth = 0
+              end = None
+              for index in range(brace, len(text)):
+                  if text[index] == '{':
+                      depth += 1
+                  elif text[index] == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  continue
+              body = ' '.join(text[brace + 1:end - 1].split())
+              alias = None
+              if all(token in body for token in ('nodes', 'edges', 'schemaVersion')):
+                  alias = 'FlowGraph'
+              elif all(token in body for token in ('sourceNodeId', 'targetNodeId', 'provenance', 'status')):
+                  alias = 'FlowEdge'
+              elif all(token in body for token in ('operationKey', 'kind', 'source')) and 'sourceNodeId' not in body:
+                  alias = "Extract<FlowNode, { readonly kind: 'endpoint' }>"
+              elif all(token in body for token in ('fingerprint', 'confidence', 'mapping', 'ruleSetVersion')):
+                  alias = 'InferenceCandidate'
+              elif all(token in body for token in ('state', 'candidateId')) and ('decision' in body or 'edgeId' in body):
+                  alias = 'ReviewDecisionOutcome'
+              if alias and name != 'WorkspaceSnapshot':
+                  replacements.append((match.start(), end, f'export type {name} = {alias}'))
+
+          for start, end, replacement in reversed(replacements):
+              text = text[:start] + replacement + text[end:]
+
+          required = [
+              name
+              for name in (
+                  'FlowEdge',
+                  'FlowGraph',
+                  'FlowNode',
+                  'InferenceCandidate',
+                  'ReviewDecisionOutcome',
+                  'ReviewWorkspaceSnapshot',
+              )
+              if name in text
+          ]
+          text = re.sub(
+              r"import type \{[^}]*ReviewWorkspaceSnapshot[^}]*\} from '@api-schema-flow/domain'\s*",
+              "import type {\n  " + ",\n  ".join(required) + "\n} from '@api-schema-flow/domain'\n\n",
+              text,
+              count=1,
+              flags=re.S,
+          )
+          path.write_text(text)
+          PY
+
+      - name: Implement the validated Snapshot 1.1 loader
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > apps/web/src/data/load-workspace.ts <<'EOF'
+          import {
+            REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION,
+            isReviewWorkspaceSnapshot,
+          } from '@api-schema-flow/domain'
+
+          import type { DiagnosticValue, WorkspaceSnapshot } from './types'
+
+          export const DEFAULT_WORKSPACE_URL = '/fixtures/reservation-workspace.json'
+
+          export type WorkspaceLoadErrorCode =
+            | 'network'
+            | 'invalid-json'
+            | 'unsupported'
+            | 'invalid-shape'
+
+          export interface WorkspaceLoadErrorDetails {
+            readonly url: string
+            readonly status?: number
+            readonly expectedVersion?: string
+            readonly receivedVersion?: string
+            readonly cause?: unknown
+          }
+
+          export class WorkspaceLoadError extends Error {
+            readonly code: WorkspaceLoadErrorCode
+            readonly url: string
+            readonly status?: number
+            readonly expectedVersion?: string
+            readonly receivedVersion?: string
+
+            constructor(
+              code: WorkspaceLoadErrorCode,
+              message: string,
+              details: WorkspaceLoadErrorDetails,
+            ) {
+              super(message, details.cause === undefined ? undefined : { cause: details.cause })
+              this.name = 'WorkspaceLoadError'
+              this.code = code
+              this.url = details.url
+              this.status = details.status
+              this.expectedVersion = details.expectedVersion
+              this.receivedVersion = details.receivedVersion
+            }
+          }
+
+          function isRecord(value: unknown): value is Record<string, unknown> {
+            return typeof value === 'object' && value !== null && !Array.isArray(value)
+          }
+
+          function readSnapshotVersion(value: unknown): string | undefined {
+            return isRecord(value) && typeof value.schemaVersion === 'string'
+              ? value.schemaVersion
+              : undefined
+          }
+
+          function isDiagnosticValue(value: unknown): value is DiagnosticValue {
+            if (!isRecord(value)) {
+              return false
+            }
+
+            const source = value.source
+            return (
+              typeof value.code === 'string' &&
+              (value.severity === 'info' ||
+                value.severity === 'warning' ||
+                value.severity === 'error') &&
+              typeof value.message === 'string' &&
+              (source === undefined ||
+                (isRecord(source) &&
+                  typeof source.uri === 'string' &&
+                  typeof source.pointer === 'string'))
+            )
+          }
+
+          function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
+            return (
+              isReviewWorkspaceSnapshot(value) &&
+              value.diagnostics.every((diagnostic) => isDiagnosticValue(diagnostic))
+            )
+          }
+
+          export async function loadWorkspaceSnapshot(
+            url = DEFAULT_WORKSPACE_URL,
+            fetcher: typeof fetch = globalThis.fetch,
+          ): Promise<WorkspaceSnapshot> {
+            let response: Response
+
+            try {
+              response = await fetcher(url)
+            } catch (cause) {
+              throw new WorkspaceLoadError(
+                'network',
+                `Unable to load workspace snapshot from ${url}.`,
+                { url, cause },
+              )
+            }
+
+            if (!response.ok) {
+              throw new WorkspaceLoadError(
+                'network',
+                `Unable to load workspace snapshot from ${url}: HTTP ${response.status}.`,
+                { url, status: response.status },
+              )
+            }
+
+            let value: unknown
+            try {
+              value = await response.json()
+            } catch (cause) {
+              throw new WorkspaceLoadError(
+                'invalid-json',
+                `Workspace snapshot at ${url} is not valid JSON.`,
+                { url, cause },
+              )
+            }
+
+            const receivedVersion = readSnapshotVersion(value)
+            if (receivedVersion !== REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION) {
+              throw new WorkspaceLoadError(
+                'unsupported',
+                `Workspace snapshot version ${receivedVersion ?? 'missing'} is unsupported; version ${REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION} is required.`,
+                {
+                  url,
+                  expectedVersion: REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION,
+                  receivedVersion,
+                },
+              )
+            }
+
+            if (!isWorkspaceSnapshot(value)) {
+              throw new WorkspaceLoadError(
+                'invalid-shape',
+                `Workspace snapshot version ${REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION} has an invalid Review Workspace shape.`,
+                {
+                  url,
+                  expectedVersion: REVIEW_WORKSPACE_SNAPSHOT_SCHEMA_VERSION,
+                  receivedVersion,
+                },
+              )
+            }
+
+            return value
+          }
+          EOF
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('apps/web/package.json')
+          package = json.loads(path.read_text())
+          package.setdefault('dependencies', {})['@api-schema-flow/review'] = 'workspace:*'
+          path.write_text(json.dumps(package, indent=2, ensure_ascii=False) + '\n')
+          PY
+
+          pnpm install --lockfile-only
+          pnpm exec prettier --write \
+            apps/web/package.json \
+            apps/web/src/data/load-workspace.ts \
+            apps/web/src/data/load-workspace.test.ts \
+            apps/web/src/data/types.ts \
+            pnpm-lock.yaml
+          pnpm install --frozen-lockfile
+
+      - name: Verify GREEN and complete regression gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @api-schema-flow/web exec vitest run src/data/load-workspace.test.ts
+          pnpm --filter @api-schema-flow/web typecheck
+          pnpm --filter @api-schema-flow/web test
+          pnpm --filter @api-schema-flow/web build
+          pnpm check:web-fixture
+          pnpm check:web-bundle
+          pnpm check:review-browser-bundle
+          pnpm ci:verify
+          git diff --check
+
+      - name: Verify the unsafe boundary is gone
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RIn --include='*.ts' --include='*.tsx' 'as unknown as WorkspaceSnapshot' apps/web/src; then
+            echo 'Unsafe WorkspaceSnapshot cast remains.' >&2
+            exit 1
+          fi
+          if grep -RIn --include='*.ts' --include='*.tsx' 'isReadOnlyWorkspaceSnapshot' apps/web/src; then
+            echo 'Legacy Snapshot 1.0 guard remains in Web source.' >&2
+            exit 1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = Path('apps/web/src/data/types.ts').read_text()
+          issues = []
+          for match in re.finditer(r'export\s+interface\s+(\w+)\s*\{', text):
+              name = match.group(1)
+              brace = text.find('{', match.start())
+              depth = 0
+              end = None
+              for index in range(brace, len(text)):
+                  if text[index] == '{':
+                      depth += 1
+                  elif text[index] == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  continue
+              body = ' '.join(text[brace + 1:end - 1].split())
+              duplicate = (
+                  all(token in body for token in ('nodes', 'edges', 'schemaVersion'))
+                  or all(token in body for token in ('sourceNodeId', 'targetNodeId', 'provenance', 'status'))
+                  or all(token in body for token in ('fingerprint', 'confidence', 'mapping', 'ruleSetVersion'))
+                  or (
+                      all(token in body for token in ('state', 'candidateId'))
+                      and ('decision' in body or 'edgeId' in body)
+                  )
+              )
+              if duplicate:
+                  issues.append(name)
+          if issues:
+              raise SystemExit('Duplicated Domain graph/candidate/outcome declarations remain: ' + ', '.join(issues))
+          PY
+
+      - name: Commit Task 4 and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3b1-task4-snapshot-boundary.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'fix(web): validate review workspace snapshot boundary'
+          git push origin HEAD:feat/m3b1-review-workspace-integration
