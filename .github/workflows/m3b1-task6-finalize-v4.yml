@@ -150,6 +150,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          pnpm build
           pnpm --filter @api-schema-flow/web exec vitest run \
             src/app.test.tsx \
             src/review/review-session-context.test.tsx \
