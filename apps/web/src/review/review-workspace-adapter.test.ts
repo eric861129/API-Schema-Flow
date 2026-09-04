@@ -110,7 +110,7 @@ describe('review workspace Domain adapter', () => {
       evidenceCount: 2,
       blockerCount: 0,
       state: 'accepted',
-      ruleSetVersion: '1.0.0',
+      ruleSetVersion: 'm2c-v1',
       sourceSchema: { type: 'string', arrayDepth: 0 },
       targetSchema: { type: 'string', required: true, arrayDepth: 0 },
       transform: 'Bearer {$steps.source.outputs.token}',

@@ -13,9 +13,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@api-schema-flow/domain": "workspace:*",
     "@api-schema-flow/diagnostics": "workspace:*",
+    "@api-schema-flow/domain": "workspace:*",
     "@api-schema-flow/layout": "workspace:*",
+    "@api-schema-flow/review": "workspace:*",
     "@xyflow/react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
