@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: m3b1-task4-green
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   green:
@@ -28,16 +28,13 @@ jobs:
           ref: feat/m3b1-review-workspace-integration
           fetch-depth: 0
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 11.24.0
-
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: pnpm
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.24.0
 
       - name: Apply Task 3 restoration and Task 4 implementation
         shell: bash
