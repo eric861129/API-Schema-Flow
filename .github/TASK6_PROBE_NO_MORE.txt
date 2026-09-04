@@ -1,0 +1,1 @@
+This temporary file exists only because the connector output was suppressed. It must be removed by Task 6 finalization.
