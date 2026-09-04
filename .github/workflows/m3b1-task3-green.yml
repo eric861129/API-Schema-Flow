@@ -1,0 +1,164 @@
+name: M3-B1 Task 3 GREEN
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-task3-green
+  cancel-in-progress: false
+
+jobs:
+  green:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+      GREEN_PATCH_GZIP_BASE64: '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'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply and format Task 3 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import gzip
+          import os
+          from pathlib import Path
+
+          Path('/tmp/task3-green.patch').write_bytes(
+              gzip.decompress(base64.b64decode(os.environ['GREEN_PATCH_GZIP_BASE64']))
+          )
+          PY
+          git apply --check /tmp/task3-green.patch
+          git apply /tmp/task3-green.patch
+          pnpm exec prettier --write \
+            package.json \
+            packages/review/package.json \
+            packages/review/src/browser.ts \
+            packages/review/tests/unit/browser-entry.test.ts \
+            packages/review/tests/integration/browser-parity.integration.test.ts \
+            tooling/scripts/check-review-browser-bundle.mjs \
+            tooling/scripts/check-boundaries.mjs
+          git diff --check
+
+      - name: Build and run focused browser API parity tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm build
+          pnpm --filter @api-schema-flow/review exec vitest run tests/unit/browser-entry.test.ts
+          pnpm --filter @api-schema-flow/review exec vitest run tests/integration/browser-parity.integration.test.ts
+          pnpm --filter @api-schema-flow/review test
+          pnpm --filter @api-schema-flow/review test:integration
+          pnpm --filter @api-schema-flow/review typecheck
+
+      - name: Verify positive browser bundle and source boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm check:review-browser-bundle
+          pnpm boundaries:check
+
+      - name: Prove the browser bundle gate rejects a Node built-in
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp packages/review/src/browser.ts /tmp/task3-browser.ts
+          printf "\nexport { readFile as __task3NodeProbe } from 'node:fs'\n" >> packages/review/src/browser.ts
+          pnpm --filter @api-schema-flow/review build
+          set +e
+          pnpm check:review-browser-bundle > /tmp/task3-bundle-negative.log 2>&1
+          status=$?
+          set -e
+          cp /tmp/task3-browser.ts packages/review/src/browser.ts
+          pnpm --filter @api-schema-flow/review build
+          cat /tmp/task3-bundle-negative.log
+          if [ "$status" -eq 0 ]; then
+            echo 'Review browser bundle negative probe unexpectedly passed.' >&2
+            exit 1
+          fi
+          grep -Fxq 'Prohibited Review browser dependency marker: node:fs' /tmp/task3-bundle-negative.log
+          pnpm check:review-browser-bundle
+
+      - name: Prove Web Review source rejects the package root
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > apps/web/src/review/__task3-boundary-probe.ts <<'EOF'
+          import { resolveReviewDecisions } from '@api-schema-flow/review'
+
+          void resolveReviewDecisions
+          EOF
+          set +e
+          pnpm boundaries:check > /tmp/task3-boundary-negative.log 2>&1
+          status=$?
+          set -e
+          rm apps/web/src/review/__task3-boundary-probe.ts
+          cat /tmp/task3-boundary-negative.log
+          if [ "$status" -eq 0 ]; then
+            echo 'Web Review boundary negative probe unexpectedly passed.' >&2
+            exit 1
+          fi
+          grep -Fq '@api-schema-flow/review/browser' /tmp/task3-boundary-negative.log
+          pnpm boundaries:check
+
+      - name: Run complete monorepo regression and fixture drift gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm ci:verify
+          pnpm check:web-fixture
+
+      - name: Commit Task 3 and remove temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3b1-task3-source-export.yml
+          rm -f .github/workflows/m3b1-task3-red.yml
+          rm -f .github/workflows/m3b1-task3-red-confirm.yml
+          rm -f .github/workflows/m3b1-task3-green.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            package.json \
+            packages/review/package.json \
+            packages/review/src/browser.ts \
+            packages/review/tests/unit/browser-entry.test.ts \
+            packages/review/tests/integration/browser-parity.integration.test.ts \
+            tooling/scripts/check-review-browser-bundle.mjs \
+            tooling/scripts/check-boundaries.mjs \
+            .github/workflows/m3b1-task3-source-export.yml \
+            .github/workflows/m3b1-task3-red.yml \
+            .github/workflows/m3b1-task3-red-confirm.yml \
+            .github/workflows/m3b1-task3-green.yml
+          git diff --cached --check
+          git commit -m 'feat(review): expose browser-safe review semantics'
+          git push origin HEAD:feat/m3b1-review-workspace-integration
