@@ -43,13 +43,13 @@ jobs:
             https://github.com/pnpm/pnpm/releases/download/v11.24.0/pnpm-linux-x64.tar.gz \
             --output "$archive"
           echo '0a9b76dedb5fe8cc5e7f3a9fd70854181cfb08a487ebaf0c9cfb044dc860936c  '"$archive" | sha256sum --check --strict
-          mkdir -p "$extract_dir" "$HOME/.local/bin"
+          mkdir -p "$extract_dir"
           tar -xzf "$archive" -C "$extract_dir"
           pnpm_binary="$(find "$extract_dir" -type f -name pnpm -print -quit)"
           test -n "$pnpm_binary"
-          install -m 0755 "$pnpm_binary" "$HOME/.local/bin/pnpm"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/pnpm" --version
+          pnpm_dir="$(dirname "$pnpm_binary")"
+          echo "$pnpm_dir" >> "$GITHUB_PATH"
+          "$pnpm_binary" --version
 
       - name: Install exact dependencies
         run: pnpm install --frozen-lockfile
