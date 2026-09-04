@@ -1,0 +1,85 @@
+name: M3-B1 Task 3 RED Confirm
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-task3-red-confirm
+  cancel-in-progress: true
+
+jobs:
+  red:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build current packages
+        run: pnpm build
+
+      - name: Recover and apply Task 3 tests only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import gzip
+          import re
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/m3b1-task3-red.yml').read_text()
+          match = re.search(r"RED_PATCH_GZIP_BASE64:\s*'([^']+)'", workflow)
+          if match is None:
+              raise SystemExit('Missing RED test payload')
+          Path('/tmp/task3-red.patch').write_bytes(
+              gzip.decompress(base64.b64decode(match.group(1)))
+          )
+          PY
+          git apply --check /tmp/task3-red.patch
+          git apply /tmp/task3-red.patch
+
+      - name: Verify both tests fail because the browser subpath is absent
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter @api-schema-flow/review exec vitest run tests/unit/browser-entry.test.ts > /tmp/unit-red.log 2>&1
+          unit_status=$?
+          pnpm --filter @api-schema-flow/review exec vitest run tests/integration/browser-parity.integration.test.ts > /tmp/integration-red.log 2>&1
+          integration_status=$?
+          set -e
+          cat /tmp/unit-red.log
+          cat /tmp/integration-red.log
+          if [ "$unit_status" -eq 0 ] || [ "$integration_status" -eq 0 ]; then
+            echo 'Task 3 RED tests unexpectedly passed before the browser entry existed.' >&2
+            exit 1
+          fi
+          grep -Eiq '@api-schema-flow/review/browser|browser' /tmp/unit-red.log
+          grep -Eiq '@api-schema-flow/review/browser|browser' /tmp/integration-red.log
+          echo 'Task 3 RED confirmed: both tests reject the missing browser subpath.'
