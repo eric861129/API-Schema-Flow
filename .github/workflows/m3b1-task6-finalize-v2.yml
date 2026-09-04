@@ -1,0 +1,167 @@
+name: M3-B1 Task 6 Finalize V2
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-task6-finalize-v2
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@11.24.0
+
+      - name: Decode and structurally validate Task 6 payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          decode_patch() {
+            local input="$1"
+            local output="$2"
+            local label="$3"
+
+            set +e
+            base64 --decode "$input" | gzip --decompress --stdout > "$output"
+            local statuses=("${PIPESTATUS[@]}")
+            set -e
+
+            echo "$label decode status: base64=${statuses[0]} gzip=${statuses[1]}"
+            test "${statuses[0]}" -eq 0
+            test -s "$output"
+            wc -c "$output"
+            sha256sum "$output"
+            git apply --check --verbose "$output"
+          }
+
+          decode_patch .m3b1-task6-red.patch.gz.b64 /tmp/m3b1-task6-red.patch RED
+          decode_patch .m3b1-task6-green.patch.gz.b64 /tmp/m3b1-task6-green.patch GREEN
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile --reporter=append-only
+
+      - name: Apply and prove Task 6 RED contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --verbose /tmp/m3b1-task6-red.patch
+
+          mapfile -t task6_tests < <(
+            git diff --name-only --diff-filter=ACM \
+              | grep -E '^apps/web/src/.+\.test\.tsx?$' \
+              | sort
+          )
+          test "${#task6_tests[@]}" -gt 0
+          printf '%s\n' "${task6_tests[@]}" | tee /tmp/m3b1-task6-test-files.txt
+          printf '%s\0' "${task6_tests[@]}" | xargs -0 pnpm exec prettier --write
+          git diff --check
+
+          mapfile -t web_tests < <(sed 's#^apps/web/##' /tmp/m3b1-task6-test-files.txt)
+          set +e
+          pnpm --filter @api-schema-flow/web exec vitest run "${web_tests[@]}" \
+            > /tmp/m3b1-task6-red.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/m3b1-task6-red.log
+          test "$status" -ne 0
+          grep -Eiq \
+            'Failed to resolve import|Cannot find module|workspace-shell|workspace-navigation|review-session-context|inference-review' \
+            /tmp/m3b1-task6-red.log
+          echo 'Task 6 RED confirmed: WorkspaceShell and Inference Review composition are required.'
+
+      - name: Commit Task 6 RED tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          mapfile -t task6_tests < /tmp/m3b1-task6-test-files.txt
+          git add -- "${task6_tests[@]}"
+          git diff --cached --check
+          git commit -m 'test(web): define Task 6 workspace shell contracts'
+
+      - name: Apply Task 6 GREEN implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --verbose /tmp/m3b1-task6-green.patch
+
+          mapfile -t changed_files < <(
+            git diff --name-only --diff-filter=ACM \
+              | grep -E '\.(css|json|md|ts|tsx)$' \
+              | sort
+          )
+          test "${#changed_files[@]}" -gt 0
+          printf '%s\n' "${changed_files[@]}" | tee /tmp/m3b1-task6-green-files.txt
+          printf '%s\0' "${changed_files[@]}" | xargs -0 pnpm exec prettier --write
+          pnpm install --frozen-lockfile --reporter=append-only
+          git diff --check
+
+      - name: Remove temporary Task 6 delivery infrastructure
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3b1-task6-finalize.yml
+          rm -f .github/workflows/m3b1-task6-finalize-v2.yml
+          rm -f .github/workflows/m3b1-task6-source-export.yml
+          rm -f .m3b1-task6-red.patch.gz.b64
+          rm -f .m3b1-task6-green.patch.gz.b64
+
+          find .github/workflows -maxdepth 1 -type f -printf '%f\n' | sort \
+            > /tmp/m3b1-task6-final-workflows.txt
+          cat /tmp/m3b1-task6-final-workflows.txt
+          diff -u \
+            <(printf '%s\n' ci.yml m3b1-ci.yml m3b1-source-export.yml) \
+            /tmp/m3b1-task6-final-workflows.txt
+
+      - name: Verify Task 6 GREEN and full repository regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t web_tests < <(sed 's#^apps/web/##' /tmp/m3b1-task6-test-files.txt)
+          pnpm --filter @api-schema-flow/web exec vitest run "${web_tests[@]}"
+          pnpm --filter @api-schema-flow/web test
+          pnpm --filter @api-schema-flow/web typecheck
+          pnpm --filter @api-schema-flow/web build
+          pnpm ci:verify
+          pnpm check:web-fixture
+          pnpm check:review-browser-bundle
+          pnpm check:web-bundle
+          pnpm boundaries:check
+          git diff --check
+
+      - name: Commit Task 6 production and cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat(web): add workspace shell and inference review navigation'
+          test -z "$(git status --porcelain)"
+          git log --oneline -3
+          git push origin HEAD:feat/m3b1-review-workspace-integration
