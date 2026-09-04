@@ -1,0 +1,128 @@
+name: M3-B1 Task 2 Regenerate Fixture Fix
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: m3b1-task2-regenerate-fix
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Recover and correct the verified generator payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          import base64
+          import gzip
+          import re
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/m3b1-task2-regenerate.yml').read_text()
+          patterns = {
+              'tooling/scripts/generate-web-workspace.mjs': 'GENERATOR_GZIP_BASE64',
+              'tooling/scripts/check-web-workspace.mjs': 'CHECKER_GZIP_BASE64',
+          }
+          for target, variable in patterns.items():
+              match = re.search(rf'^\s*{variable}:\s*(\S+)\s*$', workflow, re.MULTILINE)
+              if match is None:
+                  raise SystemExit(f'Missing {variable} payload')
+              content = gzip.decompress(base64.b64decode(match.group(1))).decode()
+              if target.endswith('generate-web-workspace.mjs'):
+                  old = 'The response token can satisfy the target Bearer authorization requirement.'
+                  new = 'The target authorization scheme is Bearer and accepts the response token.'
+                  if old not in content:
+                      raise SystemExit('Expected Evidence message was not found')
+                  content = content.replace(old, new)
+              path = Path(target)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content)
+          PYCODE
+          node --check tooling/scripts/generate-web-workspace.mjs
+          node --check tooling/scripts/check-web-workspace.mjs
+
+      - name: Build and regenerate Snapshot 1.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm build
+          pnpm generate:web-fixture
+
+      - name: Verify materialization, Domain shape, safety, and determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --filter @api-schema-flow/domain test
+          pnpm --filter @api-schema-flow/review test
+          pnpm --filter @api-schema-flow/review test:integration -- review-workspace-snapshot.integration.test.ts
+          pnpm check:web-fixture
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const text = fs.readFileSync('apps/web/public/fixtures/reservation-workspace.json', 'utf8')
+          const snapshot = JSON.parse(text)
+          if (snapshot.schemaVersion !== '1.1') throw new Error('Expected Snapshot 1.1')
+          if (snapshot.generatedBy?.milestone !== 'M3-B1') throw new Error('Expected M3-B1 milestone')
+          if (snapshot.inferenceCandidates.length < 4) throw new Error('Expected four review candidates')
+          if (/synthetic-jwt-token|synthetic-password|"decidedAt"\s*:/.test(text)) {
+            throw new Error('Fixture contains a secret or nondeterministic timestamp')
+          }
+          if (/(?:\/Users\/|\/home\/runner\/|[A-Za-z]:\\\\Users\\\\)/.test(text)) {
+            throw new Error('Fixture contains an absolute local path')
+          }
+          NODE
+
+      - name: Commit Task 2 and remove all temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/m3b1-task2-regenerate-fix.yml
+          rm -f .github/workflows/m3b1-task2-regenerate.yml
+          rm -f .github/workflows/m3b1-task2-secret-debug.yml
+          rm -f .github/workflows/m3b1-task2-source-export.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tooling/scripts/generate-web-workspace.mjs \
+            tooling/scripts/check-web-workspace.mjs \
+            apps/web/public/fixtures/reservation-workspace.json \
+            .github/workflows/m3b1-task2-regenerate-fix.yml \
+            .github/workflows/m3b1-task2-regenerate.yml \
+            .github/workflows/m3b1-task2-secret-debug.yml \
+            .github/workflows/m3b1-task2-source-export.yml
+          git diff --cached --check
+          git commit -m 'fix(fixtures): emit materializable review workspace data'
+          git push origin HEAD:feat/m3b1-review-workspace-integration
