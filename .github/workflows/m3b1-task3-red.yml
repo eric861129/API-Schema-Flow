@@ -1,0 +1,83 @@
+name: M3-B1 Task 3 RED
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-task3-red
+  cancel-in-progress: true
+
+jobs:
+  red:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+      RED_PATCH_GZIP_BASE64: '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'
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build current packages
+        run: pnpm build
+
+      - name: Apply Task 3 tests only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import gzip
+          import os
+          from pathlib import Path
+
+          Path('/tmp/task3-red.patch').write_bytes(
+              gzip.decompress(base64.b64decode(os.environ['RED_PATCH_GZIP_BASE64']))
+          )
+          PY
+          git apply --check /tmp/task3-red.patch
+          git apply /tmp/task3-red.patch
+
+      - name: Verify browser entry tests fail for the missing subpath
+        shell: bash
+        run: |
+          set -uo pipefail
+          pnpm --filter @api-schema-flow/review exec vitest run tests/unit/browser-entry.test.ts > /tmp/unit-red.log 2>&1
+          unit_status=$?
+          pnpm --filter @api-schema-flow/review exec vitest run tests/integration/browser-parity.integration.test.ts > /tmp/integration-red.log 2>&1
+          integration_status=$?
+          cat /tmp/unit-red.log
+          cat /tmp/integration-red.log
+          if [ "$unit_status" -eq 0 ] || [ "$integration_status" -eq 0 ]; then
+            echo 'Task 3 RED tests unexpectedly passed before the browser entry existed.' >&2
+            exit 1
+          fi
+          if ! grep -Eiq '@api-schema-flow/review/browser|browser.*(not found|resolve|export|subpath)|missing.*browser' /tmp/unit-red.log /tmp/integration-red.log; then
+            echo 'Task 3 RED failure did not identify the missing browser entry.' >&2
+            exit 1
+          fi
+          echo 'Task 3 RED confirmed: the browser subpath is missing.'
