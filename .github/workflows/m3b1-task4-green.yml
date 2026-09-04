@@ -62,6 +62,8 @@ jobs:
             packages/review/tests/integration/browser-parity.integration.test.ts \
             tooling/scripts/check-review-browser-bundle.mjs \
             tooling/scripts/check-boundaries.mjs \
+            tooling/scripts/generate-web-workspace.mjs \
+            tooling/scripts/check-web-workspace.mjs \
             apps/web/src/data/types.ts \
             apps/web/src/data/load-workspace.ts \
             apps/web/src/data/load-workspace.test.ts \
@@ -126,12 +128,24 @@ jobs:
           pnpm build:web
           pnpm check:web-bundle
 
-      - name: Commit restored Task 3 browser boundary
+      - name: Commit pre-existing fixture formatting repair
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tooling/scripts/generate-web-workspace.mjs \
+            tooling/scripts/check-web-workspace.mjs
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(fixtures): normalize workspace generator formatting'
+          fi
+
+      - name: Commit restored Task 3 browser boundary
+        shell: bash
+        run: |
+          set -euo pipefail
           git add \
             package.json \
             packages/review/package.json \
@@ -167,4 +181,5 @@ jobs:
           git add -u -- .github/workflows .m3b1-task4-green.patch.gz.b64
           git diff --cached --check
           git commit -m 'fix(web): validate typed review workspace snapshots'
+          test -z "$(git status --porcelain)"
           git push origin HEAD:feat/m3b1-review-workspace-integration
