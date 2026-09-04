@@ -1,16 +1,105 @@
-import { countReviewCandidateStates } from './review-selectors'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+
+import { CandidateList } from './candidate-list'
+import { EvidenceInspector } from './evidence-inspector'
+import { MappingPreview } from './mapping-preview'
+import { ReviewFilters } from './review-filters'
+import { countReviewCandidateStates, filterAndSortReviewCandidates } from './review-selectors'
 import { useReviewSession } from './review-session-context'
+import type { ReviewConfidenceBand } from './review-session'
+import { ReviewSummaryTable } from './review-summary-table'
 
 function countLabel(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  )
+}
+
+const DEFAULT_CONFIDENCE_BANDS: readonly ReviewConfidenceBand[] = ['high', 'medium']
+const ALL_CONFIDENCE_BANDS: readonly ReviewConfidenceBand[] = ['high', 'medium', 'low', 'hidden']
+
 export function ReviewWorkspace() {
-  const { state, materialization, projection, selectedCandidate } = useReviewSession()
+  const { state, dispatch, materialization, projection, selectedCandidate, selectCandidate } =
+    useReviewSession()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const evidenceToggleRef = useRef<HTMLButtonElement>(null)
   const counts = countReviewCandidateStates(projection.rows)
   const candidateCount = projection.rows.length
   const draftCount = state.draftIntents.length
   const acceptedRelationshipCount = materialization.result.graph.edges.length
+  const visibleRows = useMemo(
+    () =>
+      filterAndSortReviewCandidates(projection.rows, {
+        filters: state.filters,
+        sort: state.sort,
+      }),
+    [projection.rows, state.filters, state.sort],
+  )
+
+  const resetFilters = useCallback(() => {
+    dispatch({ type: 'set-query', query: '' })
+    dispatch({ type: 'set-review-state', state: 'pending' })
+    dispatch({ type: 'set-blockers-only', enabled: false })
+    dispatch({ type: 'set-sort', sort: 'confidence-desc' })
+    for (const band of ALL_CONFIDENCE_BANDS) {
+      const enabled = state.filters.confidenceBands.includes(band)
+      const shouldEnable = DEFAULT_CONFIDENCE_BANDS.includes(band)
+      if (enabled !== shouldEnable) dispatch({ type: 'toggle-confidence', band })
+    }
+  }, [dispatch, state.filters.confidenceBands])
+
+  const closeEvidence = useCallback(() => {
+    if (state.evidenceOpen) dispatch({ type: 'toggle-evidence' })
+    evidenceToggleRef.current?.focus()
+  }, [dispatch, state.evidenceOpen])
+
+  useEffect(() => {
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      if (event.key === '/' && !isEditableTarget(event.target)) {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+        return
+      }
+
+      if (event.key !== 'Escape') return
+
+      if (state.evidenceOpen && selectedCandidate) {
+        event.preventDefault()
+        closeEvidence()
+        return
+      }
+
+      if (state.filters.query) {
+        event.preventDefault()
+        dispatch({ type: 'set-query', query: '' })
+        return
+      }
+
+      if (state.selectedCandidateId) {
+        event.preventDefault()
+        selectCandidate(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [
+    closeEvidence,
+    dispatch,
+    selectCandidate,
+    selectedCandidate,
+    state.evidenceOpen,
+    state.filters.query,
+    state.selectedCandidateId,
+  ])
 
   return (
     <section className="review-workspace" role="region" aria-label="Inference Review workspace">
@@ -42,9 +131,33 @@ export function ReviewWorkspace() {
             No inference candidates are available in this snapshot.
           </p>
         ) : (
-          <div className="review-foundation-copy">
-            <strong>{candidateCount} inference candidates available.</strong>
-            <p>Candidate discovery is isolated here from the accepted API topology.</p>
+          <div className="review-discovery-stack">
+            <p className="review-candidate-total">
+              <strong>{candidateCount} inference candidates available.</strong>
+              <span> Candidate discovery is isolated from the accepted API topology.</span>
+            </p>
+            <ReviewFilters
+              filters={state.filters}
+              sort={state.sort}
+              visibleCount={visibleRows.length}
+              totalCount={candidateCount}
+              empty={visibleRows.length === 0}
+              searchInputRef={searchInputRef}
+              onQueryChange={(query) => dispatch({ type: 'set-query', query })}
+              onToggleConfidence={(band) => dispatch({ type: 'toggle-confidence', band })}
+              onReviewStateChange={(reviewState) =>
+                dispatch({ type: 'set-review-state', state: reviewState })
+              }
+              onBlockersOnlyChange={(enabled) => dispatch({ type: 'set-blockers-only', enabled })}
+              onSortChange={(sort) => dispatch({ type: 'set-sort', sort })}
+              onReset={resetFilters}
+            />
+            <CandidateList
+              candidates={visibleRows}
+              selectedCandidateId={state.selectedCandidateId}
+              onSelect={selectCandidate}
+              emptyMessage="Reset the review filters to see the available candidates."
+            />
           </div>
         )}
       </section>
@@ -58,19 +171,7 @@ export function ReviewWorkspace() {
           <span className="eyebrow">PREVIEW</span>
           <h2 id="review-preview-title">Mapping or Topology Preview</h2>
         </header>
-        {selectedCandidate ? (
-          <div className="review-foundation-copy">
-            <strong>{selectedCandidate.sourceLabel}</strong>
-            <code>
-              {selectedCandidate.sourceSelector} → {selectedCandidate.targetDescriptor}
-            </code>
-            <span>{selectedCandidate.targetLabel}</span>
-          </div>
-        ) : (
-          <p className="review-empty-copy">
-            Select an inference candidate to preview its mapping or topology.
-          </p>
-        )}
+        <MappingPreview candidate={selectedCandidate} />
       </section>
 
       <section
@@ -78,15 +179,29 @@ export function ReviewWorkspace() {
         role="region"
         aria-labelledby="review-evidence-title"
       >
-        <header>
-          <span className="eyebrow">RATIONALE</span>
-          <h2 id="review-evidence-title">Evidence Inspector</h2>
+        <header className="review-panel__split-header">
+          <div>
+            <span className="eyebrow">RATIONALE</span>
+            <h2 id="review-evidence-title">Evidence Inspector</h2>
+          </div>
+          {selectedCandidate ? (
+            <button
+              ref={evidenceToggleRef}
+              type="button"
+              className="text-button"
+              aria-expanded={state.evidenceOpen}
+              onClick={() => dispatch({ type: 'toggle-evidence' })}
+            >
+              {state.evidenceOpen ? 'Hide evidence' : 'Show evidence'}
+            </button>
+          ) : null}
         </header>
         {selectedCandidate ? (
-          <div className="review-foundation-copy">
-            <strong>{countLabel(selectedCandidate.evidenceCount, 'evidence item')}</strong>
-            <span>{countLabel(selectedCandidate.blockerCount, 'blocker')}</span>
-          </div>
+          state.evidenceOpen ? (
+            <EvidenceInspector candidate={selectedCandidate} open onClose={closeEvidence} />
+          ) : (
+            <p className="review-empty-copy">Evidence is hidden for the selected candidate.</p>
+          )
         ) : (
           <p className="review-empty-copy">
             Select an inference candidate to inspect its evidence.
@@ -105,7 +220,7 @@ export function ReviewWorkspace() {
         </header>
         <p className="review-empty-copy">
           {selectedCandidate
-            ? 'The selected candidate is ready for a review decision.'
+            ? 'Decision controls are intentionally deferred to Task 8.'
             : 'Review actions become available after a candidate is selected.'}
         </p>
       </section>
@@ -137,6 +252,11 @@ export function ReviewWorkspace() {
             <dd>{counts.conflict + counts.invalid + counts.stale + counts.orphaned}</dd>
           </div>
         </dl>
+        <ReviewSummaryTable
+          candidates={visibleRows}
+          selectedCandidateId={state.selectedCandidateId}
+          onSelect={selectCandidate}
+        />
       </section>
 
       <footer

@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, test } from 'vitest'
 
 import rawSnapshot from '../../public/fixtures/reservation-workspace.json'
@@ -63,5 +64,41 @@ describe('ReviewWorkspace skeleton', () => {
     for (const name of ['Accept', 'Reject', 'Edit', 'Save', 'Import', 'Export', 'Run', 'Mock']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
+  })
+})
+
+describe('ReviewWorkspace discovery integration', () => {
+  test('filters projected candidates and supports global search and Escape ordering', async () => {
+    const user = userEvent.setup()
+    const snapshot = await loadWorkspaceSnapshot(
+      '/fixture.json',
+      async () =>
+        new Response(JSON.stringify(rawSnapshot), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    )
+    renderWorkspace(snapshot)
+
+    await user.keyboard('/')
+    const search = screen.getByRole('searchbox', { name: 'Search review candidates' })
+    expect(search).toHaveFocus()
+    await user.type(search, 'reservations/')
+    expect(screen.getByText(/1 of 4 candidates/i)).toBeVisible()
+
+    const option = within(screen.getByRole('listbox')).getByRole('option')
+    await user.click(option)
+    expect(screen.getByText('Review inferred data transfer')).toBeVisible()
+    expect(screen.getByText('Why this mapping was suggested')).toBeVisible()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByText('Why this mapping was suggested')).not.toBeInTheDocument()
+    expect(search).toHaveValue('reservations/')
+
+    await user.keyboard('{Escape}')
+    expect(search).toHaveValue('')
+
+    await user.keyboard('{Escape}')
+    expect(screen.getByText(/No candidate selected/i)).toBeVisible()
   })
 })
