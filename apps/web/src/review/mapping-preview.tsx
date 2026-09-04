@@ -33,7 +33,7 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
       <header className="mapping-preview__header">
         <div>
           <p className="section-label">Mapping preview</p>
-          <h2 id="mapping-title">Review inferred data transfer' }))
+          <h2 id="mapping-title">Review inferred data transfer</h2>
         </div>
         <span className="mapping-preview__confidence">
           {candidate.band} · {Math.round(candidate.confidence * 100)}%
