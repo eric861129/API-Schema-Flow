@@ -1,0 +1,86 @@
+name: M3-B1 Task 4 RED
+
+on:
+  push:
+    branches:
+      - feat/m3b1-review-workspace-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3b1-task4-red
+  cancel-in-progress: false
+
+jobs:
+  red:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+      RED_PATCH_GZIP_BASE64: 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
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v6
+        with:
+          ref: feat/m3b1-review-workspace-integration
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build current packages
+        run: pnpm build
+
+      - name: Apply Task 4 tests only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import gzip
+          import os
+          from pathlib import Path
+
+          Path('/tmp/task4-red.patch').write_bytes(
+              gzip.decompress(base64.b64decode(os.environ['RED_PATCH_GZIP_BASE64']))
+          )
+          PY
+          git apply --check /tmp/task4-red.patch
+          git apply /tmp/task4-red.patch
+
+      - name: Verify tests fail against the Snapshot 1.0 force-cast loader
+        shell: bash
+        run: |
+          set -uo pipefail
+          pnpm --filter @api-schema-flow/web exec vitest run \
+            src/data/load-workspace.test.ts \
+            src/app.test.tsx \
+            src/workspace/operation-view-model.test.ts \
+            > /tmp/task4-red.log 2>&1
+          status=$?
+          cat /tmp/task4-red.log
+          if [ "$status" -eq 0 ]; then
+            echo 'Task 4 RED tests unexpectedly passed before the loader boundary was replaced.' >&2
+            exit 1
+          fi
+          if ! grep -Eiq 'snapshot 1\.0|received 1\.1|review workspace|No API operations|unsupported' /tmp/task4-red.log; then
+            echo 'Task 4 RED failure did not identify the obsolete Snapshot 1.0 loader boundary.' >&2
+            exit 1
+          fi
+          echo 'Task 4 RED confirmed: Snapshot 1.1 is rejected by the old force-cast loader.'
+          exit 1
