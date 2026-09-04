@@ -48,6 +48,68 @@ jobs:
           git apply /tmp/m3b1-task4-green.patch
           pnpm install --frozen-lockfile
 
+      - name: Apply focused lint repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected lint-repair target not found in {path}')
+              file.write_text(text.replace(old, new, 1))
+
+          replace_exact(
+              'apps/web/src/data/load-workspace.test.ts',
+              "import { loadWorkspaceSnapshot, WorkspaceLoadError } from './load-workspace'",
+              "import { loadWorkspaceSnapshot, type WorkspaceLoadError } from './load-workspace'",
+          )
+
+          replace_exact(
+              'tooling/scripts/check-review-browser-bundle.mjs',
+              "throw new Error(`Prohibited Review browser dependency marker: ${marker}`)",
+              "throw new Error(`Prohibited Review browser dependency marker: ${marker}`, { cause: error })",
+          )
+
+          replace_exact(
+              'tooling/scripts/generate-web-workspace.mjs',
+              """  const {
+            example: _example,
+            defaultValue: _defaultValue,
+            properties,
+            items,
+            allOf,
+            anyOf,
+            oneOf,
+            additionalProperties,
+            ...rest
+          } = schema
+
+          return {
+            ...rest,""",
+              """  const { properties, items, allOf, anyOf, oneOf, additionalProperties, ...rest } = schema
+          Reflect.deleteProperty(rest, 'example')
+          Reflect.deleteProperty(rest, 'defaultValue')
+
+          return {
+            ...rest,""",
+          )
+
+          replace_exact(
+              'tooling/scripts/generate-web-workspace.mjs',
+              """  const { example: _example, schema, ...rest } = mediaType
+          return {
+            ...rest,""",
+              """  const { schema, ...rest } = mediaType
+          Reflect.deleteProperty(rest, 'example')
+          return {
+            ...rest,""",
+          )
+          PY
+
       - name: Format implementation files
         shell: bash
         run: |
@@ -128,7 +190,7 @@ jobs:
           pnpm build:web
           pnpm check:web-bundle
 
-      - name: Commit pre-existing fixture formatting repair
+      - name: Commit pre-existing fixture sanitizer repair
         shell: bash
         run: |
           set -euo pipefail
@@ -139,7 +201,7 @@ jobs:
             tooling/scripts/check-web-workspace.mjs
           git diff --cached --check
           if ! git diff --cached --quiet; then
-            git commit -m 'style(fixtures): normalize workspace generator formatting'
+            git commit -m 'fix(fixtures): keep snapshot sanitizer lint-clean'
           fi
 
       - name: Commit restored Task 3 browser boundary
