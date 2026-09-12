@@ -105,9 +105,16 @@ interface FlowCanvasProps {
   readonly positioned: PositionedFlowGraph
   readonly selected: SelectedElement
   readonly onSelect: (selected: SelectedElement) => void
+  readonly ariaLabel?: string
 }
 
-export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCanvasProps) {
+export function FlowCanvas({
+  snapshot,
+  positioned,
+  selected,
+  onSelect,
+  ariaLabel = 'Accepted API topology',
+}: FlowCanvasProps) {
   const operationById = useMemo(
     () => new Map(snapshot.apiDocument.operations.map((item) => [item.id, item])),
     [snapshot],
@@ -163,7 +170,7 @@ export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCan
   )
 
   return (
-    <section className="canvas-region" aria-label="Accepted API topology">
+    <section className="canvas-region" aria-label={ariaLabel}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CandidateList } from './candidate-list'
 import { EvidenceInspector } from './evidence-inspector'
@@ -6,8 +6,12 @@ import { MappingPreview } from './mapping-preview'
 import { ReviewFilters } from './review-filters'
 import { countReviewCandidateStates, filterAndSortReviewCandidates } from './review-selectors'
 import { useReviewSession } from './review-session-context'
-import type { ReviewConfidenceBand } from './review-session'
+import type { ReviewConfidenceBand, ReviewRejectReason } from './review-session'
 import { ReviewSummaryTable } from './review-summary-table'
+import { ReviewActions } from './review-actions'
+import { ReviewStatusBar } from './review-status-bar'
+import { RejectDialog } from './reject-dialog'
+import { DraftGraphPreview } from './draft-graph-preview'
 
 function countLabel(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`
@@ -27,8 +31,25 @@ const DEFAULT_CONFIDENCE_BANDS: readonly ReviewConfidenceBand[] = ['high', 'medi
 const ALL_CONFIDENCE_BANDS: readonly ReviewConfidenceBand[] = ['high', 'medium', 'low', 'hidden']
 
 export function ReviewWorkspace() {
-  const { state, dispatch, materialization, projection, selectedCandidate, selectCandidate } =
-    useReviewSession()
+  const {
+    snapshot,
+    state,
+    dispatch,
+    materialization,
+    projection,
+    selectedCandidate,
+    selectCandidate,
+    acceptCandidate,
+    rejectCandidate,
+    undoLastDraft,
+  } = useReviewSession()
+  const [announcement, setAnnouncement] = useState('')
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const pendingAction = useRef<{
+    action: 'accept' | 'reject' | 'undo'
+    candidateId: string
+    visibleIds: readonly string[]
+  } | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const evidenceToggleRef = useRef<HTMLButtonElement>(null)
   const counts = countReviewCandidateStates(projection.rows)
@@ -43,6 +64,64 @@ export function ReviewWorkspace() {
       }),
     [projection.rows, state.filters, state.sort],
   )
+
+  useEffect(() => {
+    const action = pendingAction.current
+    if (!action) return
+    pendingAction.current = null
+    const reviewed = projection.details.get(action.candidateId)
+    if (action.action === 'undo') {
+      setAnnouncement(
+        `Undid the latest review change. ${reviewed?.sourceLabel ?? 'Candidate'} is ${reviewed?.state ?? 'unavailable'}.`,
+      )
+      if (visibleRows.some(({ id }) => id === action.candidateId))
+        selectCandidate(action.candidateId)
+      return
+    }
+    if (reviewed?.state === (action.action === 'accept' ? 'accepted' : 'rejected')) {
+      setAnnouncement(
+        `${action.action === 'accept' ? 'Accepted' : 'Rejected'} ${reviewed.sourceLabel} → ${reviewed.targetLabel}.`,
+      )
+      const index = action.visibleIds.indexOf(action.candidateId)
+      const nextIds = [...action.visibleIds.slice(index + 1), ...action.visibleIds.slice(0, index)]
+      const nextId = nextIds.find((id) =>
+        visibleRows.some((row) => row.id === id && row.state === 'pending'),
+      )
+      selectCandidate(nextId ?? action.candidateId)
+    } else {
+      setAnnouncement(
+        `${action.action === 'accept' ? 'Accept' : 'Reject'} was not applied: ${reviewed?.outcomeReason ?? reviewed?.state ?? 'candidate unavailable'}.`,
+      )
+    }
+  }, [materialization, projection, selectCandidate, visibleRows])
+
+  function acceptSelectedCandidate() {
+    if (!selectedCandidate) return
+    pendingAction.current = {
+      action: 'accept',
+      candidateId: selectedCandidate.id,
+      visibleIds: visibleRows.map(({ id }) => id),
+    }
+    acceptCandidate(selectedCandidate.id)
+  }
+
+  function rejectSelectedCandidate(reason: ReviewRejectReason, note?: string) {
+    if (!selectedCandidate) return
+    pendingAction.current = {
+      action: 'reject',
+      candidateId: selectedCandidate.id,
+      visibleIds: visibleRows.map(({ id }) => id),
+    }
+    rejectCandidate(selectedCandidate.id, reason, note)
+    setRejectOpen(false)
+  }
+
+  function undoLatestChange() {
+    const intent = state.draftIntents.at(-1)
+    if (!intent) return
+    pendingAction.current = { action: 'undo', candidateId: intent.candidateId, visibleIds: [] }
+    undoLastDraft()
+  }
 
   const resetFilters = useCallback(() => {
     dispatch({ type: 'set-query', query: '' })
@@ -63,6 +142,7 @@ export function ReviewWorkspace() {
 
   useEffect(() => {
     function handleGlobalKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || rejectOpen) return
       if (event.key === '/' && !isEditableTarget(event.target)) {
         event.preventDefault()
         searchInputRef.current?.focus()
@@ -99,6 +179,7 @@ export function ReviewWorkspace() {
     state.evidenceOpen,
     state.filters.query,
     state.selectedCandidateId,
+    rejectOpen,
   ])
 
   return (
@@ -171,7 +252,31 @@ export function ReviewWorkspace() {
           <span className="eyebrow">PREVIEW</span>
           <h2 id="review-preview-title">Mapping or Topology Preview</h2>
         </header>
-        <MappingPreview candidate={selectedCandidate} />
+        <div className="review-preview-switch" role="group" aria-label="Preview mode">
+          <button
+            type="button"
+            aria-pressed={state.previewMode === 'mapping'}
+            onClick={() => dispatch({ type: 'set-preview-mode', mode: 'mapping' })}
+          >
+            Mapping preview
+          </button>
+          <button
+            type="button"
+            aria-pressed={state.previewMode === 'topology'}
+            onClick={() => dispatch({ type: 'set-preview-mode', mode: 'topology' })}
+          >
+            Topology preview
+          </button>
+        </div>
+        {state.previewMode === 'topology' ? (
+          <DraftGraphPreview
+            snapshot={snapshot}
+            graph={materialization.result.graph}
+            pendingCount={counts.pending}
+          />
+        ) : (
+          <MappingPreview candidate={selectedCandidate} />
+        )}
       </section>
 
       <section
@@ -218,11 +323,18 @@ export function ReviewWorkspace() {
           <span className="eyebrow">DECISION</span>
           <h2 id="review-actions-title">Review Actions</h2>
         </header>
-        <p className="review-empty-copy">
-          {selectedCandidate
-            ? 'Decision controls are intentionally deferred to Task 8.'
-            : 'Review actions become available after a candidate is selected.'}
-        </p>
+        <ReviewActions
+          candidate={selectedCandidate}
+          onAccept={acceptSelectedCandidate}
+          onReject={() => setRejectOpen(true)}
+        />
+        {rejectOpen && selectedCandidate ? (
+          <RejectDialog
+            candidateLabel={`${selectedCandidate.sourceLabel} → ${selectedCandidate.targetLabel}`}
+            onCancel={() => setRejectOpen(false)}
+            onConfirm={rejectSelectedCandidate}
+          />
+        ) : null}
       </section>
 
       <section
@@ -259,18 +371,13 @@ export function ReviewWorkspace() {
         />
       </section>
 
-      <footer
-        className="review-status-bar"
-        role="status"
-        aria-label="Review status"
-        aria-live="polite"
-      >
-        <span>{countLabel(draftCount, 'unsaved decision')}</span>
-        <span>{countLabel(acceptedRelationshipCount, 'accepted relationship')}</span>
-        <span>
-          {selectedCandidate ? `Selected ${selectedCandidate.id}` : 'No candidate selected'}
-        </span>
-      </footer>
+      <ReviewStatusBar
+        draftCount={draftCount}
+        edgeCount={acceptedRelationshipCount}
+        selectedId={state.selectedCandidateId}
+        announcement={announcement}
+        onUndo={undoLatestChange}
+      />
     </section>
   )
 }

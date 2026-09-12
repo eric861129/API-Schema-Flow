@@ -35,8 +35,8 @@ describe('ReviewWorkspace skeleton', () => {
       'Review actions become available after a candidate is selected.',
     )
     expect(screen.getByRole('region', { name: 'Review Summary' })).toHaveTextContent('0 candidates')
-    expect(screen.getByRole('status', { name: 'Review status' })).toHaveTextContent(
-      '0 unsaved decisions',
+    expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
+      'No draft changes',
     )
   })
 
@@ -57,7 +57,7 @@ describe('ReviewWorkspace skeleton', () => {
     expect(screen.getByRole('region', { name: 'Review Summary' })).toHaveTextContent(
       `${snapshot.inferenceCandidates.length} candidates`,
     )
-    expect(screen.getByRole('status', { name: 'Review status' })).toHaveTextContent(
+    expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
       `${snapshot.acceptedGraph.edges.length} accepted relationships`,
     )
 

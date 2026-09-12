@@ -25,6 +25,7 @@ import {
 } from './review-workspace-adapter'
 
 export interface ReviewSessionContextValue {
+  readonly snapshot: WorkspaceSnapshot
   readonly state: ReviewSessionState
   readonly materialization: ReviewSessionMaterialization
   readonly projection: ReviewWorkspaceProjection
@@ -91,6 +92,7 @@ function ReviewSessionProviderInstance({
 
   const value = useMemo<ReviewSessionContextValue>(
     () => ({
+      snapshot,
       state,
       materialization,
       projection,
@@ -102,6 +104,7 @@ function ReviewSessionProviderInstance({
       undoLastDraft,
     }),
     [
+      snapshot,
       acceptCandidate,
       materialization,
       projection,
