@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { PositionedFlowGraph } from '@api-schema-flow/layout'
 
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
+import type { CanvasLayoutState } from '../project/workspace-layout'
 import { FlowCanvas } from '../graph/flow-canvas'
 
 type ReviewGraph = WorkspaceSnapshot['acceptedGraph']
@@ -11,13 +12,22 @@ export function DraftGraphPreview({
   snapshot,
   graph,
   pendingCount,
+  canvasLayout,
+  onCanvasLayoutChange,
+  direction = 'right',
+  layoutRevision = 0,
 }: {
   readonly snapshot: WorkspaceSnapshot
   readonly graph: ReviewGraph
   readonly pendingCount: number
+  readonly canvasLayout?: CanvasLayoutState
+  readonly onCanvasLayoutChange?: (layout: CanvasLayoutState) => void
+  readonly direction?: 'right' | 'down'
+  readonly layoutRevision?: number
 }) {
   const [positioned, setPositioned] = useState<{
     graph: ReviewGraph
+    direction: 'right' | 'down'
     layout: PositionedFlowGraph
     fallback: boolean
   } | null>(null)
@@ -28,15 +38,16 @@ export function DraftGraphPreview({
     let cancelled = false
     import('@api-schema-flow/layout')
       .then(({ createElkFlowLayoutEngine }) =>
-        createElkFlowLayoutEngine().layout(graph, { direction: 'right' }),
+        createElkFlowLayoutEngine().layout(graph, { direction }),
       )
       .then((layout) => {
-        if (!cancelled) setPositioned({ graph, layout, fallback: false })
+        if (!cancelled) setPositioned({ graph, direction, layout, fallback: false })
       })
       .catch(() => {
         if (!cancelled)
           setPositioned({
             graph,
+            direction,
             fallback: true,
             layout: {
               graphId: graph.id,
@@ -56,7 +67,7 @@ export function DraftGraphPreview({
     return () => {
       cancelled = true
     }
-  }, [graph])
+  }, [graph, direction])
 
   return (
     <div className="draft-graph-preview">
@@ -75,12 +86,15 @@ export function DraftGraphPreview({
           <li>{pendingCount} pending candidates outside the graph</li>
         </ul>
       </section>
-      {positioned?.graph === graph ? (
+      {positioned?.graph === graph && positioned.direction === direction ? (
         <>
           {positioned.fallback ? (
             <p>Automatic layout is unavailable. Showing a simple linear preview.</p>
           ) : null}
           <FlowCanvas
+            key={`review-${direction}-${layoutRevision}`}
+            canvasLayout={canvasLayout}
+            onCanvasLayoutChange={onCanvasLayoutChange}
             snapshot={draftSnapshot}
             positioned={positioned.layout}
             selected={selected}

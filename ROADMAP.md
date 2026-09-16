@@ -88,7 +88,8 @@
 | M3-A | Reservation 快照、React Flow／ELK 拓樸與等價清單 | 已進入 `main` |
 | M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 已實作；測試、限制及遠端交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md) |
 | M3-B2 | 欄位映射編輯、相容性驗證、手動草稿連線與 Undo | 已合併 [PR #17](https://github.com/eric861129/API-Schema-Flow/pull/17)，main CI 通過；操作見 README |
-| M3-B3 | IndexedDB 自動儲存、還原、Decision Set 匯入／匯出與復原 | 已實作；Linux 視覺基準與遠端 CI 於交付 PR 驗證 |
+| M3-B3 | IndexedDB 自動儲存、還原、Decision Set 匯入／匯出與復原 | 已合併 [PR #18](https://github.com/eric861129/API-Schema-Flow/pull/18)，main CI 通過 |
+| Project Save/Load 與 Layout Persistence | 同來源專案檔、決策／Undo、雙畫布位置與視角、版面重設 | 本機驗證通過；Linux 基準已更新，遠端檢查見交付 PR |
 
 M3-B3 已加入本機儲存，尚未提供完整工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，不能因審查工作區通過而宣告整個 M3 完成。
 

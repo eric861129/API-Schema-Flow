@@ -1,4 +1,5 @@
 import type { FlowDataMapping, ReviewDecisionSet } from '@api-schema-flow/domain'
+import type { WorkspaceLayoutState } from '../project/workspace-layout'
 
 export const REVIEW_SESSION_SCHEMA_VERSION = '1.0' as const
 
@@ -46,6 +47,8 @@ export interface ReviewSessionFilters {
 }
 
 export interface ReviewSessionState {
+  readonly workspaceLayout?: WorkspaceLayoutState
+  readonly layoutRevision?: number
   readonly importedDecisionSet?: ReviewDecisionSet | undefined
   readonly schemaVersion: typeof REVIEW_SESSION_SCHEMA_VERSION
   readonly projectFingerprint: string
@@ -67,7 +70,13 @@ export interface CreateReviewSessionOptions {
 
 export type ReviewSessionAction =
   | {
+      readonly type: 'set-workspace-layout'
+      readonly layout: WorkspaceLayoutState
+      readonly reset?: boolean
+    }
+  | {
       readonly type: 'restore-decisions'
+      readonly workspaceLayout?: WorkspaceLayoutState
       readonly draftIntents: readonly ReviewIntent[]
       readonly importedDecisionSet?: ReviewDecisionSet | undefined
       readonly baselineRevisions: Readonly<Record<string, number>>
@@ -158,12 +167,24 @@ export function reviewSessionReducer(
   action: ReviewSessionAction,
 ): ReviewSessionState {
   switch (action.type) {
+    case 'set-workspace-layout':
+      return {
+        ...state,
+        workspaceLayout: action.layout,
+        layoutRevision: (state.layoutRevision ?? 0) + (action.reset ? 1 : 0),
+      }
     case 'restore-decisions':
       return {
         ...state,
         draftIntents: action.draftIntents,
         importedDecisionSet: action.importedDecisionSet,
         baselineRevisions: action.baselineRevisions,
+        ...(action.workspaceLayout
+          ? {
+              workspaceLayout: action.workspaceLayout,
+              layoutRevision: (state.layoutRevision ?? 0) + 1,
+            }
+          : {}),
       }
     case 'select-candidate':
       return { ...state, selectedCandidateId: action.candidateId }

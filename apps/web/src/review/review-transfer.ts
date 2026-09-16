@@ -10,6 +10,11 @@ import {
 } from './review-session'
 import { validateEditedMapping } from './mapping-editor-model'
 import { version as toolVersion } from '../../package.json'
+import {
+  DEFAULT_WORKSPACE_LAYOUT,
+  parseWorkspaceLayout,
+  type WorkspaceLayoutState,
+} from '../project/workspace-layout'
 
 export const MAX_DECISION_FILE_BYTES = 5 * 1024 * 1024
 
@@ -128,9 +133,10 @@ export function previewDecisionImport(
 }
 
 export interface StoredReview {
-  readonly version: 1
-  readonly schemaVersion: '1.0'
+  readonly version: 2
+  readonly schemaVersion: '2.0'
   readonly toolVersion: string
+  readonly workspaceLayout: WorkspaceLayoutState
   readonly baseline: string
   readonly draftIntents: readonly ReviewIntent[]
   readonly importedDecisionSet?: ReviewDecisionSet | undefined
@@ -141,9 +147,10 @@ export function encodeStoredReview(
   state: ReviewSessionState,
 ): StoredReview {
   return {
-    version: 1,
-    schemaVersion: '1.0',
+    version: 2,
+    schemaVersion: '2.0',
     toolVersion,
+    workspaceLayout: state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,
     baseline: serializeDecisionSet(snapshot.reviewDecisionSet),
     draftIntents: state.draftIntents,
     ...(state.importedDecisionSet ? { importedDecisionSet: state.importedDecisionSet } : {}),
@@ -152,7 +159,7 @@ export function encodeStoredReview(
 
 /** 清除後只保留停用偏好與世代，避免其他分頁把舊決策寫回。 */
 export function disabledStoredReview() {
-  return { version: 1, schemaVersion: '1.0', toolVersion, autosave: false } as const
+  return { version: 2, schemaVersion: '2.0', toolVersion, autosave: false } as const
 }
 
 export function isStoredReviewDisabled(value: unknown): boolean {
@@ -160,9 +167,9 @@ export function isStoredReviewDisabled(value: unknown): boolean {
     value &&
     typeof value === 'object' &&
     'version' in value &&
-    value.version === 1 &&
+    (value.version === 1 || value.version === 2) &&
     'schemaVersion' in value &&
-    value.schemaVersion === '1.0' &&
+    value.schemaVersion === (value.version === 1 ? '1.0' : '2.0') &&
     'toolVersion' in value &&
     typeof value.toolVersion === 'string' &&
     value.toolVersion.trim() &&
@@ -176,12 +183,20 @@ export function decodeStoredReview(
   snapshot: WorkspaceSnapshot,
   value: unknown,
 ): ReviewSessionState {
-  if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 1)
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('version' in value) ||
+    (value.version !== 1 && value.version !== 2)
+  )
     throw new Error('Unsupported stored review version. Existing data has been preserved.')
   const record = value as Partial<StoredReview>
   // 尚未發布的早期 v1 可讀取；下一次明確變更才寫入完整版本資訊。
   if (
-    (record.schemaVersion !== undefined && record.schemaVersion !== '1.0') ||
+    (record.schemaVersion !== undefined &&
+      record.schemaVersion !== (value.version === 1 ? '1.0' : '2.0')) ||
+    (value.version === 2 &&
+      (!record.schemaVersion || !record.toolVersion || !record.workspaceLayout)) ||
     (record.toolVersion !== undefined &&
       (typeof record.toolVersion !== 'string' || !record.toolVersion.trim())) ||
     (record.schemaVersion === undefined) !== (record.toolVersion === undefined)
@@ -225,7 +240,16 @@ export function decodeStoredReview(
       state,
       parseDecisionFile(JSON.stringify(record.importedDecisionSet)),
     ).state
-  state = { ...state, draftIntents: record.draftIntents }
+  state = {
+    ...state,
+    draftIntents: record.draftIntents,
+    workspaceLayout: record.workspaceLayout
+      ? parseWorkspaceLayout(
+          record.workspaceLayout,
+          new Set(snapshot.declaredGraph.nodes.map((node) => node.id)),
+        )
+      : DEFAULT_WORKSPACE_LAYOUT,
+  }
   // 同時驗證結構、決策 ID、編輯映射及圖形投影，避免信任瀏覽器儲存內容。
   const validated = parseDecisionFile(
     serializeDecisionSet(materializeReviewSession(snapshot, state).decisionSet),

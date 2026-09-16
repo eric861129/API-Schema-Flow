@@ -1147,3 +1147,43 @@ th {
     margin-left: 0;
   }
 }
+
+.project-dialog {
+  width: min(680px, calc(100vw - 48px));
+}
+.project-dialog h2 {
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+.project-dialog p {
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.project-dialog button {
+  min-height: 44px;
+  margin: 0 8px 8px 0;
+  padding: 8px 14px;
+  border: 1px solid #385672;
+  border-radius: 8px;
+  background: #123344;
+  color: var(--primary);
+  cursor: pointer;
+}
+.project-dialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.project-dialog button:focus-visible {
+  outline: 2px solid #7ee7ef;
+  outline-offset: 2px;
+}
+.project-dialog section {
+  padding: 16px;
+  border: 1px solid #385672;
+  border-radius: 8px;
+  margin: 8px 0 16px;
+}
+.project-dialog h3 {
+  margin: 0 0 12px;
+  font-weight: 600;
+}

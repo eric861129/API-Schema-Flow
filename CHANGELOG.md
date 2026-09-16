@@ -8,6 +8,8 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
+- Project Save/Load development slice: validated same-source project files, atomic review/layout replacement, node and viewport persistence, layout reset, and read-compatible v1-to-v2 local storage.
+
 - M3-B3: IndexedDB autosave and restoration, deterministic Decision Set import/export with preview, concurrent-tab protection, explicit backup/reset recovery, and confirmed clearing with persistent autosave opt-out.
 
 - M3-B2 in-memory mapping editor with schema field selection, explicit array indices, compatibility validation, literal transform previews, manual draft edges, and Undo.

@@ -9,6 +9,7 @@ import {
   isStoredReviewDisabled,
 } from './review-transfer'
 import { readStoredReview, writeStoredReview, resetStoredReview } from './review-storage'
+import { DEFAULT_WORKSPACE_LAYOUT } from '../project/workspace-layout'
 
 export function useReviewPersistence(
   snapshot: WorkspaceSnapshot,
@@ -66,6 +67,7 @@ export function useReviewPersistence(
           draftIntents: restored.draftIntents,
           importedDecisionSet: restored.importedDecisionSet,
           baselineRevisions: restored.baselineRevisions,
+          workspaceLayout: restored.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,
         })
         setStatus(
           disabled

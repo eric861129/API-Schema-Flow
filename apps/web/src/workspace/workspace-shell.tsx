@@ -10,7 +10,9 @@ import { DiagnosticsDrawer } from '../diagnostics/diagnostics-drawer'
 import { FlowCanvas } from '../graph/flow-canvas'
 import { InspectorPanel } from '../inspector/inspector-panel'
 import { OutlineView } from '../outline/outline-view'
-import { ReviewSessionProvider } from '../review/review-session-context'
+import { DEFAULT_WORKSPACE_LAYOUT } from '../project/workspace-layout'
+import { ProjectControls } from '../project/project-controls'
+import { ReviewSessionProvider, useReviewSession } from '../review/review-session-context'
 import { ReviewWorkspace } from '../review/review-workspace'
 import { buildOperationViewModels, filterOperationViewModels } from './operation-view-model'
 import { WorkspaceNavigation, type WorkspaceDestination } from './workspace-navigation'
@@ -24,6 +26,25 @@ const emptyLayout: PositionedFlowGraph = {
 }
 
 export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnapshot }) {
+  return (
+    <ReviewSessionProvider snapshot={snapshot}>
+      <WorkspaceContent snapshot={snapshot} />
+    </ReviewSessionProvider>
+  )
+}
+
+function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }) {
+  const { state, dispatch } = useReviewSession()
+  const workspaceLayout = state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT
+  const direction = workspaceLayout.direction
+  const setDirection = (value: FlowLayoutDirection) => {
+    if (value === direction) return
+    dispatch({
+      type: 'set-workspace-layout',
+      layout: { ...DEFAULT_WORKSPACE_LAYOUT, direction: value },
+      reset: true,
+    })
+  }
   const [selected, setSelected] = useState<SelectedElement>(null)
   const [destination, setDestination] = useState<WorkspaceDestination>('topology')
   const [query, setQuery] = useState('')
@@ -31,7 +52,7 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
   const [operationsOpen, setOperationsOpen] = useState(true)
   const [inspectorOpen, setInspectorOpen] = useState(true)
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
-  const [direction, setDirection] = useState<FlowLayoutDirection>('right')
+  const [layoutDirection, setLayoutDirection] = useState<FlowLayoutDirection | null>(null)
   const [layout, setLayout] = useState<PositionedFlowGraph>(emptyLayout)
 
   useEffect(() => {
@@ -41,10 +62,14 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
         createElkFlowLayoutEngine().layout(snapshot.acceptedGraph, { direction }),
       )
       .then((result) => {
-        if (!cancelled) setLayout(result)
+        if (!cancelled) {
+          setLayout(result)
+          setLayoutDirection(direction)
+        }
       })
       .catch(() => {
         if (!cancelled) {
+          setLayoutDirection(direction)
           setLayout({
             graphId: snapshot.acceptedGraph.id,
             width: 0,
@@ -78,7 +103,7 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
   }
 
   return (
-    <ReviewSessionProvider snapshot={snapshot}>
+    <>
       <main
         aria-label="API Schema Flow workspace"
         className={
@@ -103,6 +128,7 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
             <span>{snapshot.project.sourceName}</span>
             <span className="version-chip">OpenAPI {snapshot.project.openapiVersion}</span>
           </div>
+          <ProjectControls />
           <div className="view-actions" aria-label="Topology direction">
             <button
               type="button"
@@ -169,25 +195,37 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
                 </div>
                 <p>Explore confirmed data movement without changing the specification.</p>
               </div>
-              <FlowCanvas
-                snapshot={{
-                  ...snapshot,
-                  acceptedGraph: {
-                    ...snapshot.acceptedGraph,
-                    nodes: snapshot.acceptedGraph.nodes.filter((node) =>
-                      visibleModels.some((model) => model.nodeId === node.id),
-                    ),
-                    edges: snapshot.acceptedGraph.edges.filter(
-                      (edge) =>
-                        visibleModels.some((model) => model.nodeId === edge.sourceNodeId) &&
-                        visibleModels.some((model) => model.nodeId === edge.targetNodeId),
-                    ),
-                  },
-                }}
-                positioned={layout}
-                selected={selected}
-                onSelect={select}
-              />
+              {layout.graphId === snapshot.acceptedGraph.id && layoutDirection === direction ? (
+                <FlowCanvas
+                  snapshot={{
+                    ...snapshot,
+                    acceptedGraph: {
+                      ...snapshot.acceptedGraph,
+                      nodes: snapshot.acceptedGraph.nodes.filter((node) =>
+                        visibleModels.some((model) => model.nodeId === node.id),
+                      ),
+                      edges: snapshot.acceptedGraph.edges.filter(
+                        (edge) =>
+                          visibleModels.some((model) => model.nodeId === edge.sourceNodeId) &&
+                          visibleModels.some((model) => model.nodeId === edge.targetNodeId),
+                      ),
+                    },
+                  }}
+                  key={`topology-${direction}-${state.layoutRevision ?? 0}`}
+                  canvasLayout={workspaceLayout.topology}
+                  onCanvasLayoutChange={(value) =>
+                    dispatch({
+                      type: 'set-workspace-layout',
+                      layout: { ...workspaceLayout, topology: value },
+                    })
+                  }
+                  positioned={layout}
+                  selected={selected}
+                  onSelect={select}
+                />
+              ) : (
+                <p role="status">Arranging topology…</p>
+              )}
             </>
           ) : (
             <OutlineView snapshot={snapshot} models={visibleModels} onSelect={select} />
@@ -213,6 +251,6 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
           onToggle={() => setDiagnosticsOpen((open) => !open)}
         />
       </main>
-    </ReviewSessionProvider>
+    </>
   )
 }
