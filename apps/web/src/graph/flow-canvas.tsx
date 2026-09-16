@@ -11,12 +11,20 @@ import {
   type NodeProps,
 } from '@xyflow/react'
 
-import type { EdgeValue, OperationValue, SelectedElement, WorkspaceSnapshot } from '../data/types'
-import { MethodBadge } from '../components/operations-panel'
+import type {
+  EndpointFlowNode,
+  FlowEdge,
+  FlowValueSelector,
+  FlowValueTarget,
+  NormalizedOperation,
+} from '@api-schema-flow/domain'
 import type { PositionedFlowGraph } from '@api-schema-flow/layout'
 
+import { MethodBadge } from '../components/operations-panel'
+import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
+
 interface EndpointData extends Record<string, unknown> {
-  readonly operation: OperationValue
+  readonly operation: NormalizedOperation
   readonly incoming: number
   readonly outgoing: number
   readonly selected: boolean
@@ -45,14 +53,30 @@ function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
   )
 }
 
-function selectorLabel(value: Readonly<Record<string, unknown>>): string {
-  if (typeof value.pointer === 'string')
-    return value.pointer.replace(/^#\//, '').split('/').at(-1) ?? value.pointer
-  if (typeof value.name === 'string') return value.name
-  return String(value.kind ?? 'value')
+function selectorLabel(value: FlowValueSelector | FlowValueTarget): string {
+  switch (value.kind) {
+    case 'request-body':
+    case 'response-body':
+      return value.pointer.replace(/^#\//, '').split('/').at(-1) ?? value.pointer
+    case 'request-header':
+    case 'request-query':
+    case 'request-path':
+    case 'response-header':
+    case 'workflow-input':
+    case 'path-parameter':
+    case 'query-parameter':
+    case 'querystring-parameter':
+    case 'header-parameter':
+    case 'cookie-parameter':
+      return value.name
+    case 'status-code':
+      return 'statusCode'
+    case 'literal':
+      return String(value.value)
+  }
 }
 
-function edgeStyle(item: EdgeValue, selected: boolean) {
+function edgeStyle(item: FlowEdge, selected: boolean) {
   const base = {
     strokeWidth: selected ? 3 : 2,
     stroke: selected
@@ -70,14 +94,27 @@ function edgeStyle(item: EdgeValue, selected: boolean) {
       : base
 }
 
+function isEndpointNode(
+  node: WorkspaceSnapshot['acceptedGraph']['nodes'][number],
+): node is EndpointFlowNode {
+  return node.kind === 'endpoint'
+}
+
 interface FlowCanvasProps {
   readonly snapshot: WorkspaceSnapshot
   readonly positioned: PositionedFlowGraph
   readonly selected: SelectedElement
   readonly onSelect: (selected: SelectedElement) => void
+  readonly ariaLabel?: string
 }
 
-export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCanvasProps) {
+export function FlowCanvas({
+  snapshot,
+  positioned,
+  selected,
+  onSelect,
+  ariaLabel = 'Accepted API topology',
+}: FlowCanvasProps) {
   const operationById = useMemo(
     () => new Map(snapshot.apiDocument.operations.map((item) => [item.id, item])),
     [snapshot],
@@ -86,9 +123,13 @@ export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCan
     () => new Map(positioned.nodes.map((item) => [item.id, item])),
     [positioned],
   )
+  const endpointNodes = useMemo(
+    () => snapshot.acceptedGraph.nodes.filter(isEndpointNode),
+    [snapshot.acceptedGraph.nodes],
+  )
   const nodes = useMemo<Node<EndpointData>[]>(
     () =>
-      snapshot.acceptedGraph.nodes.map((item) => {
+      endpointNodes.map((item) => {
         const operation = operationById.get(item.operationKey)
         if (!operation) throw new Error('Missing operation for graph node ' + item.id)
         const position = positionById.get(item.id) ?? { x: 0, y: 0 }
@@ -108,7 +149,7 @@ export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCan
           selectable: true,
         }
       }),
-    [operationById, positionById, selected, snapshot],
+    [endpointNodes, operationById, positionById, selected, snapshot.acceptedGraph.edges],
   )
   const edges = useMemo<Edge[]>(
     () =>
@@ -125,11 +166,11 @@ export function FlowCanvas({ snapshot, positioned, selected, onSelect }: FlowCan
         animated: false,
         selectable: true,
       })),
-    [selected, snapshot],
+    [selected, snapshot.acceptedGraph.edges],
   )
 
   return (
-    <section className="canvas-region" aria-label="Accepted API topology">
+    <section className="canvas-region" aria-label={ariaLabel}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

@@ -91,3 +91,33 @@ describe('CandidateList', () => {
     )
   })
 })
+
+describe('CandidateList keyboard completion', () => {
+  test('supports Space selection and retains focus when a selected row changes state', async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    const view = render(
+      <CandidateList
+        candidates={candidates}
+        selectedCandidateId="candidate:reservation"
+        onSelect={onSelect}
+      />,
+    )
+
+    const option = screen.getByRole('option', { name: /^Source POST \/reservations/i })
+    option.focus()
+    await user.keyboard(' ')
+    expect(onSelect).toHaveBeenCalledWith('candidate:reservation')
+
+    view.rerender(
+      <CandidateList
+        candidates={[{ ...candidates[0]!, state: 'accepted' }, candidates[1]!]}
+        selectedCandidateId="candidate:reservation"
+        onSelect={onSelect}
+      />,
+    )
+
+    expect(screen.getByRole('option', { name: /^Source POST \/reservations/i })).toHaveFocus()
+    expect(screen.getByText('Accepted')).toBeVisible()
+  })
+})

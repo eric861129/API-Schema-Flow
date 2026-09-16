@@ -1,4 +1,4 @@
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -46,16 +46,18 @@ describe('Node source acquirer', () => {
     const workspace = await mkdtemp(path.join(tmpdir(), 'schema-flow-source-'))
     temporaryDirectories.push(workspace)
     const root = path.join(workspace, 'root')
-    const outside = path.join(workspace, 'outside.yaml')
+    const outsideDirectory = path.join(workspace, 'outside')
+    const outside = path.join(outsideDirectory, 'openapi.yaml')
     const inside = path.join(root, 'openapi.yaml')
-    const escapedLink = path.join(root, 'escaped.yaml')
+    const link = path.join(root, 'escaped')
+    const escapedLink = process.platform === 'win32' ? path.join(link, 'openapi.yaml') : link
+    await mkdir(root)
+    await mkdir(outsideDirectory)
     await writeFile(outside, 'openapi: 3.1.0\n', 'utf8')
-    await writeFile(inside, 'openapi: 3.1.0\n', { encoding: 'utf8', flag: 'w' }).catch(async () => {
-      const { mkdir } = await import('node:fs/promises')
-      await mkdir(root, { recursive: true })
-      await writeFile(inside, 'openapi: 3.1.0\n', 'utf8')
-    })
-    await symlink(outside, escapedLink)
+    await writeFile(inside, 'openapi: 3.1.0\n', 'utf8')
+    // Windows 使用不需提權的目錄 junction，仍實際驗證 realpath 逃逸阻擋。
+    if (process.platform === 'win32') await symlink(outsideDirectory, link, 'junction')
+    else await symlink(outside, link)
 
     const context = policyAndBudget({ allowedFileRoots: [root] })
     expect(context).toBeDefined()
@@ -73,7 +75,7 @@ describe('Node source acquirer', () => {
     const loaded = await acquirer.acquire({ kind: 'file', path: inside }, context)
     expect(loaded.diagnostics).toEqual([])
     expect(loaded.source).toMatchObject({
-      uri: pathToFileURL(inside).href,
+      uri: pathToFileURL(await realpath(inside)).href,
       contents: 'openapi: 3.1.0\n',
     })
 

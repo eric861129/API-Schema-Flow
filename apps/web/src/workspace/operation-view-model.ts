@@ -1,8 +1,15 @@
-import type { EdgeValue, HttpMethod, OperationValue, WorkspaceSnapshot } from '../data/types'
+import type {
+  EndpointFlowNode,
+  FlowEdge,
+  HttpMethod,
+  NormalizedOperation,
+} from '@api-schema-flow/domain'
+
+import type { WorkspaceSnapshot } from '../data/types'
 
 export interface OperationViewModel {
   readonly nodeId: string
-  readonly operation: OperationValue
+  readonly operation: NormalizedOperation
   readonly tag: string
   readonly incoming: number
   readonly outgoing: number
@@ -13,13 +20,20 @@ export interface OperationFilters {
   readonly methods: readonly HttpMethod[]
 }
 
+function isEndpointNode(
+  node: WorkspaceSnapshot['acceptedGraph']['nodes'][number],
+): node is EndpointFlowNode {
+  return node.kind === 'endpoint'
+}
+
 export function buildOperationViewModels(
   snapshot: WorkspaceSnapshot,
 ): readonly OperationViewModel[] {
   const edges = snapshot.acceptedGraph.edges
   const nodeByOperation = new Map(
-    snapshot.acceptedGraph.nodes.map((node) => [node.operationKey, node.id]),
+    snapshot.acceptedGraph.nodes.filter(isEndpointNode).map((node) => [node.operationKey, node.id]),
   )
+
   return snapshot.apiDocument.operations
     .map((operation) => {
       const nodeId = nodeByOperation.get(operation.id) ?? operation.id
@@ -27,8 +41,8 @@ export function buildOperationViewModels(
         nodeId,
         operation,
         tag: operation.tags[0] ?? 'Untagged',
-        incoming: edges.filter((edge: EdgeValue) => edge.targetNodeId === nodeId).length,
-        outgoing: edges.filter((edge: EdgeValue) => edge.sourceNodeId === nodeId).length,
+        incoming: edges.filter((edge: FlowEdge) => edge.targetNodeId === nodeId).length,
+        outgoing: edges.filter((edge: FlowEdge) => edge.sourceNodeId === nodeId).length,
       }
     })
     .toSorted(

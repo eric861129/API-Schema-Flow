@@ -49,7 +49,7 @@ const STATE_PRIORITY: Readonly<Record<ReviewCandidateState, number>> = {
 }
 
 function normalizeSearchText(value: string): string {
-  return value.normalize('NFKC').trim().toLocaleLowerCase()
+  return value.normalize('NFKC').trim().toLowerCase()
 }
 
 function matchesStateFilter(
@@ -70,7 +70,8 @@ function matchesStateFilter(
 }
 
 function compareText(left: string, right: string): number {
-  return left.localeCompare(right, 'en', { sensitivity: 'base' })
+  if (left === right) return 0
+  return left < right ? -1 : 1
 }
 
 function compareCandidates(

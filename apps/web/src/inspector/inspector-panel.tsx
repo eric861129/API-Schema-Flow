@@ -1,27 +1,55 @@
 import type {
-  EdgeValue,
-  OperationValue,
-  SchemaValue,
-  SelectedElement,
-  WorkspaceSnapshot,
-} from '../data/types'
-import { MethodBadge } from '../components/operations-panel'
+  EndpointFlowNode,
+  FlowEdge,
+  FlowValueSelector,
+  FlowValueTarget,
+  NormalizedOperation,
+  NormalizedSchema,
+} from '@api-schema-flow/domain'
 
-function schemaText(schema: SchemaValue | undefined): string {
+import { MethodBadge } from '../components/operations-panel'
+import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
+
+function schemaText(schema: NormalizedSchema | undefined): string {
   if (!schema) return 'No schema declared'
-  if (schema.type === 'array') return 'array of ' + schemaText(schema.items)
-  const properties = Object.keys(schema.properties ?? {})
+  if (schema.types.includes('array')) return 'array of ' + schemaText(schema.items)
+
+  const properties = Object.keys(schema.properties)
+  const type = schema.types.join(' | ') || 'unknown'
   return properties.length > 0
-    ? (schema.type ?? 'object') + ' · ' + properties.join(', ')
+    ? type + ' · ' + properties.join(', ')
     : schema.format
-      ? (schema.type ?? 'value') + ' · ' + schema.format
-      : (schema.type ?? 'unknown')
+      ? type + ' · ' + schema.format
+      : type
 }
 
-function selectorText(value: Readonly<Record<string, unknown>>): string {
-  if (typeof value.pointer === 'string') return String(value.kind) + ' ' + value.pointer
-  if (typeof value.name === 'string') return String(value.location ?? value.kind) + '.' + value.name
-  return String(value.kind ?? 'value')
+function selectorText(value: FlowValueSelector | FlowValueTarget): string {
+  switch (value.kind) {
+    case 'request-body':
+    case 'response-body':
+      return value.kind + ' ' + value.pointer
+    case 'request-header':
+    case 'request-query':
+    case 'request-path':
+    case 'response-header':
+    case 'workflow-input':
+    case 'path-parameter':
+    case 'query-parameter':
+    case 'querystring-parameter':
+    case 'header-parameter':
+    case 'cookie-parameter':
+      return value.kind + '.' + value.name
+    case 'status-code':
+      return 'status-code'
+    case 'literal':
+      return 'literal ' + String(value.value)
+  }
+}
+
+function isEndpointNode(
+  node: WorkspaceSnapshot['acceptedGraph']['nodes'][number],
+): node is EndpointFlowNode {
+  return node.kind === 'endpoint'
 }
 
 function NodeInspector({
@@ -29,11 +57,13 @@ function NodeInspector({
   snapshot,
   onSelect,
 }: {
-  readonly operation: OperationValue
+  readonly operation: NormalizedOperation
   readonly snapshot: WorkspaceSnapshot
   readonly onSelect: (selected: SelectedElement) => void
 }) {
-  const node = snapshot.acceptedGraph.nodes.find((item) => item.operationKey === operation.id)
+  const node = snapshot.acceptedGraph.nodes
+    .filter(isEndpointNode)
+    .find((item) => item.operationKey === operation.id)
   const connections = snapshot.acceptedGraph.edges.filter(
     (edge) => edge.sourceNodeId === node?.id || edge.targetNodeId === node?.id,
   )
@@ -80,7 +110,7 @@ function NodeInspector({
             <span>{schemaText(parameter.schema)}</span>
           </div>
         ))}
-        {operation.requestBody?.mediaTypes.map((media) => (
+        {operation.requestBody?.content.map((media) => (
           <div className="schema-line" key={media.mediaType}>
             <strong>{media.mediaType}</strong>
             <span>{schemaText(media.schema)}</span>
@@ -93,9 +123,7 @@ function NodeInspector({
           <div className="response-line" key={response.statusCode}>
             <strong>{response.statusCode}</strong>
             <span>{response.description}</span>
-            <small>
-              {response.mediaTypes.map((media) => schemaText(media.schema)).join(' · ')}
-            </small>
+            <small>{response.content.map((media) => schemaText(media.schema)).join(' · ')}</small>
           </div>
         ))}
       </section>
@@ -131,17 +159,21 @@ function EdgeInspector({
   edge,
   snapshot,
 }: {
-  readonly edge: EdgeValue
+  readonly edge: FlowEdge
   readonly snapshot: WorkspaceSnapshot
 }) {
   const operationByNode = new Map(
-    snapshot.acceptedGraph.nodes.map((node) => [
-      node.id,
-      snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
-    ]),
+    snapshot.acceptedGraph.nodes
+      .filter(isEndpointNode)
+      .map((node) => [
+        node.id,
+        snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
+      ]),
   )
   const source = operationByNode.get(edge.sourceNodeId)
   const target = operationByNode.get(edge.targetNodeId)
+  const action = edge.provenance === 'manual' ? 'edit' : 'accept'
+
   return (
     <>
       <div className="edge-heading">
@@ -179,14 +211,22 @@ function EdgeInspector({
             <dl>
               <div>
                 <dt>Action</dt>
-                <dd>{edge.review.action}</dd>
+                <dd>{action}</dd>
               </div>
               <div>
-                <dt>Candidate</dt>
+                <dt>Decision</dt>
                 <dd>
-                  <code>{edge.review.candidateId}</code>
+                  <code>{edge.review.decisionId}</code>
                 </dd>
               </div>
+              {edge.review.candidateId ? (
+                <div>
+                  <dt>Candidate</dt>
+                  <dd>
+                    <code>{edge.review.candidateId}</code>
+                  </dd>
+                </div>
+              ) : null}
             </dl>
             <ul className="evidence-list">
               {edge.review.evidenceRuleIds.map((rule) => (
@@ -219,7 +259,7 @@ export function InspectorPanel({
 }) {
   const node =
     selected.kind === 'node'
-      ? snapshot.acceptedGraph.nodes.find((item) => item.id === selected.id)
+      ? snapshot.acceptedGraph.nodes.filter(isEndpointNode).find((item) => item.id === selected.id)
       : undefined
   const operation = node
     ? snapshot.apiDocument.operations.find((item) => item.id === node.operationKey)

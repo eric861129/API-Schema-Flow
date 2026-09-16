@@ -1,7 +1,8 @@
 import { describeReviewCompatibility, type ReviewCandidateDetail } from './review-detail'
+import type { ProjectedReviewCandidateDetail } from './review-workspace-adapter'
 
 export interface MappingPreviewProps {
-  readonly candidate: ReviewCandidateDetail | null
+  readonly candidate: ReviewCandidateDetail | ProjectedReviewCandidateDetail | null
 }
 
 function schemaLabel(schema: ReviewCandidateDetail['sourceSchema']): string {
@@ -12,11 +13,18 @@ function schemaLabel(schema: ReviewCandidateDetail['sourceSchema']): string {
 export function MappingPreview({ candidate }: MappingPreviewProps) {
   if (!candidate) {
     return (
-      <section className="mapping-preview mapping-preview--empty" aria-labelledby="mapping-title">
+      <section
+        className="mapping-preview mapping-preview--empty"
+        aria-labelledby="mapping-title"
+        tabIndex={0}
+      >
         <div>
           <p className="section-label">Mapping preview</p>
           <h2 id="mapping-title">Select an inference candidate</h2>
-          <p>Choose a candidate to inspect its source, target, compatibility, and evidence.</p>
+          <p>
+            Select an inference candidate to preview its mapping or topology. Choose a candidate to
+            inspect its source, target, compatibility, and evidence.
+          </p>
         </div>
       </section>
     )
@@ -25,7 +33,7 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
   const compatibility = describeReviewCompatibility(candidate)
 
   return (
-    <section className="mapping-preview" aria-labelledby="mapping-title">
+    <section className="mapping-preview" aria-labelledby="mapping-title" tabIndex={0}>
       <header className="mapping-preview__header">
         <div>
           <p className="section-label">Mapping preview</p>
@@ -96,6 +104,17 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
           ))}
         </ul>
       </div>
+
+      {'schemaWarnings' in candidate && candidate.schemaWarnings.length > 0 ? (
+        <section className="mapping-preview__warnings" aria-labelledby="mapping-warning-title">
+          <h3 id="mapping-warning-title">Schema warnings</h3>
+          <ul>
+            {candidate.schemaWarnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <p className="mapping-preview__notice">
         This is an inference candidate, not an authoritative workflow relationship, until it is

@@ -1,48 +1,9 @@
 import { describe, expect, test } from 'vitest'
 
+import { createReviewWorkspaceFixture } from '../test/review-workspace-fixture'
 import { buildOperationViewModels, filterOperationViewModels } from './operation-view-model'
-import type { WorkspaceSnapshot } from '../data/types'
 
-const snapshot = {
-  apiDocument: {
-    operations: [
-      {
-        id: 'operation:post:/reservations',
-        method: 'post',
-        path: '/reservations',
-        operationId: 'createReservation',
-        summary: 'Create reservation',
-        tags: ['Reservations'],
-        parameters: [],
-        responses: [],
-        security: [],
-        source: { uri: 'fixture://test', pointer: '#/paths' },
-      },
-    ],
-  },
-  acceptedGraph: {
-    id: 'graph',
-    nodes: [
-      {
-        kind: 'endpoint',
-        id: 'operation:post:/reservations',
-        operationKey: 'operation:post:/reservations',
-        source: { uri: 'fixture://test', pointer: '#/paths' },
-      },
-    ],
-    edges: [],
-  },
-  schemaVersion: '1.0',
-  project: {
-    name: 'Test',
-    sourceName: 'Test',
-    sourceUri: 'fixture://test',
-    openapiVersion: '3.1.0',
-  },
-  inferenceCandidates: [],
-  reviewOutcomes: [],
-  diagnostics: [],
-} satisfies WorkspaceSnapshot
+const snapshot = createReviewWorkspaceFixture()
 
 describe('operation view model', () => {
   test('builds deterministic connection metadata and searches path, summary, and operation ID', () => {

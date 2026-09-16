@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository now contains the M0 foundation, M1 OpenAPI ingestion core, and the complete headless M2 workflow layer: Arazzo parsing, declared graphs, evidence-based inference, explicit review decisions, accepted-graph materialization, and deterministic Arazzo export. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. The visual workspace, stateful mock runtime, workflow execution, Live Trace, and non-Arazzo exporters remain on the roadmap. No npm package is published yet.
+> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. Mapping editing, browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
 
 ## What works today
 
@@ -27,6 +27,32 @@ The current implementation provides:
 - structured diagnostics, stable source pointers, secret-safe output, and stable exit codes;
 - parser-backed OpenAPI, Arazzo, declared-flow, inference, review, and export fixtures with unit, integration, conformance, security, performance, benchmark, Golden, and boundary tests;
 - frozen-lockfile GitHub Actions verification.
+- a Reservation snapshot workspace with topology, outline, candidate filters, evidence, Accept/Reject, Undo, and an in-memory accepted-graph preview; see the [M3-B1 verification record](docs/reports/m3b1-review-session-verification.md) for delivery status.
+
+## Try the browser review workspace
+
+**Review changes are memory-only. Refreshing or closing the page discards them. There is no Save, Decision Set import/export, or Mapping Editor in this slice.**
+
+After installing dependencies and building the workspace packages:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm dev:web
+```
+
+Open the local URL printed by Vite, normally `http://localhost:5173`. This build loads the bundled Reservation snapshot; arbitrary spec import and `schema-flow open` are not implemented.
+
+1. Select **Inference Review** in the left navigation. Use search, confidence, and review-state filters to find a candidate.
+2. Set **Review state → All** to include the snapshot's existing decisions. Select the candidate from `POST /auth/login` to `GET /spaces/available`.
+3. Inspect **Mapping preview** and **Evidence Inspector**. Evidence is open by default; **Hide evidence**, **Show evidence**, and Escape control its visibility.
+4. This fixture already accepts the login candidate. Choose **Reject**, select a reason, and confirm to remove its inferred edge from the draft. **Other** requires a nonblank note. Declared edges remain unchanged.
+5. Select the same candidate again and choose **Accept** to restore its inferred edge. Switch to **Topology preview** to inspect the draft graph. Candidates with blockers or invalid/stale/conflicting state cannot be accepted.
+6. Use **Undo latest change** to reverse one draft action at a time. Refresh to return to the bundled baseline. Review actions never modify the source snapshot or CLI decision files.
+
+Keyboard support includes Tab, candidate-list Arrow/Home/End navigation, Enter/Space selection, `/` for search, Escape to close evidence/dialogs, and keyboard scrolling of mapping details. Desktop validation covers 1440 × 900 and 1366 × 768; mobile and other browser engines are not yet validated.
+
+Browser gates: `pnpm test:web`, `pnpm check:review-browser-bundle`, `pnpm build:web`, `pnpm check:web-bundle`, and `pnpm test:web:e2e`. Install Chromium first with `pnpm --filter @api-schema-flow/web exec playwright install chromium` if needed.
 
 ## Run the current vertical slice
 
@@ -162,10 +188,10 @@ API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 | OpenAPI normalization | Stable IDs, source pointers, schemas, security, servers, Link Objects, compatibility and ambiguity diagnostics | Continue feeding normalized fields into flow and inference layers |
 | Arazzo core | Arazzo 1.1.x parse/preserve, semantic validation, Runtime Expression AST, DAG analysis, URI and abstract operation resolution, support profile | Visual editing and supported-subset execution |
 | Declared flow graph | OpenAPI Links and Arazzo step order, `dependsOn`, and Runtime Expression mappings become versioned declared/accepted graphs | Shared input for inference, review UI, export, execution, and change impact |
-| Evidence-based inference | Deterministic candidates plus explicit accept/reject/edit decisions, stale/orphan detection, revision supersession, and accepted inferred/manual edge materialization | Interactive review and project-file persistence in the Web workspace |
+| Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject drafts only | Browser Mapping Editor and project-file persistence |
 | CLI | `validate`, `infer`, `review`, and `export-arazzo` are implemented | `open`, `mock`, `run`, Mermaid export, and report export planned |
-| Visual topology | Design specifications and concept mockups only | React Flow nodes and edges with ELK layered layout |
-| Dependency discovery | Declared relationships, inferred candidates, immutable review decisions, and accepted-only graph materialization are implemented; candidates are never auto-accepted | Interactive review UI and durable project snapshot persistence |
+| Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Arbitrary source import and workflow authoring |
+| Dependency discovery | Evidence, Accept/Reject, Undo, and draft topology in M3-B1; candidates are never auto-accepted | M3-B2 Mapping Editor; M3-B3 persistence and Decision Set import/export |
 | Stateful mocking | Not implemented | In-memory CRUD lifecycle, deterministic seed, session isolation, reset, and snapshot |
 | Workflow execution | Not implemented | Synchronous OpenAPI steps, mappings, outputs, criteria, timeout, and bounded retry |
 | Live trace and export | Deterministic parser-validated Arazzo 1.1 YAML/JSON export is implemented | Live Trace, Mermaid, project JSON, and execution reports |
@@ -227,6 +253,8 @@ The implemented core keeps framework and parser details behind package-owned bou
 ## Current repository layout
 
 ```text
+apps/
+  web/
 packages/
   domain/
   diagnostics/
@@ -239,6 +267,7 @@ packages/
   inference/
   review/
   exporter-arazzo/
+  layout/
   cli/
 examples/
   reservation/

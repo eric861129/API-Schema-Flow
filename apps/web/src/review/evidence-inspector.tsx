@@ -1,7 +1,8 @@
 import { groupReviewEvidence, type ReviewCandidateDetail } from './review-detail'
+import type { ProjectedReviewCandidateDetail } from './review-workspace-adapter'
 
 export interface EvidenceInspectorProps {
-  readonly candidate: ReviewCandidateDetail | null
+  readonly candidate: ReviewCandidateDetail | ProjectedReviewCandidateDetail | null
   readonly open: boolean
   readonly onClose: () => void
 }
@@ -111,6 +112,33 @@ export function EvidenceInspector({ candidate, open, onClose }: EvidenceInspecto
           </section>
         )
       })}
+
+      {'schemaWarnings' in candidate && candidate.schemaWarnings.length > 0 ? (
+        <section
+          className="evidence-group evidence-group--warnings"
+          aria-labelledby="schema-warning-title"
+        >
+          <h3 id="schema-warning-title">Schema warnings</h3>
+          <ul>
+            {candidate.schemaWarnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {'sourcePointers' in candidate && candidate.sourcePointers.length > 0 ? (
+        <details className="evidence-inspector__sources">
+          <summary>Mapping source pointers</summary>
+          <ul className="source-pointer-list">
+            {candidate.sourcePointers.map((pointer) => (
+              <li key={pointer}>
+                <code>{pointer}</code>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <details className="evidence-inspector__identity">
         <summary>Candidate identity</summary>

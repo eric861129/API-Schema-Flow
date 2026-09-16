@@ -91,3 +91,44 @@ describe('EvidenceInspector', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 })
+
+import rawSnapshot from '../../public/fixtures/reservation-workspace.json'
+import { loadWorkspaceSnapshot } from '../data/load-workspace'
+import { createInitialReviewSession } from './review-session'
+import { materializeReviewSession } from './review-engine'
+import { projectReviewWorkspace } from './review-workspace-adapter'
+
+describe('EvidenceInspector Domain projection', () => {
+  test('renders rules, weights, blockers, source pointers, identity, and schema warnings', async () => {
+    const user = userEvent.setup()
+    const snapshot = await loadWorkspaceSnapshot(
+      '/fixture.json',
+      async () =>
+        new Response(JSON.stringify(rawSnapshot), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+    )
+    const session = createInitialReviewSession({
+      projectFingerprint: snapshot.reviewContext.projectFingerprint,
+      sourceRevision: snapshot.reviewContext.sourceRevision,
+    })
+    const projection = projectReviewWorkspace(snapshot, materializeReviewSession(snapshot, session))
+    const candidate = [...projection.details.values()].find(
+      ({ sourceLabel }) => sourceLabel === 'GET /spaces/available',
+    )!
+
+    render(<EvidenceInspector candidate={candidate} open onClose={() => undefined} />)
+
+    expect(screen.getByText('INF-RESOURCE-ID')).toBeVisible()
+    expect(screen.getByText('+25')).toBeVisible()
+    expect(screen.getByText('INF-BLOCK-ARRAY-SELECTOR')).toBeVisible()
+    expect(screen.getByText(/requires an explicit item selector/i)).toBeVisible()
+    expect(screen.getByText(candidate.ruleSetVersion)).toBeVisible()
+    await user.click(screen.getByText('Candidate identity'))
+    expect(screen.getByText(candidate.id)).toBeVisible()
+    expect(screen.getByText(candidate.fingerprint)).toBeVisible()
+    expect(screen.getAllByText(/fixture:\/\/reservation\/openapi.yaml/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/candidate, not an authoritative workflow fact/i)).toBeVisible()
+  })
+})

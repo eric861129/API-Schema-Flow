@@ -55,3 +55,52 @@ describe('MappingPreview', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 })
+
+import rawSnapshot from '../../public/fixtures/reservation-workspace.json'
+import { loadWorkspaceSnapshot } from '../data/load-workspace'
+import { createInitialReviewSession } from './review-session'
+import { materializeReviewSession } from './review-engine'
+import { projectReviewWorkspace } from './review-workspace-adapter'
+
+async function canonicalDetails() {
+  const snapshot = await loadWorkspaceSnapshot(
+    '/fixture.json',
+    async () =>
+      new Response(JSON.stringify(rawSnapshot), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+  )
+  const session = createInitialReviewSession({
+    projectFingerprint: snapshot.reviewContext.projectFingerprint,
+    sourceRevision: snapshot.reviewContext.sourceRevision,
+  })
+  const projection = projectReviewWorkspace(snapshot, materializeReviewSession(snapshot, session))
+  return projection
+}
+
+describe('MappingPreview Domain projection', () => {
+  test('renders resolved source/target schema details, array depth, transform, and warnings', async () => {
+    const projection = await canonicalDetails()
+    const spaceCandidate = [...projection.details.values()].find(
+      (candidate) => candidate.sourceLabel === 'GET /spaces/available',
+    )!
+    const tokenCandidate = [...projection.details.values()].find(
+      (candidate) => candidate.sourceLabel === 'POST /auth/login',
+    )!
+
+    const view = render(<MappingPreview candidate={spaceCandidate} />)
+    expect(screen.getByText('GET /spaces/available')).toBeVisible()
+    expect(screen.getByText('$response.body#/id')).toBeVisible()
+    expect(screen.getByText('POST /reservations')).toBeVisible()
+    expect(screen.getByText('requestBody#/spaceId')).toBeVisible()
+    expect(screen.getAllByText(/string · uuid/i)).toHaveLength(2)
+    expect(screen.getByText(/array at depth 1/i)).toBeVisible()
+    expect(screen.getByText(/explicit item selector/i)).toBeVisible()
+
+    view.rerender(<MappingPreview candidate={tokenCandidate} />)
+    expect(screen.getByText('Bearer {$steps.source.outputs.token}')).toBeVisible()
+    expect(screen.getByText(/Target value is required/i)).toBeVisible()
+    expect(screen.getByText(/not an authoritative workflow relationship/i)).toBeVisible()
+  })
+})

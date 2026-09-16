@@ -92,9 +92,15 @@ importers:
       '@api-schema-flow/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@api-schema-flow/diagnostics':
+        specifier: workspace:*
+        version: link:../../packages/diagnostics
       '@api-schema-flow/layout':
         specifier: workspace:*
         version: link:../../packages/layout
+      '@api-schema-flow/review':
+        specifier: workspace:*
+        version: link:../../packages/review
       '@xyflow/react':
         specifier: 'catalog:'
         version: 12.11.6(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)

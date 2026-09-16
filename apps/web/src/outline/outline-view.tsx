@@ -1,13 +1,36 @@
+import type { EndpointFlowNode, FlowValueSelector, FlowValueTarget } from '@api-schema-flow/domain'
+
+import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
 import type { OperationViewModel } from '../workspace/operation-view-model'
-import { MethodBadge } from '../components/operations-panel'
 
-function short(value: Readonly<Record<string, unknown>>): string {
-  return typeof value.pointer === 'string'
-    ? value.pointer
-    : typeof value.name === 'string'
-      ? String(value.location ?? value.kind) + '.' + value.name
-      : String(value.kind ?? 'value')
+function short(value: FlowValueSelector | FlowValueTarget): string {
+  switch (value.kind) {
+    case 'request-body':
+    case 'response-body':
+      return value.pointer
+    case 'request-header':
+    case 'request-query':
+    case 'request-path':
+    case 'response-header':
+    case 'workflow-input':
+    case 'path-parameter':
+    case 'query-parameter':
+    case 'querystring-parameter':
+    case 'header-parameter':
+    case 'cookie-parameter':
+      return value.kind + '.' + value.name
+    case 'status-code':
+      return 'status-code'
+    case 'literal':
+      return String(value.value)
+  }
+}
+
+function isEndpointNode(
+  node: WorkspaceSnapshot['acceptedGraph']['nodes'][number],
+): node is EndpointFlowNode {
+  return node.kind === 'endpoint'
 }
 
 export function OutlineView({
@@ -20,10 +43,12 @@ export function OutlineView({
   readonly onSelect: (selected: SelectedElement) => void
 }) {
   const operationByNode = new Map(
-    snapshot.acceptedGraph.nodes.map((node) => [
-      node.id,
-      snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
-    ]),
+    snapshot.acceptedGraph.nodes
+      .filter(isEndpointNode)
+      .map((node) => [
+        node.id,
+        snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
+      ]),
   )
   return (
     <section className="outline-view" aria-labelledby="outline-title">

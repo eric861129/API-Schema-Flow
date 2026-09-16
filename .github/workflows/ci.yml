@@ -52,5 +52,16 @@ jobs:
       - name: Verify browser workspace
         run: pnpm test:web:e2e
 
+      - name: Upload browser verification evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-verification-${{ github.sha }}
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Smoke-test CLI
         run: node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml --json
