@@ -11,6 +11,7 @@ import {
 
 import type { WorkspaceSnapshot } from '../data/types'
 import { deriveBaselineRevisions } from './decision-factory'
+import { useReviewPersistence } from './use-review-persistence'
 import { materializeReviewSession, type ReviewSessionMaterialization } from './review-engine'
 import {
   createInitialReviewSession,
@@ -26,6 +27,7 @@ import {
 } from './review-workspace-adapter'
 
 export interface ReviewSessionContextValue {
+  readonly persistence: ReturnType<typeof useReviewPersistence>
   readonly snapshot: WorkspaceSnapshot
   readonly state: ReviewSessionState
   readonly materialization: ReviewSessionMaterialization
@@ -57,10 +59,11 @@ function ReviewSessionProviderInstance({
   readonly children: ReactNode
 }) {
   const [state, dispatch] = useReducer(reviewSessionReducer, snapshot, initializeReviewSession)
+  const persistence = useReviewPersistence(snapshot, state, dispatch)
   // 圖形重建僅取決於語意變更；草稿清單未變時，選取、篩選及預覽操作不應重建拓樸。
   const materialization = useMemo(
     () => materializeReviewSession(snapshot, state),
-    [snapshot, state.draftIntents],
+    [snapshot, state.draftIntents, state.importedDecisionSet],
   )
   const projection = useMemo(
     () => projectReviewWorkspace(snapshot, materialization),
@@ -96,6 +99,7 @@ function ReviewSessionProviderInstance({
 
   const value = useMemo<ReviewSessionContextValue>(
     () => ({
+      persistence,
       snapshot,
       state,
       materialization,
@@ -109,6 +113,7 @@ function ReviewSessionProviderInstance({
       undoLastDraft,
     }),
     [
+      persistence,
       snapshot,
       acceptCandidate,
       materialization,
@@ -122,7 +127,11 @@ function ReviewSessionProviderInstance({
     ],
   )
 
-  return <ReviewSessionContext.Provider value={value}>{children}</ReviewSessionContext.Provider>
+  return (
+    <ReviewSessionContext.Provider value={value}>
+      {persistence.ready ? children : <p role="status">Loading saved decisions…</p>}
+    </ReviewSessionContext.Provider>
+  )
 }
 
 export function ReviewSessionProvider({

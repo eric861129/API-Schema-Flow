@@ -166,7 +166,7 @@ export function MappingEditor({
       >
         <header>
           <h2 id={titleId}>Edit Mapping</h2>
-          <p>Select fields for this candidate. Applying creates an unsaved manual mapping.</p>
+          <p>Select fields for this candidate. Applying creates a manual mapping.</p>
         </header>
         <div className="mapping-editor-columns">
           <FieldPicker

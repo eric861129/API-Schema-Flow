@@ -15,6 +15,7 @@ import { ReviewActions } from './review-actions'
 import { ReviewStatusBar } from './review-status-bar'
 import { RejectDialog } from './reject-dialog'
 import { DraftGraphPreview } from './draft-graph-preview'
+import { ReviewTransferControls } from './review-transfer-controls'
 
 function countLabel(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`
@@ -46,6 +47,7 @@ export function ReviewWorkspace() {
     rejectCandidate,
     undoLastDraft,
     editCandidate,
+    persistence,
   } = useReviewSession()
   const [announcement, setAnnouncement] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -415,12 +417,16 @@ export function ReviewWorkspace() {
       </section>
 
       <ReviewStatusBar
+        storageStatus={persistence.status}
+        storageError={persistence.error}
         draftCount={draftCount}
         edgeCount={acceptedRelationshipCount}
         selectedId={state.selectedCandidateId}
         announcement={announcement}
         onUndo={undoLatestChange}
-      />
+      >
+        <ReviewTransferControls />
+      </ReviewStatusBar>
     </section>
   )
 }

@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is implemented on the development branch; Windows and Linux visual baselines are included. Merge requires successful CI on the PR head. Browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
+> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; the M3-B3 development branch auto-saves decisions locally and restores them on reload. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is merged. M3-B3 persistence and Decision Set transfer are implemented locally and await remote verification. Stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
 
 ## What works today
 
@@ -31,7 +31,7 @@ The current implementation provides:
 
 ## Try the browser review workspace
 
-**Review changes are memory-only. Refreshing or closing the page discards them. There is no Save or Decision Set import/export in this slice.**
+**On the M3-B3 development branch, decisions auto-save to IndexedDB. Wait for Saved locally before closing. Import/export uses the same Decision Set JSON format as the CLI.**
 
 After installing dependencies and building the workspace packages:
 
@@ -48,11 +48,15 @@ Open the local URL printed by Vite, normally `http://localhost:5173`. This build
 3. Inspect **Mapping preview** and **Evidence Inspector**. Evidence is open by default; **Hide evidence**, **Show evidence**, and Escape control its visibility.
 4. This fixture already accepts the login candidate. Choose **Reject**, select a reason, and confirm to remove its inferred edge from the draft. **Other** requires a nonblank note. Declared edges remain unchanged.
 5. Select the same candidate again and choose **Accept** to restore its inferred edge. Switch to **Topology preview** to inspect the draft graph. Candidates with blockers or invalid/stale/conflicting state cannot be accepted.
-6. Use **Undo latest change** to reverse one draft action at a time. Refresh to return to the bundled baseline. Review actions never modify the source snapshot or CLI decision files.
+6. Use **Undo latest change** to reverse one draft action at a time. Reload to restore locally saved decisions. Review actions never modify the source snapshot or CLI decision files.
 
 For M3-B2, select **Review state → All**, choose `GET /spaces/available → POST /reservations`, and open **Edit Mapping**. Select `Response #/*/id` and `Body #/spaceId`, explicitly enter an array index such as `0`, then **Apply mapping**. The draft gains a manual accepted edge. **Cancel** changes nothing; **Undo latest change** restores the previous mapping. Reopening the editor uses the current effective mapping.
 
 The two-column schema field lists validate scalar types, required values, formats, enums, nullability, and explicit array indices. Literal templates allow exactly one `{$value}` placeholder; examples and runtime expressions are previews, never executable scripts. Sensitive examples are redacted. Supported sources are response-body fields; targets are path/query/header parameters and request-body fields. Ambiguous unions, unresolved schemas, read-only targets, and incompatible mappings cannot be applied. JSONPath, arbitrary transforms, and switching the candidate's operations are excluded. Arazzo hints describe mapping shape only; workflow binding and ordering still require CLI validation.
+
+Local persistence is scoped to the project fingerprint and source revision. Semantic decisions and Undo history are restored; view filters and selection are not persisted. **Import Decision Set** validates the file and shows the merged outcomes before **Apply import**; Cancel preserves current decisions. **Export Decision Set** downloads deterministic JSON without browser metadata. Reimporting the same file is idempotent; stale identities and conflicting revisions remain visible through Review core.
+
+Storage errors leave the current session usable for export. **Back up stored data** downloads the original record; **Reset saved data** requires confirmation and affects only the current project/source key. **Reload saved data** replaces the current local session with the saved version, so export unsaved decisions first. Concurrent tabs use generation checks and cannot silently overwrite one another. Storage version 1 initializes a new store; unknown versions or changed baselines are preserved for recovery, not automatically migrated or overwritten. The M3-B3 Windows gates are local; Linux screenshots and CI must be refreshed before merging M3-B3.
 
 Keyboard support includes Tab, candidate-list Arrow/Home/End navigation, Enter/Space selection, `/` for search, Escape to close evidence/dialogs, and keyboard scrolling of mapping details. Desktop validation covers 1440 × 900 and 1366 × 768; mobile and other browser engines are not yet validated.
 
@@ -195,7 +199,7 @@ API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 | Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject/Edit drafts | Project-file persistence |
 | CLI | `validate`, `infer`, `review`, and `export-arazzo` are implemented | `open`, `mock`, `run`, Mermaid export, and report export planned |
 | Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Arbitrary source import and workflow authoring |
-| Dependency discovery | Evidence, Accept/Reject, Undo, draft topology, and M3-B2 mapping editing; candidates are never auto-accepted | M3-B3 persistence and Decision Set import/export |
+| Dependency discovery | Evidence, Accept/Reject, Undo, draft topology, and M3-B2 mapping editing; candidates are never auto-accepted | Additional workflow authoring |
 | Stateful mocking | Not implemented | In-memory CRUD lifecycle, deterministic seed, session isolation, reset, and snapshot |
 | Workflow execution | Not implemented | Synchronous OpenAPI steps, mappings, outputs, criteria, timeout, and bounded retry |
 | Live trace and export | Deterministic parser-validated Arazzo 1.1 YAML/JSON export is implemented | Live Trace, Mermaid, project JSON, and execution reports |

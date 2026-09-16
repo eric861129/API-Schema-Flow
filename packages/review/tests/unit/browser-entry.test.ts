@@ -81,12 +81,15 @@ describe('browser Review entry', () => {
     expect(Object.keys(browser).sort()).toEqual(
       [
         'canonicalizeDecisionSet',
+        'parseReviewDecisionSet',
         'createReviewDecisionId',
         'materializeReviewedOperationGraph',
         'resolveReviewDecisions',
       ].sort(),
     )
-    expect('parseReviewDecisionSet' in browser).toBe(false)
+    expect(
+      browser.parseReviewDecisionSet({ schemaVersion: 'unsupported' }).decisionSet,
+    ).toBeUndefined()
   })
 
   test('executes identity, canonicalization, resolution, and materialization', async () => {
@@ -98,6 +101,10 @@ describe('browser Review entry', () => {
       revision: 1,
       decisions: [decision],
       manualEdges: [],
+    })
+    expect(browser.parseReviewDecisionSet(JSON.parse(JSON.stringify(decisionSet)))).toEqual({
+      decisionSet,
+      diagnostics: [],
     })
 
     expect(browser.resolveReviewDecisions({ candidates: [candidate], decisionSet }).active).toEqual(

@@ -61,7 +61,7 @@ export function DraftGraphPreview({
   return (
     <div className="draft-graph-preview">
       <section aria-label="Draft graph summary" className="draft-graph-summary">
-        <strong>Draft review preview — not saved</strong>
+        <strong>Review graph preview</strong>
         <ul>
           <li>
             {graph.edges.filter((edge) => edge.provenance === 'declared').length} declared accepted
@@ -85,7 +85,7 @@ export function DraftGraphPreview({
             positioned={positioned.layout}
             selected={selected}
             onSelect={setSelected}
-            ariaLabel="Draft review preview — not saved"
+            ariaLabel="Review graph preview"
           />
         </>
       ) : (

@@ -1067,6 +1067,22 @@ th {
   color: var(--secondary);
   font-size: 11px;
 }
+.review-transfer-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.review-transfer-controls > p {
+  color: #ffc66d;
+}
+.review-transfer-controls dialog p,
+.review-transfer-controls dialog ul {
+  margin-block: 12px;
+}
+.review-transfer-controls dialog button {
+  margin-right: 8px;
+}
 .review-status-bar span:last-child {
   margin-left: auto;
   overflow: hidden;
