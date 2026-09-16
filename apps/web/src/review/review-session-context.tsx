@@ -55,8 +55,7 @@ function ReviewSessionProviderInstance({
   readonly children: ReactNode
 }) {
   const [state, dispatch] = useReducer(reviewSessionReducer, snapshot, initializeReviewSession)
-  // Graph materialization is semantic: selection, filters, and preview controls must not
-  // rebuild the accepted topology when the immutable draft intent list is unchanged.
+  // 圖形重建僅取決於語意變更；草稿清單未變時，選取、篩選及預覽操作不應重建拓樸。
   const materialization = useMemo(
     () => materializeReviewSession(snapshot, state),
     [snapshot, state.draftIntents],

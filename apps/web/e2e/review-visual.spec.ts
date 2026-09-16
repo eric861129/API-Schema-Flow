@@ -28,6 +28,10 @@ test('keeps review panels and actions usable and captures four stable states', a
   await page.getByRole('button', { name: 'Hide evidence' }).click()
   const capture = async (name: string) => {
     await page.evaluate(() => document.fonts.ready)
+    await expect(page).toHaveScreenshot(`${name}.png`, {
+      animations: 'disabled',
+      caret: 'hide',
+    })
     const path = testInfo.outputPath(`${name}.png`)
     await page.screenshot({ path, animations: 'disabled', caret: 'hide' })
     await testInfo.attach(name, { path, contentType: 'image/png' })
