@@ -10,7 +10,7 @@ test('reproduces the README journey against the unchanged bundled snapshot', asy
   await expect(page.getByRole('button', { name: 'Accept', exact: true })).toBeDisabled()
   await expect(
     page.getByRole('button', {
-      name: /^(Save decisions|Import Decision Set|Export Decision Set|Run Workflow|Start Mock|Export Arazzo)$/i,
+      name: /^(Save decisions|Run Workflow|Start Mock|Export Arazzo)$/i,
     }),
   ).toHaveCount(0)
   await page.getByRole('button', { name: 'Reject', exact: true }).click()
@@ -25,7 +25,7 @@ test('reproduces the README journey against the unchanged bundled snapshot', asy
   await loginCandidate(page).click()
   await page.getByRole('button', { name: 'Accept', exact: true }).click()
   await expect(summary).toContainText('1 inferred accepted')
-  const canvas = page.getByRole('region', { name: 'Draft review preview — not saved' })
+  const canvas = page.getByRole('region', { name: 'Review graph preview' })
   await expect(canvas.locator('.react-flow__edge')).toHaveCount(3)
   await page.getByRole('button', { name: 'Undo latest change' }).click()
   await expect(summary).toContainText('0 inferred accepted')
@@ -37,7 +37,7 @@ test('reproduces the README journey against the unchanged bundled snapshot', asy
   )
 })
 
-test('reviews candidates, updates real topology, undoes changes, and discards drafts on reload', async ({
+test('reviews candidates, updates real topology, undoes changes, and restores decisions on reload', async ({
   reviewPage: page,
 }) => {
   await openReview(page)
@@ -72,16 +72,20 @@ test('reviews candidates, updates real topology, undoes changes, and discards dr
 
   await page.getByRole('button', { name: 'Accept', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Review status', exact: true })).toContainText(
-    '1 unsaved review change',
+    '1 review change',
+  )
+  await expect(page.getByRole('status', { name: 'Local storage status' })).toHaveText(
+    'Saved locally',
   )
   await page.reload()
   await openReview(page)
+  await page.getByRole('combobox', { name: 'Review state' }).selectOption('all')
   await expect(page.getByRole('region', { name: 'Review status', exact: true })).toContainText(
-    'No draft changes',
+    '1 review change',
   )
-  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'pending')
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'accepted')
   await page.getByRole('button', { name: 'Topology preview' }).click()
-  await expectGraph(page, 0)
+  await expectGraph(page, 1)
 })
 
 test('completes review using only the keyboard, including dialog focus containment and restoration', async ({

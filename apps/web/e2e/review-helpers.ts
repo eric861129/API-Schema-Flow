@@ -57,7 +57,7 @@ export async function expectGraph(page: Page, inferred: number) {
   const summary = page.getByRole('region', { name: 'Draft graph summary' })
   await expect(summary).toContainText('1 declared accepted')
   await expect(summary).toContainText(`${inferred} inferred accepted`)
-  const canvas = page.getByRole('region', { name: 'Draft review preview — not saved' })
+  const canvas = page.getByRole('region', { name: 'Review graph preview' })
   await expect(canvas).toBeVisible()
   await expect(canvas.locator('.react-flow__edge')).toHaveCount(1 + inferred)
 }

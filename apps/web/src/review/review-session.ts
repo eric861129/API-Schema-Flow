@@ -1,4 +1,4 @@
-import type { FlowDataMapping } from '@api-schema-flow/domain'
+import type { FlowDataMapping, ReviewDecisionSet } from '@api-schema-flow/domain'
 
 export const REVIEW_SESSION_SCHEMA_VERSION = '1.0' as const
 
@@ -46,6 +46,7 @@ export interface ReviewSessionFilters {
 }
 
 export interface ReviewSessionState {
+  readonly importedDecisionSet?: ReviewDecisionSet | undefined
   readonly schemaVersion: typeof REVIEW_SESSION_SCHEMA_VERSION
   readonly projectFingerprint: string
   readonly sourceRevision: string
@@ -65,6 +66,12 @@ export interface CreateReviewSessionOptions {
 }
 
 export type ReviewSessionAction =
+  | {
+      readonly type: 'restore-decisions'
+      readonly draftIntents: readonly ReviewIntent[]
+      readonly importedDecisionSet?: ReviewDecisionSet | undefined
+      readonly baselineRevisions: Readonly<Record<string, number>>
+    }
   | {
       readonly type: 'edit-candidate'
       readonly candidateId: string
@@ -151,6 +158,13 @@ export function reviewSessionReducer(
   action: ReviewSessionAction,
 ): ReviewSessionState {
   switch (action.type) {
+    case 'restore-decisions':
+      return {
+        ...state,
+        draftIntents: action.draftIntents,
+        importedDecisionSet: action.importedDecisionSet,
+        baselineRevisions: action.baselineRevisions,
+      }
     case 'select-candidate':
       return { ...state, selectedCandidateId: action.candidateId }
 

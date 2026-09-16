@@ -40,6 +40,17 @@ test('edits an array mapping, updates manual topology, cancels and undoes', asyn
     '1 manual accepted',
   )
   await expect(page.locator('.react-flow__edge')).toHaveCount(2)
+  await expect(page.getByRole('status', { name: 'Local storage status' })).toHaveText(
+    'Saved locally',
+  )
+  await page.reload()
+  await openReview(page)
+  await page.getByRole('combobox', { name: 'Review state' }).selectOption('all')
+  await page.getByRole('option', { name: /Source GET \/spaces\/available/ }).click()
+  await page.getByRole('button', { name: 'Topology preview' }).click()
+  await expect(page.getByRole('region', { name: 'Draft graph summary' })).toContainText(
+    '1 manual accepted',
+  )
   await page.getByRole('button', { name: 'Edit Mapping', exact: true }).click()
   await expect(dialog.getByLabel('Source response array index 1')).toHaveValue('0')
   await dialog.getByLabel('Source response array index 1').fill('2')
@@ -51,6 +62,15 @@ test('edits an array mapping, updates manual topology, cancels and undoes', asyn
   )
   await expect(page.locator('.react-flow__edge')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Undo latest change' })).toBeDisabled()
+  await expect(page.getByRole('status', { name: 'Local storage status' })).toHaveText(
+    'Saved locally',
+  )
+  await page.reload()
+  await openReview(page)
+  await page.getByRole('button', { name: 'Topology preview' }).click()
+  await expect(page.getByRole('region', { name: 'Draft graph summary' })).toContainText(
+    '0 manual accepted',
+  )
 })
 
 test('supports keyboard editing and blocks incompatible or incomplete mappings', async ({

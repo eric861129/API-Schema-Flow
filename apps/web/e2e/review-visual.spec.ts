@@ -27,6 +27,9 @@ test('keeps review panels and actions usable and captures four stable states', a
   await loginCandidate(page).click()
   await page.getByRole('button', { name: 'Hide evidence' }).click()
   const capture = async (name: string) => {
+    await expect(
+      page.getByRole('status', { name: 'Local storage status', includeHidden: true }),
+    ).not.toHaveText('Saving locally…')
     await page.evaluate(() => document.fonts.ready)
     await expect(page).toHaveScreenshot(`${name}.png`, {
       animations: 'disabled',
@@ -77,7 +80,7 @@ test('keeps review panels and actions usable and captures four stable states', a
   await page.getByRole('button', { name: 'Topology preview' }).click()
   await expectGraph(page, 1)
   await expectUnclipped(page, page.getByRole('button', { name: 'Reject', exact: true }))
-  const canvas = page.getByRole('region', { name: 'Draft review preview — not saved' })
+  const canvas = page.getByRole('region', { name: 'Review graph preview' })
   expect((await canvas.boundingBox())!.height).toBeGreaterThanOrEqual(100)
   await expectUnclipped(page, page.getByRole('button', { name: 'Undo latest change' }))
   await capture('review-topology-preview')

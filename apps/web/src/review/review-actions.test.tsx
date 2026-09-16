@@ -69,9 +69,7 @@ describe('Review decision journey', () => {
     expect(summary).toHaveTextContent('1 inferred accepted')
     expect(summary).toHaveTextContent('0 manual accepted')
     expect(summary).toHaveTextContent('3 pending candidates outside the graph')
-    expect(
-      await screen.findByRole('region', { name: 'Draft review preview — not saved' }),
-    ).toBeVisible()
+    expect(await screen.findByRole('region', { name: 'Review graph preview' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Undo latest change' }))
     expect(summary).toHaveTextContent('0 inferred accepted')
     expect(summary).toHaveTextContent('4 pending candidates outside the graph')
@@ -137,7 +135,7 @@ describe('Review decision journey', () => {
       '1 accepted relationship',
     )
     expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
-      '2 unsaved review changes',
+      '2 review changes',
     )
     expect(screen.getByRole('status', { name: 'Review announcement' })).toHaveTextContent(
       'Rejected',
@@ -231,7 +229,7 @@ describe('Review decision journey', () => {
     await user.click(screen.getByRole('button', { name: /^Accept$/ }))
 
     expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
-      '1 unsaved review change',
+      '1 review change',
     )
     expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
       '2 accepted relationships',

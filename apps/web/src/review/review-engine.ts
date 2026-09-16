@@ -26,6 +26,10 @@ function candidateIndex(
   )
 }
 
+function uniqueById<T extends { readonly id: string }>(items: readonly T[]): T[] {
+  return [...new Map(items.map((item) => [item.id, item])).values()]
+}
+
 export function materializeReviewSession(
   snapshot: WorkspaceSnapshot,
   session: ReviewSessionState,
@@ -45,9 +49,20 @@ export function materializeReviewSession(
   const draftRevisions = draftDecisions.map(({ revision }) => revision)
   const decisionSet = canonicalizeDecisionSet({
     schemaVersion: '1.0',
-    revision: Math.max(snapshot.reviewDecisionSet.revision, 0, ...draftRevisions),
-    decisions: [...snapshot.reviewDecisionSet.decisions, ...draftDecisions],
-    manualEdges: snapshot.reviewDecisionSet.manualEdges,
+    revision: Math.max(
+      snapshot.reviewDecisionSet.revision,
+      session.importedDecisionSet?.revision ?? 0,
+      ...draftRevisions,
+    ),
+    decisions: uniqueById([
+      ...snapshot.reviewDecisionSet.decisions,
+      ...(session.importedDecisionSet?.decisions ?? []),
+      ...draftDecisions,
+    ]),
+    manualEdges: uniqueById([
+      ...snapshot.reviewDecisionSet.manualEdges,
+      ...(session.importedDecisionSet?.manualEdges ?? []),
+    ]),
   })
 
   return {

@@ -5,7 +5,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { ReviewStatusBar } from './review-status-bar'
 
 describe('ReviewStatusBar', () => {
-  test('distinguishes a clean session from unsaved review changes and exposes Undo', async () => {
+  test('distinguishes a clean session from review changes and exposes Undo', async () => {
     const user = userEvent.setup()
     const onUndo = vi.fn()
     const view = render(
@@ -22,7 +22,7 @@ describe('ReviewStatusBar', () => {
     )
     expect(screen.getByRole('button', { name: 'Undo latest change' })).toBeDisabled()
     expect(
-      screen.getByText('Refreshing this page discards the current review changes.'),
+      screen.getByText('Local storage unavailable. Export decisions before closing.'),
     ).toBeVisible()
 
     view.rerender(
@@ -35,7 +35,7 @@ describe('ReviewStatusBar', () => {
       />,
     )
     expect(screen.getByRole('region', { name: 'Review status' })).toHaveTextContent(
-      '2 unsaved review changes',
+      '2 review changes',
     )
     expect(screen.getByRole('status', { name: 'Review announcement' })).toHaveTextContent(
       'Rejected candidate.',

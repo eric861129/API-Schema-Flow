@@ -4,7 +4,7 @@
 
 API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；重新整理會清除草稿。交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md)。M3-B2 欄位映射編輯已在開發分支實作，已包含 Windows 與 Linux 視覺基準，合併以 PR 最新提交的 CI 通過為準；瀏覽器持久化、Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；M3-B3 會自動儲存決策並於重新整理後還原。交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md)。M3-B2 欄位映射編輯已合併；M3-B3 加入持久化與 Decision Set 匯入／匯出，交付檢查狀態見 ROADMAP.md。Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
 
 ## 現在已經能做什麼？
 
@@ -31,7 +31,7 @@ API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長�
 
 ## 操作瀏覽器審查工作區
 
-**審查變更只保留在記憶體中。重新整理或關閉頁面會清除草稿。本階段沒有 Save 或 Decision Set 匯入／匯出。**
+**M3-B3 會自動將決策存入 IndexedDB。關閉前請等候 Saved locally；匯入／匯出使用與 CLI 相同的 Decision Set JSON。**
 
 安裝依賴並建置工作區套件後啟動：
 
@@ -48,11 +48,17 @@ pnpm dev:web
 3. 查看 **Mapping preview** 與 **Evidence Inspector**。證據預設展開，可用 **Hide evidence**、**Show evidence** 與 Escape 切換。
 4. 內建快照已接受登入候選。按 **Reject**、選擇原因並確認，即可從草稿移除其推導連線；選擇 **Other** 時必須填寫非空白說明。既有宣告連線保持不變。
 5. 重新選取同一候選並按 **Accept**，恢復推導連線。切到 **Topology preview** 查看草稿圖；有阻擋原因或無效、過期、衝突狀態的候選不能接受。
-6. 按 **Undo latest change** 逐次撤銷草稿操作；重新整理則回到內建基準。操作不會修改來源快照或 CLI 決策檔案。
+6. 按 **Undo latest change** 逐次撤銷草稿操作；重新整理則還原本機已儲存的決策。操作不會修改來源快照或 CLI 決策檔案。
 
 M3-B2 編輯操作：將 **Review state** 設為 **All**，選取 `GET /spaces/available → POST /reservations`，按 **Edit Mapping**。選擇來源 `Response #/*/id`、目標 `Body #/spaceId`，並明確輸入陣列索引，例如 `0`。**Apply mapping** 會建立手動接受的連線；**Cancel** 不修改草稿，**Undo latest change** 可還原。再次開啟編輯器會帶入目前有效的映射。
 
 編輯器提供雙欄 Schema 欄位清單、型別／必填／format／enum／nullable 驗證、單一 `{$value}` 的文字模板、範例與 Runtime Expression 預覽。範例不執行腳本；敏感欄位的範例會遮罩。Response body、Path／Query／Header 及 Request body 支援已解析的純量欄位，陣列逐層指定索引。聯集、無法解析的 Schema、唯讀目標與不相容映射會阻擋套用；不提供 JSONPath、任意轉換程式或跨候選更換端點。Arazzo 提示只說明映射形狀，完整工作流仍須由 CLI 驗證順序與綁定。
+
+本機儲存按專案 fingerprint 與來源 revision 隔離，保留決策與 Undo 歷程，不儲存篩選或選取狀態。**Import Decision Set** 先驗證檔案並顯示合併後摘要，按 **Apply import** 才套用；Cancel 不改動目前資料。**Export Decision Set** 下載不含瀏覽器狀態的確定性 JSON。重複匯入不新增相同決策，過期 fingerprint 與衝突 revision 保留並由 Review core 判定。
+
+**Clear saved data** 經確認後清除目前專案／來源的已存決策並停用自動儲存，重新整理後仍維持停用。目前記憶體內的決策仍可匯出；儲存區只保留含版本資訊的停用偏好及世代標記，防止舊分頁把決策寫回。**Enable autosave** 可重新儲存目前決策。
+
+儲存失敗時仍可匯出目前決策。**Back up stored data** 下載原始儲存紀錄；**Reset saved data** 經確認後只重設目前專案／來源版本。**Reload saved data** 以已儲存資料取代目前狀態，操作前可先匯出尚未儲存的決策。多分頁以世代檢查防止互相覆寫。儲存紀錄包含格式與工具版本；早期開發版 v1 仍可讀取，下一次明確變更決策時才補入版本資訊。儲存格式第 1 版負責初次建庫；未知版本與變更過的 baseline 保留供復原，不自動遷移或覆寫。
 
 鍵盤支援 Tab、候選清單的方向鍵／Home／End、Enter／Space 選取、`/` 搜尋、Escape 關閉證據或對話框，以及映射內容的鍵盤捲動。桌面驗證涵蓋 1440 × 900 與 1366 × 768；尚未驗證行動版或其他瀏覽器引擎。
 
@@ -195,7 +201,7 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 | Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器支援 Accept／Reject／Edit 草稿 | 專案檔持久化 |
 | CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
 | 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 任意來源匯入與工作流程編輯 |
-| 依賴推導 | 支援證據、Accept／Reject、Undo、草稿拓樸與 M3-B2 欄位映射編輯；候選不會自動接受 | M3-B3 持久化與 Decision Set 匯入／匯出 |
+| 依賴推導 | 支援證據、Accept／Reject、Undo、草稿拓樸與 M3-B2 欄位映射編輯；候選不會自動接受 | 後續工作流程編輯 |
 | Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
 | Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
 | Live Trace 與 Export | 已實作決定性、可由 Parser 驗證的 Arazzo 1.1 YAML／JSON Export | Live Trace、Mermaid、Project JSON 與執行報告 |

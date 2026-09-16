@@ -21,9 +21,7 @@ describe('DraftGraphPreview', () => {
     expect(summary).toHaveTextContent('1 inferred accepted')
     expect(summary).toHaveTextContent('1 manual accepted')
     expect(summary).toHaveTextContent('2 pending candidates outside the graph')
-    expect(
-      await screen.findByRole('region', { name: 'Draft review preview — not saved' }),
-    ).toBeVisible()
+    expect(await screen.findByRole('region', { name: 'Review graph preview' })).toBeVisible()
     expect(JSON.stringify(snapshot.acceptedGraph)).toBe(graphBefore)
   })
 })

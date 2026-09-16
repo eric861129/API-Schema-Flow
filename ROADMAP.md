@@ -87,10 +87,10 @@
 |---|---|---|
 | M3-A | Reservation 快照、React Flow／ELK 拓樸與等價清單 | 已進入 `main` |
 | M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 已實作；測試、限制及遠端交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md) |
-| M3-B2 | 欄位映射編輯、相容性驗證、手動草稿連線與 Undo | 開發分支已推送，尚未合併；操作見 README，包含 Windows／Linux 視覺基準；合併以 PR 最新提交的 CI 通過為準 |
-| M3-B3 | IndexedDB、Decision Set 匯入／匯出 | 尚未實作 |
+| M3-B2 | 欄位映射編輯、相容性驗證、手動草稿連線與 Undo | 已合併 [PR #17](https://github.com/eric861129/API-Schema-Flow/pull/17)，main CI 通過；操作見 README |
+| M3-B3 | IndexedDB 自動儲存、還原、Decision Set 匯入／匯出與復原 | 已實作；Linux 視覺基準與遠端 CI 於交付 PR 驗證 |
 
-M3-B1 重新整理即清除草稿，不提供儲存、工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，尚不能因 M3-B1 本機通過而宣告 M3 完成。
+M3-B3 已加入本機儲存，尚未提供完整工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，不能因審查工作區通過而宣告整個 M3 完成。
 
 **目標：** 讓使用者能在視覺工作台理解、審核並編輯 Workflow。
 
