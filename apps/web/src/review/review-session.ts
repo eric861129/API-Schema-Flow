@@ -1,3 +1,5 @@
+import type { FlowDataMapping } from '@api-schema-flow/domain'
+
 export const REVIEW_SESSION_SCHEMA_VERSION = '1.0' as const
 
 export type ReviewRejectReason =
@@ -9,6 +11,12 @@ export type ReviewRejectReason =
   | 'other'
 
 export type ReviewIntent =
+  | {
+      readonly action: 'edit'
+      readonly candidateId: string
+      readonly revision: number
+      readonly editedMapping: FlowDataMapping
+    }
   | {
       readonly action: 'accept'
       readonly candidateId: string
@@ -57,6 +65,11 @@ export interface CreateReviewSessionOptions {
 }
 
 export type ReviewSessionAction =
+  | {
+      readonly type: 'edit-candidate'
+      readonly candidateId: string
+      readonly mapping: FlowDataMapping
+    }
   | { readonly type: 'select-candidate'; readonly candidateId: string | null }
   | { readonly type: 'accept-candidate'; readonly candidateId: string }
   | {
@@ -140,6 +153,20 @@ export function reviewSessionReducer(
   switch (action.type) {
     case 'select-candidate':
       return { ...state, selectedCandidateId: action.candidateId }
+
+    case 'edit-candidate':
+      return {
+        ...state,
+        draftIntents: [
+          ...state.draftIntents,
+          {
+            action: 'edit',
+            candidateId: action.candidateId,
+            revision: getNextReviewRevision(state, action.candidateId),
+            editedMapping: structuredClone(action.mapping),
+          },
+        ],
+      }
 
     case 'accept-candidate':
       return {

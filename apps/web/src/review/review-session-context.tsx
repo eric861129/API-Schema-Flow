@@ -1,3 +1,4 @@
+import type { FlowDataMapping } from '@api-schema-flow/domain'
 import {
   createContext,
   useCallback,
@@ -34,6 +35,7 @@ export interface ReviewSessionContextValue {
   readonly selectCandidate: (candidateId: string | null) => void
   readonly acceptCandidate: (candidateId: string) => void
   readonly rejectCandidate: (candidateId: string, reason: ReviewRejectReason, note?: string) => void
+  readonly editCandidate: (candidateId: string, mapping: FlowDataMapping) => void
   readonly undoLastDraft: () => void
 }
 
@@ -85,6 +87,9 @@ function ReviewSessionProviderInstance({
     },
     [],
   )
+  const editCandidate = useCallback((candidateId: string, mapping: FlowDataMapping) => {
+    dispatch({ type: 'edit-candidate', candidateId, mapping })
+  }, [])
   const undoLastDraft = useCallback(() => {
     dispatch({ type: 'undo-last-draft' })
   }, [])
@@ -100,6 +105,7 @@ function ReviewSessionProviderInstance({
       selectCandidate,
       acceptCandidate,
       rejectCandidate,
+      editCandidate,
       undoLastDraft,
     }),
     [
@@ -111,6 +117,7 @@ function ReviewSessionProviderInstance({
       selectCandidate,
       selectedCandidate,
       state,
+      editCandidate,
       undoLastDraft,
     ],
   )

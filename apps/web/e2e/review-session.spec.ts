@@ -10,7 +10,7 @@ test('reproduces the README journey against the unchanged bundled snapshot', asy
   await expect(page.getByRole('button', { name: 'Accept', exact: true })).toBeDisabled()
   await expect(
     page.getByRole('button', {
-      name: /^(Edit Mapping|Save decisions|Import Decision Set|Export Decision Set|Run Workflow|Start Mock|Export Arazzo)$/i,
+      name: /^(Save decisions|Import Decision Set|Export Decision Set|Run Workflow|Start Mock|Export Arazzo)$/i,
     }),
   ).toHaveCount(0)
   await page.getByRole('button', { name: 'Reject', exact: true }).click()

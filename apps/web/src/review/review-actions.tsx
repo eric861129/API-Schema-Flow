@@ -23,7 +23,7 @@ export function ReviewActions({
     <div className="review-decision-controls">
       <p className="review-decision-state">Review state: {candidate.state}</p>
       {candidate.outcomeReason ? <p>{candidate.outcomeReason}</p> : null}
-      {candidate.blockers.length > 0 ? (
+      {candidate.state !== 'edited' && candidate.blockers.length > 0 ? (
         <ul>
           {candidate.blockers.map((blocker, index) => (
             <li key={`${blocker.code}:${index}`}>{blocker.summary}</li>

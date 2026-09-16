@@ -1,10 +1,16 @@
 name: CI
+run-name: ${{ inputs.refresh_visual_baselines && 'Generate Linux visual baselines (not merge verification)' || 'CI' }}
 
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      refresh_visual_baselines:
+        description: Generate Linux visual baselines for manual review (no automatic commit)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,7 +56,21 @@ jobs:
         run: pnpm --filter @api-schema-flow/web exec playwright install --with-deps chromium
 
       - name: Verify browser workspace
+        if: ${{ !inputs.refresh_visual_baselines }}
         run: pnpm test:web:e2e
+
+      - name: Generate Linux visual baselines for review
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh_visual_baselines }}
+        run: pnpm --filter @api-schema-flow/web exec playwright test review-visual.spec.ts mapping-editor.spec.ts --update-snapshots
+
+      - name: Upload generated visual baselines
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.refresh_visual_baselines }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-visual-baselines-${{ github.sha }}
+          path: apps/web/e2e/*-snapshots/*-linux.png
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload browser verification evidence
         if: ${{ !cancelled() }}

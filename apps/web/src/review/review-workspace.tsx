@@ -1,3 +1,6 @@
+import type { FlowDataMapping } from '@api-schema-flow/domain'
+import { MappingEditor } from './mapping-editor'
+import { effectiveCandidateMapping } from './review-workspace-adapter'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CandidateList } from './candidate-list'
@@ -42,11 +45,16 @@ export function ReviewWorkspace() {
     acceptCandidate,
     rejectCandidate,
     undoLastDraft,
+    editCandidate,
   } = useReviewSession()
   const [announcement, setAnnouncement] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const domainCandidate = snapshot.inferenceCandidates.find(
+    (item) => item.id === state.selectedCandidateId,
+  )
   const pendingAction = useRef<{
-    action: 'accept' | 'reject' | 'undo'
+    action: 'accept' | 'reject' | 'undo' | 'edit'
     candidateId: string
     visibleIds: readonly string[]
   } | null>(null)
@@ -76,6 +84,14 @@ export function ReviewWorkspace() {
       )
       if (visibleRows.some(({ id }) => id === action.candidateId))
         selectCandidate(action.candidateId)
+      return
+    }
+    if (action.action === 'edit') {
+      setAnnouncement(
+        reviewed?.state === 'edited'
+          ? 'Applied manual mapping. Changes are not saved.'
+          : `Mapping was not applied: ${reviewed?.outcomeReason ?? reviewed?.state}.`,
+      )
       return
     }
     if (reviewed?.state === (action.action === 'accept' ? 'accepted' : 'rejected')) {
@@ -116,6 +132,13 @@ export function ReviewWorkspace() {
     setRejectOpen(false)
   }
 
+  function applyMapping(mapping: FlowDataMapping) {
+    if (!selectedCandidate) return
+    pendingAction.current = { action: 'edit', candidateId: selectedCandidate.id, visibleIds: [] }
+    editCandidate(selectedCandidate.id, mapping)
+    setEditOpen(false)
+  }
+
   function undoLatestChange() {
     const intent = state.draftIntents.at(-1)
     if (!intent) return
@@ -142,7 +165,7 @@ export function ReviewWorkspace() {
 
   useEffect(() => {
     function handleGlobalKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || rejectOpen) return
+      if (event.defaultPrevented || rejectOpen || editOpen) return
       if (event.key === '/' && !isEditableTarget(event.target)) {
         event.preventDefault()
         searchInputRef.current?.focus()
@@ -180,6 +203,7 @@ export function ReviewWorkspace() {
     state.filters.query,
     state.selectedCandidateId,
     rejectOpen,
+    editOpen,
   ])
 
   return (
@@ -267,6 +291,16 @@ export function ReviewWorkspace() {
           >
             Topology preview
           </button>
+          <button
+            type="button"
+            disabled={
+              !selectedCandidate ||
+              !['pending', 'accepted', 'rejected', 'edited'].includes(selectedCandidate.state)
+            }
+            onClick={() => setEditOpen(true)}
+          >
+            Edit Mapping
+          </button>
         </div>
         {state.previewMode === 'topology' ? (
           <DraftGraphPreview
@@ -328,6 +362,15 @@ export function ReviewWorkspace() {
           onAccept={acceptSelectedCandidate}
           onReject={() => setRejectOpen(true)}
         />
+        {editOpen && domainCandidate ? (
+          <MappingEditor
+            snapshot={snapshot}
+            candidate={domainCandidate}
+            mapping={effectiveCandidateMapping(domainCandidate, materialization)}
+            onCancel={() => setEditOpen(false)}
+            onApply={applyMapping}
+          />
+        ) : null}
         {rejectOpen && selectedCandidate ? (
           <RejectDialog
             candidateLabel={`${selectedCandidate.sourceLabel} → ${selectedCandidate.targetLabel}`}
@@ -357,7 +400,7 @@ export function ReviewWorkspace() {
           </div>
           <div>
             <dt>Accepted</dt>
-            <dd>{counts.accepted}</dd>
+            <dd>{counts.accepted + counts.edited}</dd>
           </div>
           <div>
             <dt>Needs attention</dt>

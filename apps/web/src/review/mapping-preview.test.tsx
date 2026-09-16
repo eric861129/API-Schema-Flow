@@ -91,12 +91,12 @@ describe('MappingPreview Domain projection', () => {
 
     const view = render(<MappingPreview candidate={spaceCandidate} />)
     expect(screen.getByText('GET /spaces/available')).toBeVisible()
-    expect(screen.getByText('$response.body#/id')).toBeVisible()
+    expect(screen.getByText('$response.body#/0/id')).toBeVisible()
     expect(screen.getByText('POST /reservations')).toBeVisible()
     expect(screen.getByText('requestBody#/spaceId')).toBeVisible()
     expect(screen.getAllByText(/string · uuid/i)).toHaveLength(2)
     expect(screen.getByText(/array at depth 1/i)).toBeVisible()
-    expect(screen.getByText(/explicit item selector/i)).toBeVisible()
+    expect(screen.queryByText(/explicit item selector/i)).not.toBeInTheDocument()
 
     view.rerender(<MappingPreview candidate={tokenCandidate} />)
     expect(screen.getByText('Bearer {$steps.source.outputs.token}')).toBeVisible()

@@ -42,6 +42,7 @@ export function createReviewDecisionFromIntent(
     ruleSetVersion: candidate.ruleSetVersion,
     revision: intent.revision,
     action: intent.action,
+    ...(intent.action === 'edit' ? { editedMapping: intent.editedMapping } : {}),
   } as const
 
   return {
