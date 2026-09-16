@@ -2,7 +2,7 @@
 
 > 狀態：草案，待專案負責人審閱  
 > 文件版本：0.1.0  
-> 最後更新：2026-09-03
+> 最後更新：2026-09-16
 > 適用範圍：API Schema Flow MVP
 
 ## 1. 文件目的
@@ -86,13 +86,15 @@
 | `CHANGELOG.md` | 版本變更紀錄 |
 | `FILE-MANIFEST.md` | 文件用途、行數與交付雜湊清單 |
 
-## 5. 已完成實作切片
+## 5. 實作切片與交付證據
 
 | Slice | Design／Plan／Evidence |
 |---|---|
 | M2-B Declared Flow Graph | [Design](superpowers/specs/2026-09-02-m2b-declared-flow-graph-design.md) · [Plan](superpowers/plans/2026-09-02-m2b-declared-flow-graph.md) |
 | M2-C Evidence-based Inference | [Design](superpowers/specs/2026-09-02-m2c-inference-core-design.md) · [Plan](superpowers/plans/2026-09-02-m2c-inference-core.md) |
 | M2-D Review and Arazzo Export | [Design](superpowers/specs/2026-09-03-m2d-review-arazzo-export-design.md) · [Plan](superpowers/plans/2026-09-03-m2d-review-arazzo-export.md) · [Verification](reports/m2d-review-arazzo-export-verification.md) |
+| M3-A Read-only Workspace | [Design](superpowers/specs/2026-09-03-m3a-read-only-web-workspace-design.md) · [Plan](superpowers/plans/2026-09-03-m3a-read-only-web-workspace.md) |
+| M3-B1 Interactive Review Session | [Design](superpowers/specs/2026-09-03-m3b1-review-session-design.md) · [Plan](superpowers/plans/2026-09-03-m3b1-review-session.md) · [Verification](reports/m3b1-review-session-verification.md)；開發分支本機驗證，尚待遠端 CI 與合併 |
 
 ## 6. 文件狀態規則
 

@@ -471,31 +471,29 @@ git commit -m "feat(web): reject candidates and undo draft reviews"
 
 ### Task 8: Responsive, Accessibility, E2E, and Browser Boundaries
 
+**狀態（2026-09-16）：** 本機驗收完成，程式提交為 `100b16d`。完整測試、截圖方式、平台限制與交付狀態統一記錄於 [M3-B1 驗證紀錄](../../reports/m3b1-review-session-verification.md)，不以 PR #16 舊提交的 CI 代替本次驗證。
+
 **Files:**
+- Create: `apps/web/e2e/review-helpers.ts`
 - Create: `apps/web/e2e/review-session.spec.ts`
 - Create: `apps/web/e2e/review-accessibility.spec.ts`
 - Create: `apps/web/e2e/review-visual.spec.ts`
-- Create: `apps/web/e2e/__screenshots__/review-candidate-1440x900.png`
-- Create: `apps/web/e2e/__screenshots__/review-evidence-1440x900.png`
-- Create: `apps/web/e2e/__screenshots__/review-reject-1366x768.png`
-- Create: `apps/web/e2e/__screenshots__/review-topology-preview-1366x768.png`
-- Create: `docs/design/implemented/m3b1/README.md`
-- Create: `docs/design/implemented/m3b1/review-candidate.png`
-- Create: `docs/design/implemented/m3b1/review-evidence.png`
-- Create: `docs/design/implemented/m3b1/review-reject.png`
-- Create: `docs/design/implemented/m3b1/review-topology-preview.png`
-- Modify: `tooling/scripts/check-web-bundle.mjs`
+- Modify: `apps/web/playwright.config.ts`
+- Modify: `apps/web/src/review/mapping-preview.tsx`
+- Modify: `apps/web/src/review/review-task7.css`
+- Modify: `apps/web/src/styles.css`
+- Reuse: `tooling/scripts/check-web-bundle.mjs`
 - Modify: `tooling/scripts/check-boundaries.mjs`
 - Modify: `.github/workflows/ci.yml`
 
 **Interfaces:**
 - Adds canonical pointer and keyboard review journeys and serious/critical axe gates.
 
-- [ ] **Step 1: Add source and bundle boundaries**
+- [x] **Step 1: Add source and bundle boundaries**
 
 Allow only the browser Review entry. Reject package-root Review imports if they reach Node-only code and reject every parser/source/CLI/export/server/mock/execution import from Web review modules.
 
-- [ ] **Step 2: Write pointer E2E journey**
+- [x] **Step 2: Write pointer E2E journey**
 
 ```text
 Open workspace
@@ -511,27 +509,27 @@ Open workspace
 → pending state restored
 ```
 
-- [ ] **Step 3: Write keyboard-only E2E journey**
+- [x] **Step 3: Write keyboard-only E2E journey**
 
 Use icon rail, candidate list, Evidence, Accept, Reject dialog, Undo, and topology preview without pointer input.
 
-- [ ] **Step 4: Add responsive bounding-box checks**
+- [x] **Step 4: Add responsive bounding-box checks**
 
 At 1440 × 900 and 1366 × 768, candidate list, primary preview, evidence overlay, actions, and status bar must not overlap or clip primary actions.
 
-- [ ] **Step 5: Add axe checks**
+- [x] **Step 5: Add axe checks**
 
 Fail on serious/critical violations for list, evidence inspector, Reject dialog, topology preview, and summary table.
 
-- [ ] **Step 6: Generate and review stable screenshots**
+- [x] **Step 6: Generate and review stable screenshots**
 
-Disable animation, use fixed seed/snapshot, and capture the four approved states. Copy accepted images to `docs/design/implemented/m3b1/`.
+Disable animation, use a fixed snapshot, and capture the four review states as Playwright attachments. Review screenshots together with layout assertions; retain CI artifacts instead of duplicating images in the documentation tree.
 
-- [ ] **Step 7: Extend exact-head CI**
+- [x] **Step 7: Extend exact-head CI**
 
-Run Review browser bundle check, Web tests, Web build/bundle check, Playwright review journeys, and existing M0–M3-A gates.
+Run Review browser bundle check, Web tests, Web build/bundle check, Playwright review journeys, and existing M0–M3-A gates. Save browser artifacts by commit SHA. The workflow changes are prepared locally; remote execution remains pending.
 
-- [ ] **Step 8: Run complete browser gate**
+- [x] **Step 8: Run complete browser gate**
 
 ```bash
 pnpm check:review-browser-bundle
@@ -545,7 +543,7 @@ pnpm boundaries:check
 
 Expected: PASS.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/web/e2e docs/design/implemented/m3b1 tooling/scripts .github/workflows
@@ -555,6 +553,8 @@ git commit -m "test(web): verify interactive inference review"
 ---
 
 ### Task 9: Documentation and Exact-head Verification
+
+**狀態（2026-09-16）：** 操作文件、完整本機檢查、限制盤點與本機提交完成；Step 6 的推送及遠端 exact-head CI 尚未執行。Windows 換行、junction 與 canonical path 的驗證修正為 `d93c406`。本階段不包含 M3-B2／M3-B3 開發。
 
 **Files:**
 - Modify: `README.md`
@@ -567,19 +567,19 @@ git commit -m "test(web): verify interactive inference review"
 **Interfaces:**
 - Documents M3-B1 as memory-only and leaves Mapping Editor/persistence for M3-B2/M3-B3.
 
-- [ ] **Step 1: Document the user journey**
+- [x] **Step 1: Document the user journey**
 
 Explain how to open Inference Review, inspect evidence, Accept, Reject, preview graph, and Undo. State prominently that refreshing discards M3-B1 draft changes.
 
-- [ ] **Step 2: Update roadmap without overclaiming**
+- [x] **Step 2: Update roadmap without overclaiming**
 
 Mark Accept/Reject and draft preview implemented. Leave Edit Mapping, IndexedDB, Decision Set import/export, Workflow Builder, Mock, execution, and Live Trace future.
 
-- [ ] **Step 3: Create verification report**
+- [x] **Step 3: Create verification report**
 
 Record exact branch SHA, M3-A base merge SHA, dependency versions, test counts, candidate/performance benchmarks, bundle sizes, axe results, viewport results, screenshot paths, and all commands with exit codes.
 
-- [ ] **Step 4: Run full repository verification**
+- [x] **Step 4: Run full repository verification**
 
 ```bash
 pnpm install --frozen-lockfile
@@ -608,7 +608,7 @@ git diff --check
 
 Expected: every command exits `0`.
 
-- [ ] **Step 5: Audit slice exclusions**
+- [x] **Step 5: Audit slice exclusions**
 
 Verify there are no active controls for:
 
@@ -626,7 +626,7 @@ Export Arazzo
 
 Record remote SHA and successful exact-head Actions run in the PR. Any later commit requires a new exact-head run.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add README.md README.zh-TW.md CHANGELOG.md ROADMAP.md docs

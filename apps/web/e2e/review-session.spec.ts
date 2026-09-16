@@ -1,6 +1,42 @@
 import { expect } from '@playwright/test'
 import { expectGraph, loginCandidate, openReview, tabTo, test } from './review-helpers'
 
+test('reproduces the README journey against the unchanged bundled snapshot', async ({ page }) => {
+  await page.goto('/')
+  await openReview(page)
+  await page.getByRole('combobox', { name: 'Review state' }).selectOption('all')
+  await loginCandidate(page).click()
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'accepted')
+  await expect(page.getByRole('button', { name: 'Accept', exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', {
+      name: /^(Edit Mapping|Save decisions|Import Decision Set|Export Decision Set|Run Workflow|Start Mock|Export Arazzo)$/i,
+    }),
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: 'Reject', exact: true }).click()
+  await page.getByRole('radio', { name: 'Wrong field' }).check()
+  await page.getByRole('button', { name: 'Confirm rejection' }).click()
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'rejected')
+  await page.getByRole('button', { name: 'Topology preview' }).click()
+  const summary = page.getByRole('region', { name: 'Draft graph summary' })
+  await expect(summary).toContainText('0 inferred accepted')
+  await expect(summary).toContainText('1 declared accepted')
+  await expect(summary).toContainText('1 manual accepted')
+  await loginCandidate(page).click()
+  await page.getByRole('button', { name: 'Accept', exact: true }).click()
+  await expect(summary).toContainText('1 inferred accepted')
+  const canvas = page.getByRole('region', { name: 'Draft review preview — not saved' })
+  await expect(canvas.locator('.react-flow__edge')).toHaveCount(3)
+  await page.getByRole('button', { name: 'Undo latest change' }).click()
+  await expect(summary).toContainText('0 inferred accepted')
+  await page.getByRole('button', { name: 'Undo latest change' }).click()
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'accepted')
+  await expect(canvas.locator('.react-flow__edge')).toHaveCount(3)
+  await expect(page.getByRole('region', { name: 'Review status', exact: true })).toContainText(
+    'No draft changes',
+  )
+})
+
 test('reviews candidates, updates real topology, undoes changes, and discards drafts on reload', async ({
   reviewPage: page,
 }) => {

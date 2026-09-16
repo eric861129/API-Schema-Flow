@@ -8,6 +8,9 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
+- Reservation browser workspace with topology/outline views and an M3-B1 in-memory review session: candidate discovery, evidence, Accept/Reject, structured rejection reasons, Undo, and draft accepted-graph preview. Refreshing discards drafts; Mapping Editor and persistence remain planned.
+- Chromium pointer/keyboard journeys, five-state axe checks, two desktop viewport checks, and screenshot artifacts retained by CI commit SHA. Remote verification of this development-branch change is pending.
+
 - Initial product, architecture, security, testing, UX, CLI, mock runtime, inference, and governance specifications.
 - Proposed Arazzo-first workflow model and local-first architecture.
 - GitHub issue and pull request templates.
@@ -46,7 +49,7 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changed
 
-- Project status now distinguishes the implemented M0, M1, and complete headless M2 workflow layer from planned visualization, execution, mock, Live Trace, and non-Arazzo export capabilities.
+- Project status distinguishes M0–M2, the M3-A workspace, and locally verified M3-B1 review from planned Mapping Editor, persistence, execution, mock, Live Trace, and non-Arazzo export capabilities.
 - OpenAPI and Arazzo packages are enforced as mutually independent parser boundaries, with the Flow package as their framework-free composition layer.
 - The Inference package consumes normalized OpenAPI plus the declared operation graph without depending on parser implementations, UI/layout, server, mock, or execution runtimes.
 - Public package declarations are checked to prevent Scalar and Zod implementation types from leaking across boundaries.
@@ -65,6 +68,9 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - Superseded duplicate M2-C inference design and implementation-plan documents that conflicted with the canonical `m2c-inference-core` architecture.
 
 ### Fixed
+
+- Review actions and status bar clipping at the minimum desktop viewport, and keyboard access to scrollable mapping details.
+- Windows path separators causing package-boundary false positives; repository text now uses LF to keep formatting and deterministic fixture checks consistent across platforms.
 
 - Local file read failures now return input exit code `2` with `ASF-CLI-1002` instead of an internal-error exit.
 - Parser diagnostics and diagnostic details are redacted before human or JSON CLI output.

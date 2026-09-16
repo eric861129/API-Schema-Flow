@@ -1,7 +1,7 @@
 # Roadmap
 
 > 狀態：規劃基準  
-> 最後更新：2026-09-01  
+> 最後更新：2026-09-16
 > Roadmap 採成果導向，不承諾日期。
 
 ## 原則
@@ -80,6 +80,17 @@
 - CLI/測試可輸出 Candidate、Evidence 與 Support Diagnostics。
 
 ## M3 — Interactive Workflow Workspace
+
+目前分階段狀態：
+
+| 切片 | 已實作範圍 | 交付狀態 |
+|---|---|---|
+| M3-A | Reservation 快照、React Flow／ELK 拓樸與等價清單 | 已進入 `main` |
+| M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 開發分支已實作，完整本機驗證見[紀錄](docs/reports/m3b1-review-session-verification.md)；待遠端 CI 與合併 |
+| M3-B2 | 欄位映射編輯 | 尚未實作 |
+| M3-B3 | IndexedDB、Decision Set 匯入／匯出 | 尚未實作 |
+
+M3-B1 重新整理即清除草稿，不提供儲存、工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，尚不能因 M3-B1 本機通過而宣告 M3 完成。
 
 **目標：** 讓使用者能在視覺工作台理解、審核並編輯 Workflow。
 

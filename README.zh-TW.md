@@ -4,7 +4,7 @@
 
 API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha**。目前 Repository 已完成 M0 Foundation、M1 OpenAPI Ingestion Core，以及完整的 Headless M2 Workflow Layer：Arazzo Parse、Declared Graph、Evidence-based Inference、明確 Review Decision、Accepted Graph Materialization 與決定性 Arazzo Export。CLI 已提供 `validate`、`infer`、`review` 與 `export-arazzo`。視覺化 Workspace、Stateful Mock、Workflow Executor、Live Trace 與非 Arazzo Exporter 仍在 Roadmap 中，目前尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及開發分支上的 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；重新整理會清除草稿。M3-B1 尚待遠端驗證與合併。欄位映射編輯、瀏覽器持久化、Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
 
 ## 現在已經能做什麼？
 
@@ -27,6 +27,32 @@ API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長�
 - Structured Diagnostic、Stable Source Pointer、敏感資料遮罩與穩定 Exit Code；
 - 由正式 Parser 驗證的 OpenAPI、Arazzo、Declared Flow、Inference、Review 與 Export Fixture，以及 Unit、Integration、Conformance、Security、Performance、Benchmark、Golden 與 Boundary Test；
 - 使用 Frozen Lockfile 的 GitHub Actions 驗證流程。
+- Reservation 快照工作區，提供拓樸、清單、候選篩選、證據、Accept／Reject、Undo 與記憶體內草稿預覽；交付狀態見 [M3-B1 驗證紀錄](docs/reports/m3b1-review-session-verification.md)。
+
+## 操作瀏覽器審查工作區
+
+**審查變更只保留在記憶體中。重新整理或關閉頁面會清除草稿。本階段沒有 Save、Decision Set 匯入／匯出或 Mapping Editor。**
+
+安裝依賴並建置工作區套件後啟動：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm dev:web
+```
+
+開啟 Vite 顯示的本機網址，預設為 `http://localhost:5173`。目前載入內建 Reservation 快照，尚不支援任意規格匯入或 `schema-flow open`。
+
+1. 在左側選擇 **Inference Review**，利用搜尋、信心程度與審查狀態篩選候選。
+2. 將 **Review state** 設為 **All**，包含快照既有的決策。選取 `POST /auth/login` 到 `GET /spaces/available` 的候選。
+3. 查看 **Mapping preview** 與 **Evidence Inspector**。證據預設展開，可用 **Hide evidence**、**Show evidence** 與 Escape 切換。
+4. 內建快照已接受登入候選。按 **Reject**、選擇原因並確認，即可從草稿移除其推導連線；選擇 **Other** 時必須填寫非空白說明。既有宣告連線保持不變。
+5. 重新選取同一候選並按 **Accept**，恢復推導連線。切到 **Topology preview** 查看草稿圖；有阻擋原因或無效、過期、衝突狀態的候選不能接受。
+6. 按 **Undo latest change** 逐次撤銷草稿操作；重新整理則回到內建基準。操作不會修改來源快照或 CLI 決策檔案。
+
+鍵盤支援 Tab、候選清單的方向鍵／Home／End、Enter／Space 選取、`/` 搜尋、Escape 關閉證據或對話框，以及映射內容的鍵盤捲動。桌面驗證涵蓋 1440 × 900 與 1366 × 768；尚未驗證行動版或其他瀏覽器引擎。
+
+瀏覽器檢查命令：`pnpm test:web`、`pnpm check:review-browser-bundle`、`pnpm build:web`、`pnpm check:web-bundle`、`pnpm test:web:e2e`。首次執行可先用 `pnpm --filter @api-schema-flow/web exec playwright install chromium` 安裝 Chromium。
 
 ## 執行目前的垂直切片
 
@@ -162,10 +188,10 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 | OpenAPI Normalization | Stable ID、Source Pointer、Schema、Security、Server、Link Object、Compatibility 與 Ambiguity Diagnostic | 持續提供正規化欄位給 Flow 與 Inference Layer |
 | Arazzo Core | Arazzo 1.1.x Parse／Preserve、Semantic Validation、Runtime Expression AST、DAG Analysis、URI 與抽象 Operation Resolution、Support Profile | 視覺編輯與支援子集合執行 |
 | Declared Flow Graph | OpenAPI Link 與 Arazzo Step Order、`dependsOn`、Runtime Expression Mapping 已轉成版本化 `declared + accepted` Graph | 作為 Inference、Review UI、Export、Execution 與 Change Impact 的共同輸入 |
-| Evidence-based Inference | 已實作 Candidate、明確 Accept／Reject／Edit、Stale／Orphan Detection、Revision Supersession 與 Accepted Inferred／Manual Edge Materialization | Web Workspace 的互動式 Review 與 Project File Persistence |
+| Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器目前只能建立 Accept／Reject 草稿 | 瀏覽器欄位映射編輯與專案檔持久化 |
 | CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
-| 視覺拓撲 | 目前只有設計規格與概念圖 | React Flow 節點與連線，使用 ELK Layered Layout |
-| 依賴推導 | Declared Relationship、Inferred Candidate、Immutable Review Decision 與 Accepted-only Graph Materialization 都已實作；Candidate 不會自動接受 | 互動式 Review UI 與 Durable Project Snapshot Persistence |
+| 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 任意來源匯入與工作流程編輯 |
+| 依賴推導 | M3-B1 支援證據、Accept／Reject、Undo 與草稿拓樸；候選不會自動接受 | M3-B2 欄位映射編輯；M3-B3 持久化與 Decision Set 匯入／匯出 |
 | Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
 | Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
 | Live Trace 與 Export | 已實作決定性、可由 Parser 驗證的 Arazzo 1.1 YAML／JSON Export | Live Trace、Mermaid、Project JSON 與執行報告 |
@@ -227,6 +253,8 @@ flowchart LR
 ## 目前的 Repository 結構
 
 ```text
+apps/
+  web/
 packages/
   domain/
   diagnostics/
@@ -239,6 +267,7 @@ packages/
   inference/
   review/
   exporter-arazzo/
+  layout/
   cli/
 examples/
   reservation/
