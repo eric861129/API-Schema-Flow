@@ -64,7 +64,7 @@ Project Save/Load 開發分支新增 **Project → Save Project**，下載確定
 
 **Load Project** 先驗證完整檔案並預覽取代內容；**Apply project** 同時取代決策與兩個畫布的版面，**Cancel load** 保留現況。取代前可先 Save Project 備份。來源 fingerprint／revision 不同、baseline 改變、未知版本、無效節點 ID／座標或超過 5 MB 的檔案均不套用。目前仍只支援 Reservation 來源，任意規格匯入尚未提供。
 
-拖曳節點或平移／縮放畫布會保存各自的位置與視角；切換 Horizontal／Vertical 會重排兩個畫布，重按目前方向不改動版面。**Project → Reset layout** 恢復自動排版且不更動決策。停用自動儲存時仍可 Save Project；Load Project 不變更停用偏好。版面格式只保存穩定 ID 與有限座標，不保存 React Flow／ELK 物件。本分支需完成本機檢查與 Windows 基準；合併前另須更新 Linux 基準並通過遠端 CI。
+拖曳節點或平移／縮放畫布會保存各自的位置與視角；切換 Horizontal／Vertical 會重排兩個畫布，重按目前方向不改動版面。**Project → Reset layout** 恢復自動排版且不更動決策。停用自動儲存時仍可 Save Project；Load Project 不變更停用偏好。版面格式只保存穩定 ID 與有限座標，不保存 React Flow／ELK 物件。Windows 與 Linux 視覺基準涵蓋兩種桌面尺寸；合併前由一般 PR CI 驗證已提交的基準。
 
 鍵盤支援 Tab、候選清單的方向鍵／Home／End、Enter／Space 選取、`/` 搜尋、Escape 關閉證據或對話框，以及映射內容的鍵盤捲動。桌面驗證涵蓋 1440 × 900 與 1366 × 768；尚未驗證行動版或其他瀏覽器引擎。
 
