@@ -4,7 +4,7 @@
 
 API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；重新整理會清除草稿。交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md)。M3-B2 欄位映射編輯已在開發分支實作，合併前仍須更新 Linux 視覺基準並通過遠端 CI；瀏覽器持久化、Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；重新整理會清除草稿。交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md)。M3-B2 欄位映射編輯已在開發分支實作，已包含 Windows 與 Linux 視覺基準，合併以 PR 最新提交的 CI 通過為準；瀏覽器持久化、Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
 
 ## 現在已經能做什麼？
 
@@ -192,7 +192,7 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 | OpenAPI Normalization | Stable ID、Source Pointer、Schema、Security、Server、Link Object、Compatibility 與 Ambiguity Diagnostic | 持續提供正規化欄位給 Flow 與 Inference Layer |
 | Arazzo Core | Arazzo 1.1.x Parse／Preserve、Semantic Validation、Runtime Expression AST、DAG Analysis、URI 與抽象 Operation Resolution、Support Profile | 視覺編輯與支援子集合執行 |
 | Declared Flow Graph | OpenAPI Link 與 Arazzo Step Order、`dependsOn`、Runtime Expression Mapping 已轉成版本化 `declared + accepted` Graph | 作為 Inference、Review UI、Export、Execution 與 Change Impact 的共同輸入 |
-| Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器目前只能建立 Accept／Reject 草稿 | 瀏覽器欄位映射編輯與專案檔持久化 |
+| Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器支援 Accept／Reject／Edit 草稿 | 專案檔持久化 |
 | CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
 | 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 任意來源匯入與工作流程編輯 |
 | 依賴推導 | 支援證據、Accept／Reject、Undo、草稿拓樸與 M3-B2 欄位映射編輯；候選不會自動接受 | M3-B3 持久化與 Decision Set 匯入／匯出 |

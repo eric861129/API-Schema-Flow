@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is implemented on the development branch; Linux visual baselines and remote CI remain pending before merge. Browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
+> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is implemented on the development branch; Windows and Linux visual baselines are included. Merge requires successful CI on the PR head. Browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
 
 ## What works today
 
@@ -192,7 +192,7 @@ API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 | OpenAPI normalization | Stable IDs, source pointers, schemas, security, servers, Link Objects, compatibility and ambiguity diagnostics | Continue feeding normalized fields into flow and inference layers |
 | Arazzo core | Arazzo 1.1.x parse/preserve, semantic validation, Runtime Expression AST, DAG analysis, URI and abstract operation resolution, support profile | Visual editing and supported-subset execution |
 | Declared flow graph | OpenAPI Links and Arazzo step order, `dependsOn`, and Runtime Expression mappings become versioned declared/accepted graphs | Shared input for inference, review UI, export, execution, and change impact |
-| Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject drafts only | Browser Mapping Editor and project-file persistence |
+| Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject/Edit drafts | Project-file persistence |
 | CLI | `validate`, `infer`, `review`, and `export-arazzo` are implemented | `open`, `mock`, `run`, Mermaid export, and report export planned |
 | Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Arbitrary source import and workflow authoring |
 | Dependency discovery | Evidence, Accept/Reject, Undo, draft topology, and M3-B2 mapping editing; candidates are never auto-accepted | M3-B3 persistence and Decision Set import/export |

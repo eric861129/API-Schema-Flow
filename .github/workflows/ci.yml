@@ -1,4 +1,5 @@
 name: CI
+run-name: ${{ inputs.refresh_visual_baselines && 'Generate Linux visual baselines (not merge verification)' || 'CI' }}
 
 on:
   push:
