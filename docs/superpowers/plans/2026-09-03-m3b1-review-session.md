@@ -1,5 +1,7 @@
 # M3-B1 Interactive Review Session Implementation Plan
 
+**歷史計畫：** 目前整合進度以 [2026-09-04 整合計畫](2026-09-04-m3b1-review-workspace-integration.md) 與[驗證紀錄](../../reports/m3b1-review-session-verification.md) 為準；下列 checklist 與尚待推送描述保留當時執行快照。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a dedicated browser-based Inference Review workspace where users can understand candidates, Accept or Reject them through the existing Review semantics, undo in-memory draft actions, and immediately preview the resulting accepted graph.

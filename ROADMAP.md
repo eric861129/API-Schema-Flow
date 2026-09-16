@@ -86,7 +86,7 @@
 | 切片 | 已實作範圍 | 交付狀態 |
 |---|---|---|
 | M3-A | Reservation 快照、React Flow／ELK 拓樸與等價清單 | 已進入 `main` |
-| M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 開發分支已實作，完整本機驗證見[紀錄](docs/reports/m3b1-review-session-verification.md)；待遠端 CI 與合併 |
+| M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 已實作；測試、限制及遠端交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md) |
 | M3-B2 | 欄位映射編輯 | 尚未實作 |
 | M3-B3 | IndexedDB、Decision Set 匯入／匯出 | 尚未實作 |
 

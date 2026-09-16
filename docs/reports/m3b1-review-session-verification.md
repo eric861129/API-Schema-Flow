@@ -1,6 +1,6 @@
 # M3-B1 互動審查驗證紀錄
 
-日期：2026-09-16。狀態：開發分支本機驗證完成；尚未推送、合併或完成最終提交的遠端 CI。
+日期：2026-09-16。初版 `435f5db` 已完成本機及遠端驗證；本次收尾補齊像素回歸與瀏覽器效能閘門。最終提交 SHA、Checks 與合併狀態以 [PR #16](https://github.com/eric861129/API-Schema-Flow/pull/16) 為準。
 
 ## 版本與範圍
 
@@ -13,7 +13,7 @@
 | 瀏覽器驗收與介面修正 | `100b16d` |
 | Windows 驗證相容修正 | `d93c406d50010c9d13363e4fa7eaeccddf57ad7f` |
 | 本報告的提交 | 在該 checkout 執行 `git log -1 --format=%H -- docs/reports/m3b1-review-session-verification.md` 取得；同筆提交加入中英文說明與 README 旅程回歸測試 |
-| 遠端 PR #16 | 仍為 `26c73466fb940c8e7fd05f456f7f0f042cbb7a52`；既有成功 CI 不涵蓋上述本機變更 |
+| 遠端 PR #16 | 初版 `435f5dba0e9d95d150cb1914c41ad7eafb356d02` 已推送；[CI](https://github.com/eric861129/API-Schema-Flow/actions/runs/35050353922) 與 [Review CI](https://github.com/eric861129/API-Schema-Flow/actions/runs/35050353951) 成功；後續修正必須另跑相同 SHA 的 CI |
 
 操作入口與限制以 [英文 README](../../README.md#try-the-browser-review-workspace)、[繁中 README](../../README.zh-TW.md#操作瀏覽器審查工作區) 為準。本階段只提供記憶體內 Accept／Reject／Undo 與草稿拓樸，不修改來源快照或 CLI 決策檔。重新整理會清除草稿。
 
@@ -51,7 +51,7 @@
 | `pnpm build:web` | production build 通過 |
 | `pnpm check:web-bundle` | 無 Node-only／parser／CLI 等禁止標記 |
 | `pnpm test:web` | 22 檔、82 個測試通過 |
-| `pnpm test:web:e2e` | 18 個案例通過，涵蓋 Chromium 兩種尺寸的審查、既有工作區與內建快照 README 旅程 |
+| `pnpm test:web:e2e` | 初版 18 個案例通過；收尾新增兩個瀏覽器效能案例，共 20 個，涵蓋 Chromium 兩種尺寸的審查、既有工作區與內建快照 README 旅程 |
 | `pnpm boundaries:check` | 套件邊界通過；八種禁止 Web Review 引用注入亦均被拒絕 |
 | `pnpm ci:verify` | 完整本機 CI 聚合命令通過；部分 Turbo 任務使用內容雜湊快取 |
 | `node packages/cli/bin/schema-flow.mjs validate examples/reservation/openapi.yaml --json` | CLI smoke test 通過 |
@@ -72,9 +72,9 @@ Chromium 尺寸：1440 × 900、1366 × 768。驗證包括：
 - README 旅程直接使用內建快照，驗證既有 accepted login 候選的 Reject → Accept → Undo；其他審查 E2E 只在 HTTP 回應移除 baseline decisions，產生待審核場景，沒有修改正式 fixture。
 - 未提供 Edit Mapping、Save decisions、Import／Export Decision Set、Run Workflow、Start Mock、Export Arazzo 控制項。
 
-截圖名稱為 `review-candidate.png`、`review-evidence.png`、`review-reject.png`、`review-topology-preview.png`，各尺寸一組。Playwright 預設輸出到 `apps/web/test-results/`，本機可用 `PLAYWRIGHT_OUTPUT_DIR` 指向外部資料夾；每張圖也加入 test attachment。CI 設定上傳 `browser-verification-<SHA>` artifact，保留 14 天，尚待實際遠端執行。
+截圖名稱為 `review-candidate.png`、`review-evidence.png`、`review-reject.png`、`review-topology-preview.png`，各尺寸一組。Playwright 預設輸出到 `apps/web/test-results/`，本機可用 `PLAYWRIGHT_OUTPUT_DIR` 指向外部資料夾；每張圖也加入 test attachment。CI 設定上傳 `browser-verification-<SHA>` artifact，保留 14 天；初版遠端執行已驗證上傳成功。永久基準與操作畫面見[畫面入口](../design/implemented/m3b1/README.md)。
 
-已檢視四種狀態與兩種尺寸截圖；採穩定 fixture、停用動畫、幾何斷言與視覺檢視，尚未建立跨平台像素差異基準。未驗證行動版、Firefox／WebKit 或真人螢幕閱讀器。
+已檢視四種狀態與兩種尺寸截圖；採穩定 fixture、停用動畫、幾何斷言及 Playwright `toHaveScreenshot`。Windows 與 Linux 各自保存八張基準，正常 CI 不更新基準，畫面差異會使測試失敗。未驗證行動版、Firefox／WebKit 或真人螢幕閱讀器。
 
 ## 品質與效能門檻
 
@@ -82,6 +82,8 @@ Chromium 尺寸：1440 × 900、1366 × 768。驗證包括：
 - 500 operations 推導少於 5,000 ms、候選配對不超過 50,000、產生 250 個高信心候選。
 - 1,000 candidates 篩選排序的五次執行最大值 < 100 ms。
 - 1,000 candidates／500 nodes 的三次 materialization 最大值 < 250 ms。
+
+收尾另外新增 Chromium benchmark：正式頁面載入 1,000 candidates／500 nodes 快照，測試專用記憶體 bundle 在瀏覽器中執行既有 selectors／engine。每個尺寸五次驗證篩選排序 < 100 ms、Accept 與 Reject 各 < 250 ms；同時確認接受新增連線、拒絕移除連線、baseline 不變。每次量測附於 `chromium-review-core-budgets` JSON。此門檻量測核心運算，不包含 React 繪製或 ELK 排版；測試程式沒有加入正式 bundle。
 
 以上是測試斷言通過的界線，不是另行量測的平均值或 p95；未聲稱完成完整產品的所有 NFR。
 
@@ -95,4 +97,4 @@ Vite 仍提示大型 layout chunk 超過 500 kB；建置與依賴邊界通過，
 
 ## 尚待完成的交付層級
 
-推送本機提交後，必須以新的遠端 SHA 執行 CI 並核對成功結果，才能更新遠端驗證狀態與合併。本機通過不代表 PR #16 已更新、main 已包含這些變更，或已有 npm／網站發布。M3-B2／M3-B3 不在本次驗證範圍。
+每次提交後皆以新的遠端 SHA 執行 CI，PR body 保存最後成功的執行連結；合併前須確認 SHA 未變且 Checks 成功。此紀錄不代表 npm／網站發布。M3-B2／M3-B3 不在本次驗證範圍。

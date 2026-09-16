@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and an M3-B1 in-memory review implementation on the development branch. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. M3-B1 remote verification and merge are pending. Mapping editing, browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
+> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; refreshing discards all draft changes. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. Mapping editing, browser persistence, stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
 
 ## What works today
 

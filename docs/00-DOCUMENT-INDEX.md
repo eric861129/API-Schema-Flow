@@ -94,7 +94,7 @@
 | M2-C Evidence-based Inference | [Design](superpowers/specs/2026-09-02-m2c-inference-core-design.md) · [Plan](superpowers/plans/2026-09-02-m2c-inference-core.md) |
 | M2-D Review and Arazzo Export | [Design](superpowers/specs/2026-09-03-m2d-review-arazzo-export-design.md) · [Plan](superpowers/plans/2026-09-03-m2d-review-arazzo-export.md) · [Verification](reports/m2d-review-arazzo-export-verification.md) |
 | M3-A Read-only Workspace | [Design](superpowers/specs/2026-09-03-m3a-read-only-web-workspace-design.md) · [Plan](superpowers/plans/2026-09-03-m3a-read-only-web-workspace.md) |
-| M3-B1 Interactive Review Session | [Design](superpowers/specs/2026-09-03-m3b1-review-session-design.md) · [Plan](superpowers/plans/2026-09-03-m3b1-review-session.md) · [Verification](reports/m3b1-review-session-verification.md)；開發分支本機驗證，尚待遠端 CI 與合併 |
+| M3-B1 Interactive Review Session | [Integration Design](superpowers/specs/2026-09-04-m3b1-review-workspace-integration-design.md) · [Integration Plan](superpowers/plans/2026-09-04-m3b1-review-workspace-integration.md) · [Verification](reports/m3b1-review-session-verification.md) · [Screenshots](design/implemented/m3b1/README.md) |
 
 ## 6. 文件狀態規則
 

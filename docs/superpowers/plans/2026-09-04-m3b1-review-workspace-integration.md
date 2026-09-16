@@ -1,5 +1,9 @@
 # M3-B1 Review Workspace Integration Implementation Plan
 
+**交付狀態（2026-09-16）：** Tasks 1–8 的整合已實作；Tasks 9–10 已補上瀏覽器操作、無障礙、Windows／Linux 像素基準、Chromium 效能閘門與操作文件。執行結果統一見[驗證紀錄](../../reports/m3b1-review-session-verification.md)，最終 SHA 的遠端 CI 與合併狀態見 [PR #16](https://github.com/eric861129/API-Schema-Flow/pull/16)。以下 checklist 保留原始執行步驟，不作為即時交付狀態。
+
+**畫面儲存調整：** Task 10 要求的 `docs/design/implemented/m3b1/README.md` 直接連結唯一的 Playwright PNG 基準，不複製第二套相同圖片；主 CI 與專用 Review CI 均執行正常模式的畫面比對。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Complete the remaining M3-B1 vertical slice by connecting the merged Review Session foundation to a typed Review Workspace Snapshot, the browser-safe Review core, and the M3-A Web shell with Accept, Reject, Undo, and live draft topology preview.
