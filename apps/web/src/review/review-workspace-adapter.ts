@@ -64,7 +64,7 @@ function operationLabel(operation: NormalizedOperation | undefined, fallback: st
   return operation ? `${operation.method.toUpperCase()} ${operation.path}` : fallback
 }
 
-function selectorLabel(selector: FlowValueSelector): string {
+export function selectorLabel(selector: FlowValueSelector): string {
   switch (selector.kind) {
     case 'request-header':
       return `$request.header.${selector.name}`
@@ -87,7 +87,7 @@ function selectorLabel(selector: FlowValueSelector): string {
   }
 }
 
-function targetLabel(target: FlowValueTarget): string {
+export function targetLabel(target: FlowValueTarget): string {
   switch (target.kind) {
     case 'path-parameter':
       return `path.${target.name}`
@@ -117,7 +117,7 @@ function schemaKey(schema: NormalizedSchema): string {
   return `${schema.source.uri}\u0000${schema.source.pointer}`
 }
 
-function createSchemaResolver(document: NormalizedApiDocument) {
+export function createSchemaResolver(document: NormalizedApiDocument) {
   const schemas = new Map<string, NormalizedSchema>()
 
   function visit(schema: NormalizedSchema, seen: Set<NormalizedSchema>): void {
@@ -153,7 +153,7 @@ function createSchemaResolver(document: NormalizedApiDocument) {
     schemas.get(`${pointer.uri}\u0000${pointer.pointer}`)
 }
 
-function expandSchema(
+export function expandSchema(
   schema: NormalizedSchema,
   resolveSchema: (pointer: SourcePointer) => NormalizedSchema | undefined,
 ): readonly NormalizedSchema[] {
@@ -555,18 +555,11 @@ export function projectReviewWorkspace(
   for (const candidate of [...snapshot.inferenceCandidates].sort((left, right) =>
     left.id.localeCompare(right.id),
   )) {
+    const mapping = effectiveCandidateMapping(candidate, materialization)
     const sourceOperation = operations.get(candidate.sourceOperationKey)
     const targetOperation = operations.get(candidate.targetOperationKey)
-    const sourceSchema = resolveSourceSchema(
-      snapshot.apiDocument,
-      sourceOperation,
-      candidate.mapping.source,
-    )
-    const targetSchema = resolveTargetSchema(
-      snapshot.apiDocument,
-      targetOperation,
-      candidate.mapping.target,
-    )
+    const sourceSchema = resolveSourceSchema(snapshot.apiDocument, sourceOperation, mapping.source)
+    const targetSchema = resolveTargetSchema(snapshot.apiDocument, targetOperation, mapping.target)
     const state = resolveReviewCandidateState(
       candidate.id,
       materialization.decisionSet,
@@ -575,20 +568,20 @@ export function projectReviewWorkspace(
     )
     const evidence = evidenceDetail(candidate)
     const blockers = blockerDetail(candidate)
-    const alias = aliasLabel(candidate.mapping)
-    const transform = candidate.mapping.transform?.raw
+    const alias = aliasLabel(mapping)
+    const transform = mapping.transform?.raw
     const detail: ProjectedReviewCandidateDetail = {
       id: candidate.id,
       sourceOperationKey: candidate.sourceOperationKey,
       sourceLabel: operationLabel(sourceOperation, candidate.sourceOperationKey),
-      sourceSelector: selectorLabel(candidate.mapping.source),
+      sourceSelector: selectorLabel(mapping.source),
       targetOperationKey: candidate.targetOperationKey,
       targetLabel: operationLabel(targetOperation, candidate.targetOperationKey),
-      targetDescriptor: targetLabel(candidate.mapping.target),
+      targetDescriptor: targetLabel(mapping.target),
       confidence: candidate.confidence,
       band: candidate.band,
       evidenceCount: evidence.length,
-      blockerCount: blockers.length,
+      blockerCount: state.state === 'edited' ? 0 : blockers.length,
       state: state.state,
       ruleSetVersion: candidate.ruleSetVersion,
       fingerprint: candidate.fingerprint,
@@ -600,7 +593,7 @@ export function projectReviewWorkspace(
       blockers,
       ...(state.outcomeState ? { outcomeState: state.outcomeState } : {}),
       ...(state.outcomeReason ? { outcomeReason: state.outcomeReason } : {}),
-      sourcePointers: candidate.mapping.sourcePointers.map(formatSourcePointer).toSorted(),
+      sourcePointers: mapping.sourcePointers.map(formatSourcePointer).toSorted(),
       schemaWarnings: [...sourceSchema.warnings, ...targetSchema.warnings],
     }
     details.set(candidate.id, detail)
@@ -611,4 +604,21 @@ export function projectReviewWorkspace(
     details,
     baselineRevisions: deriveBaselineRevisions(snapshot.reviewDecisionSet),
   }
+}
+
+/** 以實際套用的決策顯示映射，保留原始推導候選不變。 */
+export function effectiveCandidateMapping(
+  candidate: InferenceCandidate,
+  materialization: ReviewSessionMaterialization,
+): FlowDataMapping {
+  const outcome = materialization.result.outcomes.find(
+    (item) =>
+      item.candidateId === candidate.id && ['applied', 'already-present'].includes(item.state),
+  )
+  const decision = materialization.decisionSet.decisions.find(
+    (item) => item.id === outcome?.decisionId,
+  )
+  return decision?.action === 'edit' && decision.editedMapping
+    ? decision.editedMapping
+    : candidate.mapping
 }

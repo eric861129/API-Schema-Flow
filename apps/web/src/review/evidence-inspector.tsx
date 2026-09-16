@@ -58,7 +58,9 @@ export function EvidenceInspector({ candidate, open, onClose }: EvidenceInspecto
           className="evidence-group evidence-group--blockers"
           aria-labelledby="blocker-title"
         >
-          <h3 id="blocker-title">Blockers</h3>
+          <h3 id="blocker-title">
+            {candidate.state === 'edited' ? 'Original inference blockers' : 'Blockers'}
+          </h3>
           <ul>
             {candidate.blockers.map((blocker) => (
               <li key={`${blocker.code}:${blocker.summary}`}>

@@ -981,6 +981,12 @@ th {
   align-items: center;
   margin-bottom: 8px;
 }
+.review-preview-region > header {
+  margin-bottom: 4px;
+}
+.review-preview-region > header h2 {
+  margin-top: 0;
+}
 .review-preview-region > .review-preview-switch button {
   padding: 0 8px;
   font-size: 12px;

@@ -122,11 +122,11 @@ describe('review workspace Domain adapter', () => {
     expect(token?.evidence[0]).toMatchObject({ kind: 'positive' })
 
     expect(space).toMatchObject({
-      sourceSelector: '$response.body#/id',
+      sourceSelector: '$response.body#/0/id',
       targetDescriptor: 'requestBody#/spaceId',
       sourceSchema: { type: 'string', format: 'uuid', arrayDepth: 1 },
       targetSchema: { type: 'string', format: 'uuid', required: true, arrayDepth: 0 },
-      blockerCount: 1,
+      blockerCount: 0,
       state: 'edited',
     })
     expect(space?.blockers[0]).toMatchObject({ code: 'INF-BLOCK-ARRAY-SELECTOR' })

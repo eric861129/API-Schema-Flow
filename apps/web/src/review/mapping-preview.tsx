@@ -117,8 +117,9 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
       ) : null}
 
       <p className="mapping-preview__notice">
-        This is an inference candidate, not an authoritative workflow relationship, until it is
-        reviewed.
+        {candidate.state === 'edited'
+          ? 'This manual mapping is accepted in the current draft. Original inference evidence is retained.'
+          : 'This is an inference candidate, not an authoritative workflow relationship, until it is reviewed.'}
       </p>
     </section>
   )

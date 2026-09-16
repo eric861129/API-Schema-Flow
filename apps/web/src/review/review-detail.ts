@@ -43,7 +43,7 @@ export function describeReviewCompatibility(
   candidate: ReviewCandidateDetail,
 ): readonly ReviewCompatibilityItem[] {
   const items: ReviewCompatibilityItem[] = []
-  const sourceType = candidate.sourceSchema.type
+  const sourceType = candidate.transform ? 'string' : candidate.sourceSchema.type
   const targetType = candidate.targetSchema.type
   const sourceFormat = candidate.sourceSchema.format
   const targetFormat = candidate.targetSchema.format
@@ -77,7 +77,7 @@ export function describeReviewCompatibility(
     items.push({ state: 'compatible', label: 'Target value is required' })
   }
 
-  for (const blocker of candidate.blockers) {
+  for (const blocker of candidate.state === 'edited' ? [] : candidate.blockers) {
     items.push({ state: 'blocked', label: blocker.summary })
   }
 

@@ -8,7 +8,9 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
-- Reservation browser workspace with topology/outline views and an M3-B1 in-memory review session: candidate discovery, evidence, Accept/Reject, structured rejection reasons, Undo, and draft accepted-graph preview. Refreshing discards drafts; Mapping Editor and persistence remain planned.
+- M3-B2 in-memory mapping editor with schema field selection, explicit array indices, compatibility validation, literal transform previews, manual draft edges, and Undo.
+
+- Reservation browser workspace with topology/outline views and an M3-B1 in-memory review session: candidate discovery, evidence, Accept/Reject, structured rejection reasons, Undo, and draft accepted-graph preview. Refreshing discards drafts; Persistence remains planned.
 - Chromium pointer/keyboard journeys, five-state axe checks, two desktop viewport checks, Windows/Linux screenshot regression baselines, browser performance gates, and screenshot artifacts retained by CI commit SHA.
 
 - Initial product, architecture, security, testing, UX, CLI, mock runtime, inference, and governance specifications.

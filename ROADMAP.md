@@ -87,7 +87,7 @@
 |---|---|---|
 | M3-A | Reservation 快照、React Flow／ELK 拓樸與等價清單 | 已進入 `main` |
 | M3-B1 | 候選篩選、證據、Accept／Reject、Undo、記憶體內草稿拓樸 | 已實作；測試、限制及遠端交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md) |
-| M3-B2 | 欄位映射編輯 | 尚未實作 |
+| M3-B2 | 欄位映射編輯、相容性驗證、手動草稿連線與 Undo | 開發分支實作；操作見 README，尚未推送或合併；合併前須更新 Linux 視覺基準並通過 CI |
 | M3-B3 | IndexedDB、Decision Set 匯入／匯出 | 尚未實作 |
 
 M3-B1 重新整理即清除草稿，不提供儲存、工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，尚不能因 M3-B1 本機通過而宣告 M3 完成。

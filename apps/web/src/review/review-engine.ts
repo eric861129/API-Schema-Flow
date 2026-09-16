@@ -8,6 +8,7 @@ import {
 import type { WorkspaceSnapshot } from '../data/types'
 import { createReviewDecisionFromIntent } from './decision-factory'
 import type { ReviewSessionState } from './review-session'
+import { validateEditedMapping } from './mapping-editor-model'
 
 export interface ReviewSessionMaterialization {
   readonly decisionSet: ReviewDecisionSet
@@ -34,6 +35,10 @@ export function materializeReviewSession(
     const candidate = candidates.get(intent.candidateId)
     if (!candidate) {
       throw new Error(`Review intent references unknown candidate "${intent.candidateId}".`)
+    }
+    if (intent.action === 'edit') {
+      const errors = validateEditedMapping(snapshot, candidate, intent.editedMapping)
+      if (errors.length) throw new Error(`Invalid mapping edit: ${errors.join(' ')}`)
     }
     return createReviewDecisionFromIntent(intent, candidate)
   })
