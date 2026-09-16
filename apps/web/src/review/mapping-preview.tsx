@@ -13,7 +13,11 @@ function schemaLabel(schema: ReviewCandidateDetail['sourceSchema']): string {
 export function MappingPreview({ candidate }: MappingPreviewProps) {
   if (!candidate) {
     return (
-      <section className="mapping-preview mapping-preview--empty" aria-labelledby="mapping-title">
+      <section
+        className="mapping-preview mapping-preview--empty"
+        aria-labelledby="mapping-title"
+        tabIndex={0}
+      >
         <div>
           <p className="section-label">Mapping preview</p>
           <h2 id="mapping-title">Select an inference candidate</h2>
@@ -29,7 +33,7 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
   const compatibility = describeReviewCompatibility(candidate)
 
   return (
-    <section className="mapping-preview" aria-labelledby="mapping-title">
+    <section className="mapping-preview" aria-labelledby="mapping-title" tabIndex={0}>
       <header className="mapping-preview__header">
         <div>
           <p className="section-label">Mapping preview</p>

@@ -65,6 +65,10 @@ textarea:focus-visible {
   outline: 3px solid #7ee7ef;
   outline-offset: 2px;
 }
+.mapping-preview:focus-visible {
+  outline: 3px solid #7ee7ef;
+  outline-offset: -3px;
+}
 
 /* M3-B1 Task 8: in-memory decisions, dialog, undo, and draft topology */
 .review-decision-controls {
@@ -903,14 +907,14 @@ th {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.35fr) minmax(240px, 0.9fr);
-  grid-template-rows: auto minmax(320px, 1fr) minmax(150px, 0.45fr) auto;
+  grid-template-rows: auto minmax(240px, 1fr) minmax(200px, 0.45fr) auto;
   grid-template-areas:
     'review-header review-header review-header'
     'review-candidates review-preview review-evidence'
     'review-actions review-summary review-summary'
     'review-status review-status review-status';
-  gap: 12px;
-  padding: 18px;
+  gap: 8px;
+  padding: 12px;
   overflow: auto;
   background:
     radial-gradient(circle at 52% 24%, rgb(24 84 106 / 0.16), transparent 38%), var(--canvas);
@@ -921,11 +925,11 @@ th {
   align-items: end;
   justify-content: space-between;
   gap: 24px;
-  padding: 2px 2px 8px;
+  padding: 0 2px;
 }
 .review-workspace__header h1 {
   margin: 4px 0;
-  font-size: 24px;
+  font-size: 20px;
 }
 .review-workspace__header p {
   margin: 0;
@@ -949,14 +953,14 @@ th {
 .review-panel {
   min-width: 0;
   min-height: 0;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 11px;
   background: rgb(12 23 37 / 0.94);
   overflow: auto;
 }
 .review-panel > header {
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 .review-panel h2 {
   margin: 4px 0 0;
@@ -968,8 +972,22 @@ th {
 .review-preview-region {
   grid-area: review-preview;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 8px;
   overflow: hidden;
+}
+.review-preview-region > .review-preview-switch {
+  align-items: center;
+  margin-bottom: 8px;
+}
+.review-preview-region > .review-preview-switch button {
+  padding: 0 8px;
+  font-size: 12px;
+}
+.review-preview-region > .mapping-preview,
+.review-preview-region > .draft-graph-preview {
+  grid-column: 1 / -1;
 }
 .review-evidence-region {
   grid-area: review-evidence;
@@ -1062,6 +1080,10 @@ th {
   }
 }
 @media (max-width: 760px) {
+  .review-preview-region {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
   .top-bar {
     gap: 10px;
     padding: 0 10px;

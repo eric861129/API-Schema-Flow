@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR ?? 'test-results',
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
@@ -24,6 +25,6 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && npm run preview -- --host 127.0.0.1',
     port: 4173,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 })

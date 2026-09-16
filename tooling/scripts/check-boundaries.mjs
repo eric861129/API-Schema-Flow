@@ -152,7 +152,7 @@ async function collectWebReviewImportViolations() {
 
   for (const file of files) {
     const content = await readFile(file, 'utf8')
-    const relative = path.relative(root, file)
+    const relative = path.relative(root, file).split(path.sep).join('/')
     const importSpecifierPattern = /(?:from\s+|import\s*\(\s*|import\s+)['"]([^'"]+)['"]/g
 
     for (const match of content.matchAll(importSpecifierPattern)) {
@@ -208,7 +208,7 @@ async function main() {
 
   for (const file of packageFiles) {
     const content = await readFile(file, 'utf8')
-    const relative = path.relative(root, file)
+    const relative = path.relative(root, file).split(path.sep).join('/')
 
     if (forbiddenDeepImport.test(content)) {
       violations.push(`${relative}: deep workspace import`)
