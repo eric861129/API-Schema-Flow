@@ -8,7 +8,7 @@ The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
-- M3-B3 local development: IndexedDB autosave and restoration, deterministic Decision Set import/export with preview, concurrent-tab protection, and explicit backup/reset recovery.
+- M3-B3: IndexedDB autosave and restoration, deterministic Decision Set import/export with preview, concurrent-tab protection, explicit backup/reset recovery, and confirmed clearing with persistent autosave opt-out.
 
 - M3-B2 in-memory mapping editor with schema field selection, explicit array indices, compatibility validation, literal transform previews, manual draft edges, and Undo.
 

@@ -5,12 +5,65 @@ import type { WorkspaceSnapshot } from '../data/types'
 import { initialStoredSession } from './review-transfer'
 import { reviewSessionReducer } from './review-session'
 import { useReviewPersistence } from './use-review-persistence'
-import { readStoredReview, writeStoredReview } from './review-storage'
+import { readStoredReview, writeStoredReview, resetStoredReview } from './review-storage'
 
-vi.mock('./review-storage', () => ({ readStoredReview: vi.fn(), writeStoredReview: vi.fn() }))
+vi.mock('./review-storage', () => ({
+  readStoredReview: vi.fn(),
+  writeStoredReview: vi.fn(),
+  resetStoredReview: vi.fn(),
+}))
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.resetAllMocks()
+})
+
+test('clears only after an in-flight write and prevents queued decisions from returning', async () => {
+  vi.stubGlobal('indexedDB', {})
+  vi.mocked(readStoredReview).mockResolvedValue(undefined)
+  vi.mocked(resetStoredReview).mockResolvedValue(2)
+  let complete!: (generation: number) => void
+  vi.mocked(writeStoredReview).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve
+      }),
+  )
+  const snapshot = raw as unknown as WorkspaceSnapshot
+  const initial = initialStoredSession(snapshot)
+  const dispatch = vi.fn()
+  const hook = renderHook(({ state }) => useReviewPersistence(snapshot, state, dispatch), {
+    initialProps: { state: initial },
+  })
+  await waitFor(() => expect(hook.result.current.ready).toBe(true))
+  const edited = reviewSessionReducer(initial, {
+    type: 'accept-candidate',
+    candidateId: snapshot.inferenceCandidates[0]!.id,
+  })
+  hook.rerender({ state: edited })
+  await waitFor(() => expect(writeStoredReview).toHaveBeenCalledTimes(1))
+  let clearing!: Promise<void>
+  act(() => {
+    clearing = hook.result.current.clearAndDisable()
+  })
+  expect(resetStoredReview).not.toHaveBeenCalled()
+  await act(async () => {
+    complete(1)
+    await clearing
+  })
+  expect(resetStoredReview).toHaveBeenCalledWith(
+    expect.any(String),
+    0,
+    expect.objectContaining({
+      autosave: false,
+      schemaVersion: '1.0',
+      toolVersion: expect.any(String),
+    }),
+  )
+  expect(hook.result.current.enabled).toBe(false)
+  hook.rerender({ state: initial })
+  hook.rerender({ state: edited })
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  expect(writeStoredReview).toHaveBeenCalledTimes(1)
 })
 
 test('persists Undo even when the previous write is still in flight', async () => {

@@ -9,6 +9,7 @@ import {
   type ReviewSessionState,
 } from './review-session'
 import { validateEditedMapping } from './mapping-editor-model'
+import { version as toolVersion } from '../../package.json'
 
 export const MAX_DECISION_FILE_BYTES = 5 * 1024 * 1024
 
@@ -128,6 +129,8 @@ export function previewDecisionImport(
 
 export interface StoredReview {
   readonly version: 1
+  readonly schemaVersion: '1.0'
+  readonly toolVersion: string
   readonly baseline: string
   readonly draftIntents: readonly ReviewIntent[]
   readonly importedDecisionSet?: ReviewDecisionSet | undefined
@@ -139,10 +142,33 @@ export function encodeStoredReview(
 ): StoredReview {
   return {
     version: 1,
+    schemaVersion: '1.0',
+    toolVersion,
     baseline: serializeDecisionSet(snapshot.reviewDecisionSet),
     draftIntents: state.draftIntents,
     ...(state.importedDecisionSet ? { importedDecisionSet: state.importedDecisionSet } : {}),
   }
+}
+
+/** 清除後只保留停用偏好與世代，避免其他分頁把舊決策寫回。 */
+export function disabledStoredReview() {
+  return { version: 1, schemaVersion: '1.0', toolVersion, autosave: false } as const
+}
+
+export function isStoredReviewDisabled(value: unknown): boolean {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'version' in value &&
+    value.version === 1 &&
+    'schemaVersion' in value &&
+    value.schemaVersion === '1.0' &&
+    'toolVersion' in value &&
+    typeof value.toolVersion === 'string' &&
+    value.toolVersion.trim() &&
+    'autosave' in value &&
+    value.autosave === false,
+  )
 }
 
 /** 未知版本或損壞內容不自動降版、刪除或覆寫。 */
@@ -153,6 +179,14 @@ export function decodeStoredReview(
   if (!value || typeof value !== 'object' || !('version' in value) || value.version !== 1)
     throw new Error('Unsupported stored review version. Existing data has been preserved.')
   const record = value as Partial<StoredReview>
+  // 尚未發布的早期 v1 可讀取；下一次明確變更才寫入完整版本資訊。
+  if (
+    (record.schemaVersion !== undefined && record.schemaVersion !== '1.0') ||
+    (record.toolVersion !== undefined &&
+      (typeof record.toolVersion !== 'string' || !record.toolVersion.trim())) ||
+    (record.schemaVersion === undefined) !== (record.toolVersion === undefined)
+  )
+    throw new Error('Unsupported stored review metadata. Existing data has been preserved.')
   if (record.baseline !== serializeDecisionSet(snapshot.reviewDecisionSet))
     throw new Error(
       'The baseline changed. Existing review data has been preserved; export it before resetting.',

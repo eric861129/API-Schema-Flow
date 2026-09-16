@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; the M3-B3 development branch auto-saves decisions locally and restores them on reload. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is merged. M3-B3 persistence and Decision Set transfer are implemented locally and await remote verification. Stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
+> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; M3-B3 auto-saves decisions locally and restores them on reload. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is merged. M3-B3 adds persistence and Decision Set transfer; delivery checks are tracked in ROADMAP.md. Stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
 
 ## What works today
 
@@ -31,7 +31,7 @@ The current implementation provides:
 
 ## Try the browser review workspace
 
-**On the M3-B3 development branch, decisions auto-save to IndexedDB. Wait for Saved locally before closing. Import/export uses the same Decision Set JSON format as the CLI.**
+**Decisions auto-save to IndexedDB. Wait for Saved locally before closing. Import/export uses the same Decision Set JSON format as the CLI.**
 
 After installing dependencies and building the workspace packages:
 
@@ -56,7 +56,9 @@ The two-column schema field lists validate scalar types, required values, format
 
 Local persistence is scoped to the project fingerprint and source revision. Semantic decisions and Undo history are restored; view filters and selection are not persisted. **Import Decision Set** validates the file and shows the merged outcomes before **Apply import**; Cancel preserves current decisions. **Export Decision Set** downloads deterministic JSON without browser metadata. Reimporting the same file is idempotent; stale identities and conflicting revisions remain visible through Review core.
 
-Storage errors leave the current session usable for export. **Back up stored data** downloads the original record; **Reset saved data** requires confirmation and affects only the current project/source key. **Reload saved data** replaces the current local session with the saved version, so export unsaved decisions first. Concurrent tabs use generation checks and cannot silently overwrite one another. Storage version 1 initializes a new store; unknown versions or changed baselines are preserved for recovery, not automatically migrated or overwritten. The M3-B3 Windows gates are local; Linux screenshots and CI must be refreshed before merging M3-B3.
+**Clear saved data** confirms removal of saved decisions for the current project/source and disables autosave across reloads. Current in-memory decisions remain exportable; only a versioned disabled preference and generation marker remain stored to prevent older tabs from writing decisions back. **Enable autosave** resumes saving the current session.
+
+Storage errors leave the current session usable for export. **Back up stored data** downloads the original record; **Reset saved data** requires confirmation and affects only the current project/source key. **Reload saved data** replaces the current local session with the saved version, so export unsaved decisions first. Concurrent tabs use generation checks and cannot silently overwrite one another. Stored records include schema and tool versions. Early development v1 records remain readable and gain metadata on the next explicit decision change. Storage version 1 initializes a new store; unknown versions or changed baselines are preserved for recovery, not automatically migrated or overwritten.
 
 Keyboard support includes Tab, candidate-list Arrow/Home/End navigation, Enter/Space selection, `/` for search, Escape to close evidence/dialogs, and keyboard scrolling of mapping details. Desktop validation covers 1440 × 900 and 1366 × 768; mobile and other browser engines are not yet validated.
 

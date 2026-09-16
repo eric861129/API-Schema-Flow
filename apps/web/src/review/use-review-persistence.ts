@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import type { WorkspaceSnapshot } from '../data/types'
 import type { ReviewSessionAction, ReviewSessionState } from './review-session'
-import { decodeStoredReview, encodeStoredReview, initialStoredSession } from './review-transfer'
-import { readStoredReview, writeStoredReview } from './review-storage'
+import {
+  decodeStoredReview,
+  encodeStoredReview,
+  initialStoredSession,
+  disabledStoredReview,
+  isStoredReviewDisabled,
+} from './review-transfer'
+import { readStoredReview, writeStoredReview, resetStoredReview } from './review-storage'
 
 export function useReviewPersistence(
   snapshot: WorkspaceSnapshot,
@@ -17,6 +23,7 @@ export function useReviewPersistence(
       : 'Local storage unavailable. Export decisions before closing.',
   )
   const [error, setError] = useState(!available)
+  const [enabled, setEnabled] = useState(true)
   const [reload, setReload] = useState(0)
   const [writeRevision, setWriteRevision] = useState(0)
   const generation = useRef(0)
@@ -46,9 +53,12 @@ export function useReviewPersistence(
         if (cancelled) return
         if (record && (!Number.isSafeInteger(record.generation) || record.generation < 1))
           throw new Error('Stored review generation is damaged.')
-        const restored = record
-          ? decodeStoredReview(snapshot, record.value)
-          : initialStoredSession(snapshot)
+        const disabled = isStoredReviewDisabled(record?.value)
+        setEnabled(!disabled)
+        const restored =
+          record && !disabled
+            ? decodeStoredReview(snapshot, record.value)
+            : initialStoredSession(snapshot)
         generation.current = record?.generation ?? 0
         saved.current = JSON.stringify(encodeStoredReview(snapshot, restored))
         dispatch({
@@ -57,7 +67,13 @@ export function useReviewPersistence(
           importedDecisionSet: restored.importedDecisionSet,
           baselineRevisions: restored.baselineRevisions,
         })
-        setStatus(record ? 'Saved locally' : 'No saved changes')
+        setStatus(
+          disabled
+            ? 'Autosave disabled. Export decisions before closing.'
+            : record
+              ? 'Saved locally'
+              : 'No saved changes',
+        )
       })
       .catch((reason: unknown) => {
         if (!cancelled) {
@@ -75,7 +91,7 @@ export function useReviewPersistence(
   }, [available, dispatch, key, reload, snapshot])
 
   useEffect(() => {
-    if (!ready || error || !available) return
+    if (!ready || error || !available || !enabled) return
     if (payload === saved.current) {
       if (pendingWrites.current === 0)
         setStatus(generation.current ? 'Saved locally' : 'No saved changes')
@@ -102,7 +118,7 @@ export function useReviewPersistence(
         })
     }, 100)
     return () => window.clearTimeout(timer)
-  }, [available, error, key, payload, ready, writeRevision])
+  }, [available, enabled, error, key, payload, ready, writeRevision])
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -113,5 +129,41 @@ export function useReviewPersistence(
     return () => window.removeEventListener('beforeunload', warn)
   }, [ready])
 
-  return { ready, status, error, reloadSaved: () => setReload((value) => value + 1), key }
+  async function clearAndDisable() {
+    ++epoch.current
+    setEnabled(false)
+    try {
+      await queue.current
+      const record = await readStoredReview(key)
+      generation.current = await resetStoredReview(
+        key,
+        record?.generation ?? 0,
+        disabledStoredReview(),
+      )
+      saved.current = JSON.stringify(encodeStoredReview(snapshot, initialStoredSession(snapshot)))
+      setError(false)
+      setStatus('Autosave disabled. Export decisions before closing.')
+    } catch (reason) {
+      setError(true)
+      setStatus(reason instanceof Error ? reason.message : 'Cannot clear local decisions.')
+      throw reason
+    }
+  }
+
+  function enableAutosave() {
+    saved.current = ''
+    setEnabled(true)
+    setWriteRevision((value) => value + 1)
+  }
+
+  return {
+    ready,
+    status,
+    error,
+    enabled,
+    clearAndDisable,
+    enableAutosave,
+    reloadSaved: () => setReload((value) => value + 1),
+    key,
+  }
 }

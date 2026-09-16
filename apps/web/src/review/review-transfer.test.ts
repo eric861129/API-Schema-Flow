@@ -82,6 +82,12 @@ describe('review persistence and transfer', () => {
   })
   test('rejects invalid files, unknown versions and changed baselines without mutating session', () => {
     const state = initial()
+    const encoded = encodeStoredReview(snapshot, state)
+    expect(encoded).toMatchObject({ schemaVersion: '1.0', toolVersion: expect.any(String) })
+    expect(() => decodeStoredReview(snapshot, { ...encoded, schemaVersion: '999' })).toThrow(
+      /preserved/,
+    )
+    expect(() => decodeStoredReview(snapshot, { ...encoded, toolVersion: '' })).toThrow(/preserved/)
     expect(() => parseDecisionFile('{')).toThrow()
     expect(() => parseDecisionFile('{"schemaVersion":"99"}')).toThrow()
     expect(() =>

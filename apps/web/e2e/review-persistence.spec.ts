@@ -21,6 +21,76 @@ async function upload(page: Page, text: string) {
   })
 }
 
+test('clears healthy storage, keeps autosave disabled after reload and blocks an older tab', async ({
+  reviewPage: page,
+  context,
+}) => {
+  await openReview(page)
+  const snapshot = await page.evaluate(async () =>
+    (await fetch('/fixtures/reservation-workspace.json')).json(),
+  )
+  const other = await context.newPage()
+  await other.route('**/fixtures/reservation-workspace.json', (route) =>
+    route.fulfill({ json: snapshot }),
+  )
+  await other.goto('/')
+  await openReview(other)
+  await loginCandidate(page).click()
+  await page.getByRole('button', { name: 'Accept', exact: true }).click()
+  await saved(page)
+  const exported = await exportFile(page)
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page.getByRole('button', { name: 'Clear saved data', exact: true }).click()
+  await saved(page)
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Clear saved data', exact: true }).click()
+  await expect(page.getByRole('status', { name: 'Local storage status' })).toContainText(
+    'Autosave disabled',
+  )
+  expect(await exportFile(page)).toBe(exported)
+  const stored = await page.evaluate(
+    () =>
+      new Promise<unknown>((resolve) => {
+        const request = indexedDB.open('api-schema-flow-review', 1)
+        request.onsuccess = () => {
+          const db = request.result
+          const tx = db.transaction('sessions')
+          const all = tx.objectStore('sessions').getAll()
+          tx.oncomplete = () => {
+            resolve(all.result)
+            db.close()
+          }
+        }
+      }),
+  )
+  expect(stored).toEqual([
+    expect.objectContaining({
+      value: { version: 1, schemaVersion: '1.0', toolVersion: expect.any(String), autosave: false },
+    }),
+  ])
+  await loginCandidate(other).click()
+  await other.getByRole('button', { name: 'Accept', exact: true }).click()
+  await expect(other.getByRole('alert', { name: 'Local storage status' })).toContainText(
+    'Another tab',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.reload()
+  await openReview(page)
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'pending')
+  await expect(page.getByRole('status', { name: 'Local storage status' })).toContainText(
+    'Autosave disabled',
+  )
+  await page.getByRole('button', { name: 'Enable autosave' }).click()
+  await loginCandidate(page).click()
+  await page.getByRole('button', { name: 'Accept', exact: true }).click()
+  await saved(page)
+  await page.reload()
+  await openReview(page)
+  await page.getByRole('combobox', { name: 'Review state' }).selectOption('all')
+  await expect(loginCandidate(page)).toHaveAttribute('data-state', 'accepted')
+  await other.close()
+})
+
 test('isolates source revisions and restores the original revision when reopened', async ({
   reviewPage: page,
 }) => {

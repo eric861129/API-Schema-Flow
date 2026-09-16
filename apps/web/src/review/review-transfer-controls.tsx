@@ -180,6 +180,40 @@ export function ReviewTransferControls() {
       >
         Export Decision Set
       </button>
+      <button
+        type="button"
+        className="secondary-button"
+        disabled={busy}
+        onClick={async () => {
+          if (
+            !window.confirm(
+              'Clear saved decisions and disable autosave for this project and source version? Current decisions remain available for export.',
+            )
+          )
+            return
+          setBusy(true)
+          setError('')
+          try {
+            await persistence.clearAndDisable()
+          } catch (reason) {
+            setError(reason instanceof Error ? reason.message : 'Cannot clear local decisions.')
+          } finally {
+            setBusy(false)
+          }
+        }}
+      >
+        Clear saved data
+      </button>
+      {!persistence.enabled && !persistence.error ? (
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={busy}
+          onClick={persistence.enableAutosave}
+        >
+          Enable autosave
+        </button>
+      ) : null}
       {persistence.error ? (
         <>
           <button
