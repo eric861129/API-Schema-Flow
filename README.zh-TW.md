@@ -56,9 +56,15 @@ M3-B2 編輯操作：將 **Review state** 設為 **All**，選取 `GET /spaces/a
 
 本機儲存按專案 fingerprint 與來源 revision 隔離，保留決策與 Undo 歷程，不儲存篩選或選取狀態。**Import Decision Set** 先驗證檔案並顯示合併後摘要，按 **Apply import** 才套用；Cancel 不改動目前資料。**Export Decision Set** 下載不含瀏覽器狀態的確定性 JSON。重複匯入不新增相同決策，過期 fingerprint 與衝突 revision 保留並由 Review core 判定。
 
-**Clear saved data** 經確認後清除目前專案／來源的已存決策並停用自動儲存，重新整理後仍維持停用。目前記憶體內的決策仍可匯出；儲存區只保留含版本資訊的停用偏好及世代標記，防止舊分頁把決策寫回。**Enable autosave** 可重新儲存目前決策。
+**Clear saved data** 經確認後清除目前專案／來源的已存決策與版面並停用自動儲存，重新整理後仍維持停用。目前記憶體內的決策仍可匯出；儲存區只保留含版本資訊的停用偏好及世代標記，防止舊分頁把決策寫回。**Enable autosave** 可重新儲存目前決策。
 
-儲存失敗時仍可匯出目前決策。**Back up stored data** 下載原始儲存紀錄；**Reset saved data** 經確認後只重設目前專案／來源版本。**Reload saved data** 以已儲存資料取代目前狀態，操作前可先匯出尚未儲存的決策。多分頁以世代檢查防止互相覆寫。儲存紀錄包含格式與工具版本；早期開發版 v1 仍可讀取，下一次明確變更決策時才補入版本資訊。儲存格式第 1 版負責初次建庫；未知版本與變更過的 baseline 保留供復原，不自動遷移或覆寫。
+儲存失敗時仍可匯出目前決策。**Back up stored data** 下載原始儲存紀錄；**Reset saved data** 經確認後只重設目前專案／來源版本。**Reload saved data** 以已儲存資料取代目前狀態，操作前可先匯出尚未儲存的決策。多分頁以世代檢查防止互相覆寫。儲存內容第 2 版加入版面資料；第 1 版仍可讀取並套用預設版面，下一次使用者變更才寫入新版。IndexedDB 資料庫本身維持第 1 版；未知版本與變更過的 baseline 保留供復原，不自動遷移或覆寫。
+
+Project Save/Load 開發分支新增 **Project → Save Project**，下載確定性的 `schema-flow-project.json`，保存來源 fingerprint／revision、決策、Undo 歷程，以及彼此獨立的拓樸／審查畫布版面。此格式與 CLI 設定檔、Decision Set 不同，只參照目前載入的來源，不內嵌來源文件或載入外部 URL。
+
+**Load Project** 先驗證完整檔案並預覽取代內容；**Apply project** 同時取代決策與兩個畫布的版面，**Cancel load** 保留現況。取代前可先 Save Project 備份。來源 fingerprint／revision 不同、baseline 改變、未知版本、無效節點 ID／座標或超過 5 MB 的檔案均不套用。目前仍只支援 Reservation 來源，任意規格匯入尚未提供。
+
+拖曳節點或平移／縮放畫布會保存各自的位置與視角；切換 Horizontal／Vertical 會重排兩個畫布，重按目前方向不改動版面。**Project → Reset layout** 恢復自動排版且不更動決策。停用自動儲存時仍可 Save Project；Load Project 不變更停用偏好。版面格式只保存穩定 ID 與有限座標，不保存 React Flow／ELK 物件。本分支需完成本機檢查與 Windows 基準；合併前另須更新 Linux 基準並通過遠端 CI。
 
 鍵盤支援 Tab、候選清單的方向鍵／Home／End、Enter／Space 選取、`/` 搜尋、Escape 關閉證據或對話框，以及映射內容的鍵盤捲動。桌面驗證涵蓋 1440 × 900 與 1366 × 768；尚未驗證行動版或其他瀏覽器引擎。
 

@@ -5,6 +5,7 @@ import {
   useContext,
   useMemo,
   useReducer,
+  useRef,
   type Dispatch,
   type ReactNode,
 } from 'react'
@@ -60,6 +61,9 @@ function ReviewSessionProviderInstance({
 }) {
   const [state, dispatch] = useReducer(reviewSessionReducer, snapshot, initializeReviewSession)
   const persistence = useReviewPersistence(snapshot, state, dispatch)
+  // 還原期間保留已掛載的工作區與導覽狀態，暫停操作而不重建整個畫面。
+  const hydrated = useRef(false)
+  if (persistence.ready) hydrated.current = true
   // 圖形重建僅取決於語意變更；草稿清單未變時，選取、篩選及預覽操作不應重建拓樸。
   const materialization = useMemo(
     () => materializeReviewSession(snapshot, state),
@@ -129,7 +133,13 @@ function ReviewSessionProviderInstance({
 
   return (
     <ReviewSessionContext.Provider value={value}>
-      {persistence.ready ? children : <p role="status">Loading saved decisions…</p>}
+      {hydrated.current ? (
+        <div style={{ display: 'contents' }} inert={!persistence.ready}>
+          {children}
+        </div>
+      ) : (
+        <p role="status">Loading saved decisions…</p>
+      )}
     </ReviewSessionContext.Provider>
   )
 }

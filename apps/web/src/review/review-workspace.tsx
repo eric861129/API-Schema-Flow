@@ -15,6 +15,7 @@ import { ReviewActions } from './review-actions'
 import { ReviewStatusBar } from './review-status-bar'
 import { RejectDialog } from './reject-dialog'
 import { DraftGraphPreview } from './draft-graph-preview'
+import { DEFAULT_WORKSPACE_LAYOUT } from '../project/workspace-layout'
 import { ReviewTransferControls } from './review-transfer-controls'
 
 function countLabel(count: number, singular: string, plural = `${singular}s`): string {
@@ -49,6 +50,7 @@ export function ReviewWorkspace() {
     editCandidate,
     persistence,
   } = useReviewSession()
+  const workspaceLayout = state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT
   const [announcement, setAnnouncement] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -306,6 +308,15 @@ export function ReviewWorkspace() {
         </div>
         {state.previewMode === 'topology' ? (
           <DraftGraphPreview
+            direction={workspaceLayout.direction}
+            layoutRevision={state.layoutRevision ?? 0}
+            canvasLayout={workspaceLayout.review}
+            onCanvasLayoutChange={(value) =>
+              dispatch({
+                type: 'set-workspace-layout',
+                layout: { ...workspaceLayout, review: value },
+              })
+            }
             snapshot={snapshot}
             graph={materialization.result.graph}
             pendingCount={counts.pending}

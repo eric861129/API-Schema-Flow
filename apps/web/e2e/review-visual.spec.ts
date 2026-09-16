@@ -19,7 +19,7 @@ async function expectUnclipped(page: Page, locator: Locator) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 }
 
-test('keeps review panels and actions usable and captures four stable states', async ({
+test('keeps review panels and actions usable and captures stable review and project states', async ({
   reviewPage: page,
 }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -84,4 +84,8 @@ test('keeps review panels and actions usable and captures four stable states', a
   expect((await canvas.boundingBox())!.height).toBeGreaterThanOrEqual(100)
   await expectUnclipped(page, page.getByRole('button', { name: 'Undo latest change' }))
   await capture('review-topology-preview')
+  await page.getByRole('button', { name: 'Project', exact: true }).click()
+  await expectUnclipped(page, page.getByRole('button', { name: 'Save Project', exact: true }))
+  await expectUnclipped(page, page.getByRole('button', { name: 'Load Project', exact: true }))
+  await capture('project-save-load')
 })

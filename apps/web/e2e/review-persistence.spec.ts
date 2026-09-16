@@ -65,7 +65,7 @@ test('clears healthy storage, keeps autosave disabled after reload and blocks an
   )
   expect(stored).toEqual([
     expect.objectContaining({
-      value: { version: 1, schemaVersion: '1.0', toolVersion: expect.any(String), autosave: false },
+      value: { version: 2, schemaVersion: '2.0', toolVersion: expect.any(String), autosave: false },
     }),
   ])
   await loginCandidate(other).click()

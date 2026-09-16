@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import {
   Background,
   Controls,
@@ -22,6 +22,7 @@ import type { PositionedFlowGraph } from '@api-schema-flow/layout'
 
 import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
+import type { CanvasLayoutState } from '../project/workspace-layout'
 
 interface EndpointData extends Record<string, unknown> {
   readonly operation: NormalizedOperation
@@ -52,6 +53,8 @@ function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
     </article>
   )
 }
+
+const nodeTypes = { endpoint: EndpointNode }
 
 function selectorLabel(value: FlowValueSelector | FlowValueTarget): string {
   switch (value.kind) {
@@ -101,6 +104,8 @@ function isEndpointNode(
 }
 
 interface FlowCanvasProps {
+  readonly canvasLayout?: CanvasLayoutState | undefined
+  readonly onCanvasLayoutChange?: ((layout: CanvasLayoutState) => void) | undefined
   readonly snapshot: WorkspaceSnapshot
   readonly positioned: PositionedFlowGraph
   readonly selected: SelectedElement
@@ -109,19 +114,26 @@ interface FlowCanvasProps {
 }
 
 export function FlowCanvas({
+  canvasLayout,
+  onCanvasLayoutChange,
   snapshot,
   positioned,
   selected,
   onSelect,
   ariaLabel = 'Accepted API topology',
 }: FlowCanvasProps) {
+  const interacted = useRef(false)
+  const editable = Boolean(onCanvasLayoutChange)
   const operationById = useMemo(
     () => new Map(snapshot.apiDocument.operations.map((item) => [item.id, item])),
     [snapshot],
   )
   const positionById = useMemo(
-    () => new Map(positioned.nodes.map((item) => [item.id, item])),
-    [positioned],
+    () =>
+      new Map(
+        [...positioned.nodes, ...(canvasLayout?.positions ?? [])].map((item) => [item.id, item]),
+      ),
+    [positioned, canvasLayout?.positions],
   )
   const endpointNodes = useMemo(
     () => snapshot.acceptedGraph.nodes.filter(isEndpointNode),
@@ -145,11 +157,11 @@ export function FlowCanvas({
               .length,
             selected: selected?.kind === 'node' && selected.id === item.id,
           },
-          draggable: false,
+          draggable: editable,
           selectable: true,
         }
       }),
-    [endpointNodes, operationById, positionById, selected, snapshot.acceptedGraph.edges],
+    [endpointNodes, operationById, positionById, selected, snapshot.acceptedGraph.edges, editable],
   )
   const edges = useMemo<Edge[]>(
     () =>
@@ -170,19 +182,54 @@ export function FlowCanvas({
   )
 
   return (
-    <section className="canvas-region" aria-label={ariaLabel}>
+    <section
+      className="canvas-region"
+      aria-label={ariaLabel}
+      onPointerDown={() => {
+        interacted.current = true
+      }}
+      onKeyDown={() => {
+        interacted.current = true
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={{ endpoint: EndpointNode }}
-        nodesDraggable={false}
+        nodeTypes={nodeTypes}
+        nodesDraggable={editable}
+        onNodesChange={(changes) => {
+          if (!onCanvasLayoutChange) return
+          const updates = changes.filter((change) => change.type === 'position' && change.position)
+          if (!updates.length) return
+          const positions = new Map((canvasLayout?.positions ?? []).map((node) => [node.id, node]))
+          for (const change of updates)
+            if (change.type === 'position' && change.position)
+              positions.set(change.id, { id: change.id, ...change.position })
+          onCanvasLayoutChange({
+            ...canvasLayout,
+            positions: [...positions.values()].sort((a, b) =>
+              a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+            ),
+          })
+        }}
+        {...(canvasLayout?.viewport ? { defaultViewport: canvasLayout.viewport } : {})}
+        onMoveEnd={(event, viewport) => {
+          const changedByUser = event !== null || interacted.current
+          interacted.current = false
+          if (
+            changedByUser &&
+            onCanvasLayoutChange &&
+            JSON.stringify(viewport) !== JSON.stringify(canvasLayout?.viewport)
+          )
+            onCanvasLayoutChange({ positions: canvasLayout?.positions ?? [], viewport })
+        }}
         nodesConnectable={false}
         edgesReconnectable={false}
         deleteKeyCode={null}
         multiSelectionKeyCode={null}
         minZoom={0.3}
         maxZoom={1.8}
-        fitView
+        fitView={!canvasLayout?.viewport}
         fitViewOptions={{ padding: 0.2 }}
         onPaneClick={() => onSelect(null)}
         onNodeClick={(_, node) => onSelect({ kind: 'node', id: node.id })}
