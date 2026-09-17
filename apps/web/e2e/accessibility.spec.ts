@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { test } from './review-helpers'
 
 test('has no serious or critical accessibility violations in the canonical workspace', async ({
   page,

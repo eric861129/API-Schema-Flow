@@ -20,15 +20,36 @@ function stubWorkspace(value = createReviewWorkspaceFixture()) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  window.history.replaceState(null, '', '/')
 })
 
 describe('App composition boundary', () => {
+  test('loads the private local snapshot using the fragment token', async () => {
+    window.history.replaceState(null, '', '/#workspace=local-token')
+    const fetcher = stubWorkspace()
+    render(<App />)
+    await screen.findByRole('main', { name: 'API Schema Flow workspace' })
+    expect(fetcher).toHaveBeenCalledWith('/api/workspace', {
+      headers: { Authorization: 'Bearer local-token' },
+      cache: 'no-store',
+    })
+  })
+
+  test('does not fall back to the demo when the local token is rejected', async () => {
+    window.history.replaceState(null, '', '/#workspace=expired')
+    const fetcher = vi.fn(async () => new Response('Forbidden', { status: 403 }))
+    vi.stubGlobal('fetch', fetcher)
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Workspace unavailable' })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('Reservation System')).not.toBeInTheDocument()
+  })
   test('keeps loading and no-operation states outside the workspace shell', async () => {
     stubWorkspace(createReviewWorkspaceFixture({ operations: [], nodes: [] }))
 
     render(<App />)
 
-    expect(screen.getByText('Loading Reservation workspace…')).toBeInTheDocument()
+    expect(screen.getByText('Loading API workspace…')).toBeInTheDocument()
     await waitFor(() =>
       expect(screen.getByRole('heading', { name: 'No API operations' })).toBeInTheDocument(),
     )
@@ -52,12 +73,10 @@ describe('App composition boundary', () => {
       await screen.findByRole('heading', { name: 'Workspace unavailable' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(
-        'The Reservation workspace could not be loaded. Check the local server and retry.',
-      ),
+      screen.getByText('The API workspace could not be loaded. Check the local server and retry.'),
     ).toBeVisible()
 
-    await user.click(screen.getByRole('button', { name: 'Retry loading fixture' }))
+    await user.click(screen.getByRole('button', { name: 'Retry loading workspace' }))
 
     expect(await screen.findByRole('main', { name: 'API Schema Flow workspace' })).toBeVisible()
     expect(fetcher).toHaveBeenCalledTimes(2)

@@ -1,4 +1,5 @@
 import type { FlowDataMapping } from '@api-schema-flow/domain'
+import type { TFunction } from 'i18next'
 import { MappingEditor } from './mapping-editor'
 import { effectiveCandidateMapping } from './review-workspace-adapter'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -17,9 +18,10 @@ import { RejectDialog } from './reject-dialog'
 import { DraftGraphPreview } from './draft-graph-preview'
 import { DEFAULT_WORKSPACE_LAYOUT } from '../project/workspace-layout'
 import { ReviewTransferControls } from './review-transfer-controls'
+import { useI18n } from '../i18n'
 
-function countLabel(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : plural}`
+function countLabel(count: number, t: TFunction): string {
+  return t(count === 1 ? '{{count}} candidate' : '{{count}} candidates', { count })
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -50,6 +52,7 @@ export function ReviewWorkspace() {
     editCandidate,
     persistence,
   } = useReviewSession()
+  const { localize, locale, status, t } = useI18n()
   const workspaceLayout = state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT
   const [announcement, setAnnouncement] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -84,7 +87,14 @@ export function ReviewWorkspace() {
     const reviewed = projection.details.get(action.candidateId)
     if (action.action === 'undo') {
       setAnnouncement(
-        `Undid the latest review change. ${reviewed?.sourceLabel ?? 'Candidate'} is ${reviewed?.state ?? 'unavailable'}.`,
+        t('Undid the latest review change. {{candidate}} is {{state}}.', {
+          candidate: reviewed?.sourceLabel ?? t('Candidate'),
+          state: reviewed
+            ? locale === 'en'
+              ? reviewed.state
+              : status(reviewed.state)
+            : t('unavailable'),
+        }),
       )
       if (visibleRows.some(({ id }) => id === action.candidateId))
         selectCandidate(action.candidateId)
@@ -93,14 +103,30 @@ export function ReviewWorkspace() {
     if (action.action === 'edit') {
       setAnnouncement(
         reviewed?.state === 'edited'
-          ? 'Applied manual mapping. Changes are not saved.'
-          : `Mapping was not applied: ${reviewed?.outcomeReason ?? reviewed?.state}.`,
+          ? t('Applied manual mapping. Changes are not saved.')
+          : t('Mapping was not applied: {{reason}}.', {
+              reason: reviewed?.outcomeReason
+                ? localize(reviewed.outcomeReason)
+                : reviewed?.state
+                  ? locale === 'en'
+                    ? reviewed.state
+                    : status(reviewed.state)
+                  : t('unavailable'),
+            }),
       )
       return
     }
     if (reviewed?.state === (action.action === 'accept' ? 'accepted' : 'rejected')) {
       setAnnouncement(
-        `${action.action === 'accept' ? 'Accepted' : 'Rejected'} ${reviewed.sourceLabel} → ${reviewed.targetLabel}.`,
+        t(
+          action.action === 'accept'
+            ? 'Accepted {{source}} → {{target}}.'
+            : 'Rejected {{source}} → {{target}}.',
+          {
+            source: reviewed.sourceLabel,
+            target: reviewed.targetLabel,
+          },
+        ),
       )
       const index = action.visibleIds.indexOf(action.candidateId)
       const nextIds = [...action.visibleIds.slice(index + 1), ...action.visibleIds.slice(0, index)]
@@ -110,7 +136,20 @@ export function ReviewWorkspace() {
       selectCandidate(nextId ?? action.candidateId)
     } else {
       setAnnouncement(
-        `${action.action === 'accept' ? 'Accept' : 'Reject'} was not applied: ${reviewed?.outcomeReason ?? reviewed?.state ?? 'candidate unavailable'}.`,
+        t(
+          action.action === 'accept'
+            ? 'Accept was not applied: {{reason}}.'
+            : 'Reject was not applied: {{reason}}.',
+          {
+            reason: reviewed?.outcomeReason
+              ? localize(reviewed.outcomeReason)
+              : reviewed?.state
+                ? locale === 'en'
+                  ? reviewed.state
+                  : status(reviewed.state)
+                : t('candidate unavailable'),
+          },
+        ),
       )
     }
   }, [materialization, projection, selectCandidate, visibleRows])
@@ -211,16 +250,22 @@ export function ReviewWorkspace() {
   ])
 
   return (
-    <section className="review-workspace" role="region" aria-label="Inference Review workspace">
+    <section
+      className="review-workspace"
+      role="region"
+      aria-label={t('Inference Review workspace')}
+    >
       <header className="review-workspace__header">
         <div>
-          <span className="eyebrow">HUMAN REVIEW</span>
-          <h1 id="inference-review-title">Inference Review</h1>
+          <span className="eyebrow">{t('HUMAN REVIEW')}</span>
+          <h1 id="inference-review-title">{t('Inference Review')}</h1>
           <p>
-            Inspect suggested data relationships before they become part of the accepted topology.
+            {t(
+              'Inspect suggested data relationships before they become part of the accepted topology.',
+            )}
           </p>
         </div>
-        <div className="review-workspace__identity" aria-label="Review source identity">
+        <div className="review-workspace__identity" aria-label={t('Review source identity')}>
           <span>{state.projectFingerprint}</span>
           <code>{state.sourceRevision}</code>
         </div>
@@ -232,18 +277,20 @@ export function ReviewWorkspace() {
         aria-labelledby="review-candidates-title"
       >
         <header>
-          <span className="eyebrow">DISCOVERY</span>
-          <h2 id="review-candidates-title">Candidate List</h2>
+          <span className="eyebrow">{t('DISCOVERY')}</span>
+          <h2 id="review-candidates-title">{t('Candidate List')}</h2>
         </header>
         {candidateCount === 0 ? (
           <p className="review-empty-copy">
-            No inference candidates are available in this snapshot.
+            {t('No inference candidates are available in this snapshot.')}
           </p>
         ) : (
           <div className="review-discovery-stack">
             <p className="review-candidate-total">
-              <strong>{candidateCount} inference candidates available.</strong>
-              <span> Candidate discovery is isolated from the accepted API topology.</span>
+              <strong>
+                {t('{{count}} inference candidates available.', { count: candidateCount })}
+              </strong>
+              <span> {t('Candidate discovery is isolated from the accepted API topology.')}</span>
             </p>
             <ReviewFilters
               filters={state.filters}
@@ -265,7 +312,7 @@ export function ReviewWorkspace() {
               candidates={visibleRows}
               selectedCandidateId={state.selectedCandidateId}
               onSelect={selectCandidate}
-              emptyMessage="Reset the review filters to see the available candidates."
+              emptyMessage={t('Reset the review filters to see the available candidates.')}
             />
           </div>
         )}
@@ -277,23 +324,23 @@ export function ReviewWorkspace() {
         aria-labelledby="review-preview-title"
       >
         <header>
-          <span className="eyebrow">PREVIEW</span>
-          <h2 id="review-preview-title">Mapping or Topology Preview</h2>
+          <span className="eyebrow">{t('PREVIEW')}</span>
+          <h2 id="review-preview-title">{t('Mapping or Topology Preview')}</h2>
         </header>
-        <div className="review-preview-switch" role="group" aria-label="Preview mode">
+        <div className="review-preview-switch" role="group" aria-label={t('Preview mode')}>
           <button
             type="button"
             aria-pressed={state.previewMode === 'mapping'}
             onClick={() => dispatch({ type: 'set-preview-mode', mode: 'mapping' })}
           >
-            Mapping preview
+            {t('Mapping preview')}
           </button>
           <button
             type="button"
             aria-pressed={state.previewMode === 'topology'}
             onClick={() => dispatch({ type: 'set-preview-mode', mode: 'topology' })}
           >
-            Topology preview
+            {t('Topology preview')}
           </button>
           <button
             type="button"
@@ -303,7 +350,7 @@ export function ReviewWorkspace() {
             }
             onClick={() => setEditOpen(true)}
           >
-            Edit Mapping
+            {t('Edit Mapping')}
           </button>
         </div>
         {state.previewMode === 'topology' ? (
@@ -333,8 +380,8 @@ export function ReviewWorkspace() {
       >
         <header className="review-panel__split-header">
           <div>
-            <span className="eyebrow">RATIONALE</span>
-            <h2 id="review-evidence-title">Evidence Inspector</h2>
+            <span className="eyebrow">{t('RATIONALE')}</span>
+            <h2 id="review-evidence-title">{t('Evidence Inspector')}</h2>
           </div>
           {selectedCandidate ? (
             <button
@@ -344,7 +391,7 @@ export function ReviewWorkspace() {
               aria-expanded={state.evidenceOpen}
               onClick={() => dispatch({ type: 'toggle-evidence' })}
             >
-              {state.evidenceOpen ? 'Hide evidence' : 'Show evidence'}
+              {t(state.evidenceOpen ? 'Hide evidence' : 'Show evidence')}
             </button>
           ) : null}
         </header>
@@ -352,11 +399,13 @@ export function ReviewWorkspace() {
           state.evidenceOpen ? (
             <EvidenceInspector candidate={selectedCandidate} open onClose={closeEvidence} />
           ) : (
-            <p className="review-empty-copy">Evidence is hidden for the selected candidate.</p>
+            <p className="review-empty-copy">
+              {t('Evidence is hidden for the selected candidate.')}
+            </p>
           )
         ) : (
           <p className="review-empty-copy">
-            Select an inference candidate to inspect its evidence.
+            {t('Select an inference candidate to inspect its evidence.')}
           </p>
         )}
       </section>
@@ -367,8 +416,8 @@ export function ReviewWorkspace() {
         aria-labelledby="review-actions-title"
       >
         <header>
-          <span className="eyebrow">DECISION</span>
-          <h2 id="review-actions-title">Review Actions</h2>
+          <span className="eyebrow">{t('DECISION')}</span>
+          <h2 id="review-actions-title">{t('Review Actions')}</h2>
         </header>
         <ReviewActions
           candidate={selectedCandidate}
@@ -399,24 +448,24 @@ export function ReviewWorkspace() {
         aria-labelledby="review-summary-title"
       >
         <header>
-          <span className="eyebrow">NON-SPATIAL VIEW</span>
-          <h2 id="review-summary-title">Review Summary</h2>
+          <span className="eyebrow">{t('NON-SPATIAL VIEW')}</span>
+          <h2 id="review-summary-title">{t('Review Summary')}</h2>
         </header>
         <dl className="review-summary-counts">
           <div>
-            <dt>Candidates</dt>
-            <dd>{countLabel(candidateCount, 'candidate')}</dd>
+            <dt>{t('Candidates')}</dt>
+            <dd>{countLabel(candidateCount, t)}</dd>
           </div>
           <div>
-            <dt>Pending</dt>
+            <dt>{t('Pending')}</dt>
             <dd>{counts.pending}</dd>
           </div>
           <div>
-            <dt>Accepted</dt>
+            <dt>{t('Accepted')}</dt>
             <dd>{counts.accepted + counts.edited}</dd>
           </div>
           <div>
-            <dt>Needs attention</dt>
+            <dt>{t('Needs attention')}</dt>
             <dd>{counts.conflict + counts.invalid + counts.stale + counts.orphaned}</dd>
           </div>
         </dl>

@@ -31,6 +31,8 @@ API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長�
 
 ## 操作瀏覽器審查工作區
 
+介面預設為繁體中文，可從頂端語言選單切換為 English；瀏覽器會記住語言偏好。切換語言會保留目前的審查決策與版面，API 路徑、欄位名稱、來源內容及匯出格式維持原值。下方操作說明沿用英文按鈕名稱，方便對照 English 介面。
+
 **M3-B3 會自動將決策存入 IndexedDB。關閉前請等候 Saved locally；匯入／匯出使用與 CLI 相同的 Decision Set JSON。**
 
 安裝依賴並建置工作區套件後啟動：
@@ -41,7 +43,7 @@ pnpm build
 pnpm dev:web
 ```
 
-開啟 Vite 顯示的本機網址，預設為 `http://localhost:5173`。目前載入內建 Reservation 快照，尚不支援任意規格匯入或 `schema-flow open`。
+開啟 Vite 顯示的本機網址，預設為 `http://localhost:5173`。此入口載入內建 Reservation 快照；自己的規格請使用下方本機匯入指令。
 
 1. 在左側選擇 **Inference Review**，利用搜尋、信心程度與審查狀態篩選候選。
 2. 將 **Review state** 設為 **All**，包含快照既有的決策。選取 `POST /auth/login` 到 `GET /spaces/available` 的候選。
@@ -60,9 +62,9 @@ M3-B2 編輯操作：將 **Review state** 設為 **All**，選取 `GET /spaces/a
 
 儲存失敗時仍可匯出目前決策。**Back up stored data** 下載原始儲存紀錄；**Reset saved data** 經確認後只重設目前專案／來源版本。**Reload saved data** 以已儲存資料取代目前狀態，操作前可先匯出尚未儲存的決策。多分頁以世代檢查防止互相覆寫。儲存內容第 2 版加入版面資料；第 1 版仍可讀取並套用預設版面，下一次使用者變更才寫入新版。IndexedDB 資料庫本身維持第 1 版；未知版本與變更過的 baseline 保留供復原，不自動遷移或覆寫。
 
-Project Save/Load 開發分支新增 **Project → Save Project**，下載確定性的 `schema-flow-project.json`，保存來源 fingerprint／revision、決策、Undo 歷程，以及彼此獨立的拓樸／審查畫布版面。此格式與 CLI 設定檔、Decision Set 不同，只參照目前載入的來源，不內嵌來源文件或載入外部 URL。
+**Project → Save Project**，下載確定性的 `schema-flow-project.json`，保存來源 fingerprint／revision、決策、Undo 歷程，以及彼此獨立的拓樸／審查畫布版面。此格式與 CLI 設定檔、Decision Set 不同，只參照目前載入的來源，不內嵌來源文件或載入外部 URL。
 
-**Load Project** 先驗證完整檔案並預覽取代內容；**Apply project** 同時取代決策與兩個畫布的版面，**Cancel load** 保留現況。取代前可先 Save Project 備份。來源 fingerprint／revision 不同、baseline 改變、未知版本、無效節點 ID／座標或超過 5 MB 的檔案均不套用。目前仍只支援 Reservation 來源，任意規格匯入尚未提供。
+**Load Project** 先驗證完整檔案並預覽取代內容；**Apply project** 同時取代決策與兩個畫布的版面，**Cancel load** 保留現況。取代前可先 Save Project 備份。來源 fingerprint／revision 不同、baseline 改變、未知版本、無效節點 ID／座標或超過 5 MB 的檔案均不套用。載入專案前，請先開啟相同路徑及內容的本機來源。
 
 拖曳節點或平移／縮放畫布會保存各自的位置與視角；切換 Horizontal／Vertical 會重排兩個畫布，重按目前方向不改動版面。**Project → Reset layout** 恢復自動排版且不更動決策。停用自動儲存時仍可 Save Project；Load Project 不變更停用偏好。版面格式只保存穩定 ID 與有限座標，不保存 React Flow／ELK 物件。Windows 與 Linux 視覺基準涵蓋兩種桌面尺寸；合併前由一般 PR CI 驗證已提交的基準。
 
@@ -206,7 +208,7 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 | Declared Flow Graph | OpenAPI Link 與 Arazzo Step Order、`dependsOn`、Runtime Expression Mapping 已轉成版本化 `declared + accepted` Graph | 作為 Inference、Review UI、Export、Execution 與 Change Impact 的共同輸入 |
 | Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器支援 Accept／Reject／Edit 草稿 | 專案檔持久化 |
 | CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
-| 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 任意來源匯入與工作流程編輯 |
+| 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 工作流程編輯 |
 | 依賴推導 | 支援證據、Accept／Reject、Undo、草稿拓樸與 M3-B2 欄位映射編輯；候選不會自動接受 | 後續工作流程編輯 |
 | Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
 | Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
@@ -351,3 +353,20 @@ English: [README.md](README.md)
 ## License
 
 本專案採用 [Apache License 2.0](LICENSE)。
+
+## 匯入本機 OpenAPI 工作區
+
+完成 `pnpm install --frozen-lockfile` 與 `pnpm build` 後，從儲存庫根目錄執行：
+
+```bash
+node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
+```
+
+以 Chrome 或 Edge 開啟印出的完整網址，包含 `#workspace=…`，並保留執行中的程序。此指令從原始碼工作目錄執行，接受本機 JSON／YAML 與來源目錄內的本機參照，不呼叫業務 API 或取得遠端參照。唯讀服務僅綁定 `127.0.0.1`，私人快照須使用每次啟動產生的 token；請勿分享網址。正規化模型會移除範例與預設值，但描述與來源路徑仍可能屬於內部資訊，規格和匯出檔請放在公開儲存庫之外。
+
+1. 到 **Inference Review** 檢視證據，使用 **Edit Mapping** 或 Accept／Reject。信心分數不等於業務正確性，nullable／必填／型別檢查仍可能阻擋編輯。
+2. 等候 **Saved locally**，再用 **Project → Save Project** 備份決策、Undo 與布局。專案檔不包含來源文件，請保留原始規格。
+3. 重新整理，或 Ctrl+C 停止後，以相同檔案與連接埠重新執行，開啟新印出的 token 網址。同一瀏覽器設定檔及 origin 會還原 IndexedDB；換瀏覽器時可用 **Project → Load Project → Apply project** 還原備份。
+4. **Export Decision Set** 下載 CLI 相容的決策檔。這與可執行的 Arazzo 工作流程不同，後者仍須透過 `export-arazzo` 提供明確的 workflow plan。
+
+來源沿用單份 5 MiB、總量 20 MiB 限制，正規化工作區回應上限為 64 MiB。推論沿用配對數／深度預算並保留診斷，候選可能不完整；時間截斷時拒絕開啟，避免同來源的保存結果無法重現。超過 200 個操作時預設開啟 Outline，Topology 須先篩選至 200 個以下；大型審查草稿停用畫布，映射與摘要仍可使用。此範圍是本機匯入預覽，尚不代表工作流程執行或正式上線驗收完成。

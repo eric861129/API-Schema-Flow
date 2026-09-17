@@ -1,4 +1,5 @@
 import type { ReviewCandidateRow } from './review-selectors'
+import { useI18n } from '../i18n'
 
 export interface ReviewSummaryTableProps {
   readonly candidates: readonly ReviewCandidateRow[]
@@ -6,42 +7,29 @@ export interface ReviewSummaryTableProps {
   readonly onSelect: (candidateId: string) => void
 }
 
-const STATE_LABELS: Readonly<Record<ReviewCandidateRow['state'], string>> = {
-  pending: 'Pending',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  edited: 'Edited',
-  stale: 'Stale',
-  orphaned: 'Orphaned',
-  superseded: 'Superseded',
-  conflict: 'Conflict',
-  invalid: 'Invalid',
-}
-
-function confidenceLabel(candidate: ReviewCandidateRow): string {
-  return `${candidate.band[0]?.toUpperCase()}${candidate.band.slice(1)} · ${Math.round(candidate.confidence * 100)}%`
-}
-
 export function ReviewSummaryTable({
   candidates,
   selectedCandidateId,
   onSelect,
 }: ReviewSummaryTableProps) {
+  const { status, t } = useI18n()
+  const confidenceLabel = (candidate: ReviewCandidateRow) =>
+    `${status(candidate.band)} · ${Math.round(candidate.confidence * 100)}%`
   if (candidates.length === 0) {
-    return <p className="review-empty-copy">No visible candidates to summarize.</p>
+    return <p className="review-empty-copy">{t('No visible candidates to summarize.')}</p>
   }
 
   return (
     <div className="review-summary-table-wrap">
-      <table className="review-summary-table" aria-label="Review candidate summary">
+      <table className="review-summary-table" aria-label={t('Review candidate summary')}>
         <thead>
           <tr>
-            <th scope="col">Source</th>
-            <th scope="col">Target</th>
-            <th scope="col">Confidence</th>
-            <th scope="col">State</th>
-            <th scope="col">Evidence</th>
-            <th scope="col">Blockers</th>
+            <th scope="col">{t('Source')}</th>
+            <th scope="col">{t('Target')}</th>
+            <th scope="col">{t('Confidence')}</th>
+            <th scope="col">{t('State')}</th>
+            <th scope="col">{t('Evidence')}</th>
+            <th scope="col">{t('Blockers')}</th>
           </tr>
         </thead>
         <tbody>
@@ -65,7 +53,7 @@ export function ReviewSummaryTable({
                   <code>{candidate.targetDescriptor}</code>
                 </td>
                 <td>{confidenceLabel(candidate)}</td>
-                <td>{STATE_LABELS[candidate.state]}</td>
+                <td>{status(candidate.state)}</td>
                 <td>{candidate.evidenceCount}</td>
                 <td>{candidate.blockerCount}</td>
               </tr>

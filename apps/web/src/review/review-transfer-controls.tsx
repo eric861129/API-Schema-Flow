@@ -10,6 +10,7 @@ import {
   initialStoredSession,
 } from './review-transfer'
 import { readStoredReview, resetStoredReview } from './review-storage'
+import { useI18n } from '../i18n'
 
 function download(name: string, content: string) {
   const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }))
@@ -27,6 +28,7 @@ function ImportPreview({
   readonly incoming: ReviewDecisionSet
   readonly onClose: () => void
 }) {
+  const { localize, status, t } = useI18n()
   const { snapshot, state, dispatch } = useReviewSession()
   const dialog = useRef<HTMLDialogElement>(null)
   const preview = previewDecisionImport(snapshot, state, incoming)
@@ -46,7 +48,7 @@ function ImportPreview({
     <dialog
       ref={dialog}
       className="mapping-editor"
-      aria-label="Import Decision Set preview"
+      aria-label={t('Import Decision Set preview')}
       onCancel={(event) => {
         event.preventDefault()
         onClose()
@@ -61,30 +63,34 @@ function ImportPreview({
         }
       }}
     >
-      <h2>Import Decision Set</h2>
+      <h2>{t('Import Decision Set')}</h2>
       <p>
-        {incoming.decisions.length} decisions and {incoming.manualEdges.length} manual edges in this
-        file.
+        {t('{{decisions}} decisions and {{edges}} manual edges in this file.', {
+          decisions: incoming.decisions.length,
+          edges: incoming.manualEdges.length,
+        })}
       </p>
-      <p>Result after merging with current decisions:</p>
+      <p>{t('Result after merging with current decisions:')}</p>
       <ul>
         {[...counts].map(([name, count]) => (
           <li key={name}>
-            {name}: {count}
+            {status(name)}: {count}
           </li>
         ))}
       </ul>
       <p>
-        {preview.materialization.result.graph.edges.length} accepted relationships. Stale, orphaned,
-        invalid and conflicting decisions do not create accepted edges.
+        {t(
+          '{{count}} accepted relationships. Stale, orphaned, invalid and conflicting decisions do not create accepted edges.',
+          { count: preview.materialization.result.graph.edges.length },
+        )}
       </p>
       <ul>
         {preview.materialization.result.diagnostics.map((item, index) => (
-          <li key={index}>{item.message}</li>
+          <li key={index}>{localize(item.message)}</li>
         ))}
       </ul>
       <button type="button" onClick={onClose}>
-        Cancel import
+        {t('Cancel import')}
       </button>
       <button
         type="button"
@@ -98,13 +104,14 @@ function ImportPreview({
           onClose()
         }}
       >
-        Apply import
+        {t('Apply import')}
       </button>
     </dialog>
   )
 }
 
 export function ReviewTransferControls() {
+  const { localize, t } = useI18n()
   const { snapshot, state, materialization, persistence } = useReviewSession()
   const input = useRef<HTMLInputElement>(null)
   const [incoming, setIncoming] = useState<ReviewDecisionSet | null>(null)
@@ -120,7 +127,7 @@ export function ReviewTransferControls() {
       previewDecisionImport(snapshot, state, parsed)
       setIncoming(parsed)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Cannot import this file.')
+      setError(localize(reason instanceof Error ? reason.message : 'Cannot import this file.'))
     } finally {
       setBusy(false)
     }
@@ -133,7 +140,7 @@ export function ReviewTransferControls() {
       if (!reset) download('review-storage-backup.json', JSON.stringify(stored ?? null, null, 2))
       else if (
         window.confirm(
-          'Reset saved decisions for this project and source version? Export a backup first.',
+          t('Reset saved decisions for this project and source version? Export a backup first.'),
         )
       ) {
         await resetStoredReview(
@@ -144,7 +151,7 @@ export function ReviewTransferControls() {
         persistence.reloadSaved()
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Cannot access local storage.')
+      setError(localize(reason instanceof Error ? reason.message : 'Cannot access local storage.'))
     } finally {
       setBusy(false)
     }
@@ -157,13 +164,13 @@ export function ReviewTransferControls() {
         disabled={busy}
         onClick={() => input.current?.click()}
       >
-        Import Decision Set
+        {t('Import Decision Set')}
       </button>
       <input
         ref={input}
         type="file"
         accept="application/json,.json"
-        aria-label="Decision Set file"
+        aria-label={t('Decision Set file')}
         hidden
         onChange={(event) => {
           const file = event.target.files?.[0]
@@ -178,7 +185,7 @@ export function ReviewTransferControls() {
           download('review-decisions.json', serializeDecisionSet(materialization.decisionSet))
         }
       >
-        Export Decision Set
+        {t('Export Decision Set')}
       </button>
       <button
         type="button"
@@ -187,7 +194,9 @@ export function ReviewTransferControls() {
         onClick={async () => {
           if (
             !window.confirm(
-              'Clear saved decisions and disable autosave for this project and source version? Current decisions remain available for export.',
+              t(
+                'Clear saved decisions and disable autosave for this project and source version? Current decisions remain available for export.',
+              ),
             )
           )
             return
@@ -196,13 +205,15 @@ export function ReviewTransferControls() {
           try {
             await persistence.clearAndDisable()
           } catch (reason) {
-            setError(reason instanceof Error ? reason.message : 'Cannot clear local decisions.')
+            setError(
+              localize(reason instanceof Error ? reason.message : 'Cannot clear local decisions.'),
+            )
           } finally {
             setBusy(false)
           }
         }}
       >
-        Clear saved data
+        {t('Clear saved data')}
       </button>
       {!persistence.enabled && !persistence.error ? (
         <button
@@ -211,7 +222,7 @@ export function ReviewTransferControls() {
           disabled={busy}
           onClick={persistence.enableAutosave}
         >
-          Enable autosave
+          {t('Enable autosave')}
         </button>
       ) : null}
       {persistence.error ? (
@@ -222,7 +233,7 @@ export function ReviewTransferControls() {
             disabled={busy}
             onClick={persistence.reloadSaved}
           >
-            Reload saved data
+            {t('Reload saved data')}
           </button>
           <button
             type="button"
@@ -230,7 +241,7 @@ export function ReviewTransferControls() {
             disabled={busy}
             onClick={() => void recover(false)}
           >
-            Back up stored data
+            {t('Back up stored data')}
           </button>
           <button
             type="button"
@@ -238,11 +249,11 @@ export function ReviewTransferControls() {
             disabled={busy}
             onClick={() => void recover(true)}
           >
-            Reset saved data
+            {t('Reset saved data')}
           </button>
         </>
       ) : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <p role="alert">{localize(error)}</p> : null}
       {incoming ? <ImportPreview incoming={incoming} onClose={() => setIncoming(null)} /> : null}
     </div>
   )

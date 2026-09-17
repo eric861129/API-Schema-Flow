@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { EndpointFlowNode, FlowValueSelector, FlowValueTarget } from '@api-schema-flow/domain'
 
 import { MethodBadge } from '../components/operations-panel'
@@ -42,6 +43,7 @@ export function OutlineView({
   readonly models: readonly OperationViewModel[]
   readonly onSelect: (selected: SelectedElement) => void
 }) {
+  const { t } = useTranslation()
   const operationByNode = new Map(
     snapshot.acceptedGraph.nodes
       .filter(isEndpointNode)
@@ -53,20 +55,20 @@ export function OutlineView({
   return (
     <section className="outline-view" aria-labelledby="outline-title">
       <header>
-        <span className="eyebrow">ACCESSIBLE ALTERNATIVE</span>
-        <h1 id="outline-title">Operation and relationship outline</h1>
-        <p>The tables contain the same accepted topology shown on the canvas.</p>
+        <span className="eyebrow">{t('ACCESSIBLE ALTERNATIVE')}</span>
+        <h1 id="outline-title">{t('Operation and relationship outline')}</h1>
+        <p>{t('The tables contain the same accepted topology shown on the canvas.')}</p>
       </header>
       <div className="table-shell">
         <table>
-          <caption>API operations</caption>
+          <caption>{t('API operations')}</caption>
           <thead>
             <tr>
-              <th>Method</th>
-              <th>Path</th>
-              <th>Tag</th>
-              <th>Incoming</th>
-              <th>Outgoing</th>
+              <th>{t('Method')}</th>
+              <th>{t('Path')}</th>
+              <th>{t('Tag')}</th>
+              <th>{t('Incoming')}</th>
+              <th>{t('Outgoing')}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,14 +95,14 @@ export function OutlineView({
       </div>
       <div className="table-shell">
         <table>
-          <caption>Accepted data mappings</caption>
+          <caption>{t('Accepted data mappings')}</caption>
           <thead>
             <tr>
-              <th>Source</th>
-              <th>Selector</th>
-              <th>Target</th>
-              <th>Target field</th>
-              <th>Provenance</th>
+              <th>{t('Source')}</th>
+              <th>{t('Selector')}</th>
+              <th>{t('Target')}</th>
+              <th>{t('Target field')}</th>
+              <th>{t('Provenance')}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,7 +123,7 @@ export function OutlineView({
                 </td>
                 <td>
                   <span className={'provenance-token provenance-' + edge.provenance}>
-                    {edge.provenance}
+                    {t(edge.provenance)}
                   </span>
                 </td>
               </tr>

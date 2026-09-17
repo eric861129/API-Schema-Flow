@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 import { validateRejectReason, type ReviewRejectReason } from './review-session'
+import { useI18n } from '../i18n'
 
 const REJECT_REASONS: readonly { value: ReviewRejectReason; label: string }[] = [
   { value: 'wrong-resource', label: 'Wrong resource' },
@@ -22,6 +23,7 @@ export function RejectDialog({
   readonly onCancel: () => void
   readonly onConfirm: (reason: ReviewRejectReason, note?: string) => void
 }) {
+  const { localize, t } = useI18n()
   const titleId = useId()
   const errorId = useId()
   const backdropRef = useRef<HTMLDivElement>(null)
@@ -99,21 +101,21 @@ export function RejectDialog({
         onSubmit={(event) => {
           event.preventDefault()
           if (!reason) {
-            setError('Choose a reject reason.')
+            setError(t('Choose a reject reason.'))
             return
           }
           const validation = validateRejectReason(reason, note)
           if (!validation.valid) {
-            setError(validation.message)
+            setError(localize(validation.message))
             return
           }
           onConfirm(reason, note.trim() || undefined)
         }}
       >
-        <h2 id={titleId}>Reject candidate</h2>
+        <h2 id={titleId}>{t('Reject candidate')}</h2>
         <p>{candidateLabel}</p>
         <fieldset aria-describedby={error ? errorId : undefined}>
-          <legend>Reason (required)</legend>
+          <legend>{t('Reason (required)')}</legend>
           {REJECT_REASONS.map((option) => (
             <label key={option.value}>
               <input
@@ -126,12 +128,12 @@ export function RejectDialog({
                   setError('')
                 }}
               />
-              {option.label}
+              {t(option.label)}
             </label>
           ))}
         </fieldset>
         <label className="review-note-field">
-          {reason === 'other' ? 'Note (required for Other)' : 'Note (optional)'}
+          {t(reason === 'other' ? 'Note (required for Other)' : 'Note (optional)')}
           <textarea
             value={note}
             onChange={(event) => setNote(event.currentTarget.value)}
@@ -142,14 +144,14 @@ export function RejectDialog({
         </label>
         {error ? (
           <p id={errorId} role="alert">
-            {error}
+            {localize(error)}
           </p>
         ) : null}
         <div className="review-dialog-buttons">
           <button type="button" onClick={onCancel}>
-            Cancel
+            {t('Cancel')}
           </button>
-          <button type="submit">Confirm rejection</button>
+          <button type="submit">{t('Confirm rejection')}</button>
         </div>
       </form>
     </div>,

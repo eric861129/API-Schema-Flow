@@ -9,6 +9,8 @@
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
+    'Microsoft JhengHei',
+    'Noto Sans TC',
     sans-serif;
   color: #edf6ff;
   background: #07111d;
@@ -272,7 +274,8 @@ textarea:focus-visible {
 }
 .product-lockup,
 .project-context,
-.view-actions {
+.view-actions,
+.language-switcher {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -322,6 +325,15 @@ textarea:focus-visible {
 .view-actions button[aria-pressed='true'] {
   background: #173149;
   color: #8fe9f0;
+}
+.language-switcher select {
+  min-width: 92px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--elevated);
+  color: var(--primary);
+  font-size: 12px;
 }
 .icon-rail {
   grid-area: rail;
@@ -528,6 +540,9 @@ textarea:focus-visible {
   display: grid;
   grid-template-rows: 58px minmax(0, 1fr);
   position: relative;
+}
+.outline-main-region {
+  grid-template-rows: minmax(0, 1fr);
 }
 .canvas-header {
   display: flex;

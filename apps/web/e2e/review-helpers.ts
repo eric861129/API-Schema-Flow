@@ -2,6 +2,13 @@ import { expect, test as base, type Locator, type Page } from '@playwright/test'
 
 // 沿用正式快照，只移除既有決策，讓瀏覽器走完待審核流程。
 export const test = base.extend<{ reviewPage: Page }>({
+  page: async ({ page }, use) => {
+    await page.addInitScript(() => {
+      if (!localStorage.getItem('api-schema-flow.locale'))
+        localStorage.setItem('api-schema-flow.locale', 'en')
+    })
+    await use(page)
+  },
   reviewPage: async ({ page }, use) => {
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))

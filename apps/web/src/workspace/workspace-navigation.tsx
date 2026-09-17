@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 export type WorkspaceDestination = 'topology' | 'outline' | 'inference-review'
 
 interface WorkspaceNavigationProps {
@@ -25,8 +26,9 @@ export function WorkspaceNavigation({
   onToggleDiagnostics,
   onShowAbout,
 }: WorkspaceNavigationProps) {
+  const { t } = useTranslation()
   return (
-    <nav className="icon-rail" aria-label="Workspace views">
+    <nav className="icon-rail" aria-label={t('Workspace views')}>
       {destinations.map((destination) => (
         <button
           type="button"
@@ -35,16 +37,16 @@ export function WorkspaceNavigation({
           onClick={() => onDestinationChange(destination.id)}
         >
           <span aria-hidden="true">{destination.icon}</span>
-          <small>{destination.label}</small>
+          <small>{t(destination.label)}</small>
         </button>
       ))}
       <button type="button" aria-expanded={diagnosticsOpen} onClick={onToggleDiagnostics}>
         <span aria-hidden="true">◇</span>
-        <small>Diagnostics</small>
+        <small>{t('Diagnostics')}</small>
       </button>
       <button type="button" onClick={onShowAbout}>
         <span aria-hidden="true">i</span>
-        <small>About</small>
+        <small>{t('About')}</small>
       </button>
     </nav>
   )

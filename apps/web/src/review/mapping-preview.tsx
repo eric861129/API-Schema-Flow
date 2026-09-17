@@ -1,16 +1,19 @@
 import { describeReviewCompatibility, type ReviewCandidateDetail } from './review-detail'
 import type { ProjectedReviewCandidateDetail } from './review-workspace-adapter'
+import { useI18n } from '../i18n'
+import type { TFunction } from 'i18next'
 
 export interface MappingPreviewProps {
   readonly candidate: ReviewCandidateDetail | ProjectedReviewCandidateDetail | null
 }
 
-function schemaLabel(schema: ReviewCandidateDetail['sourceSchema']): string {
+function schemaLabel(schema: ReviewCandidateDetail['sourceSchema'], t: TFunction): string {
   const parts = [schema.type, schema.format].filter(Boolean)
-  return parts.length > 0 ? parts.join(' · ') : 'Schema type unknown'
+  return parts.length > 0 ? parts.join(' · ') : t('Schema type unknown')
 }
 
 export function MappingPreview({ candidate }: MappingPreviewProps) {
+  const { localize, t } = useI18n()
   if (!candidate) {
     return (
       <section
@@ -19,11 +22,12 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
         tabIndex={0}
       >
         <div>
-          <p className="section-label">Mapping preview</p>
-          <h2 id="mapping-title">Select an inference candidate</h2>
+          <p className="section-label">{t('Mapping preview')}</p>
+          <h2 id="mapping-title">{t('Select an inference candidate')}</h2>
           <p>
-            Select an inference candidate to preview its mapping or topology. Choose a candidate to
-            inspect its source, target, compatibility, and evidence.
+            {t(
+              'Select an inference candidate to preview its mapping or topology. Choose a candidate to inspect its source, target, compatibility, and evidence.',
+            )}
           </p>
         </div>
       </section>
@@ -36,34 +40,34 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
     <section className="mapping-preview" aria-labelledby="mapping-title" tabIndex={0}>
       <header className="mapping-preview__header">
         <div>
-          <p className="section-label">Mapping preview</p>
-          <h2 id="mapping-title">Review inferred data transfer</h2>
+          <p className="section-label">{t('Mapping preview')}</p>
+          <h2 id="mapping-title">{t('Review inferred data transfer')}</h2>
         </div>
         <span className="mapping-preview__confidence">
           {candidate.band} · {Math.round(candidate.confidence * 100)}%
         </span>
       </header>
 
-      <div className="mapping-preview__flow" aria-label="Source to target mapping">
+      <div className="mapping-preview__flow" aria-label={t('Source to target mapping')}>
         <article className="mapping-endpoint mapping-endpoint--source">
-          <p className="mapping-endpoint__role">Source response</p>
+          <p className="mapping-endpoint__role">{t('Source response')}</p>
           <h3>{candidate.sourceLabel}</h3>
           <code>{candidate.sourceSelector}</code>
-          <p>{schemaLabel(candidate.sourceSchema)}</p>
+          <p>{schemaLabel(candidate.sourceSchema, t)}</p>
         </article>
 
         <div className="mapping-transfer" aria-hidden="true">
-          <span>Data transfer</span>
+          <span>{t('Data transfer')}</span>
           <span className="mapping-transfer__line">→</span>
         </div>
 
         <article className="mapping-endpoint mapping-endpoint--target">
-          <p className="mapping-endpoint__role">Target request</p>
+          <p className="mapping-endpoint__role">{t('Target request')}</p>
           <h3>{candidate.targetLabel}</h3>
           <code>{candidate.targetDescriptor}</code>
           <p>
-            {schemaLabel(candidate.targetSchema)}
-            {candidate.targetSchema.required ? ' · required' : ''}
+            {schemaLabel(candidate.targetSchema, t)}
+            {candidate.targetSchema.required ? ` · ${t('required')}` : ''}
           </p>
         </article>
       </div>
@@ -72,13 +76,13 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
         <dl className="mapping-preview__metadata">
           {candidate.alias ? (
             <div>
-              <dt>Alias</dt>
+              <dt>{t('Alias')}</dt>
               <dd>{candidate.alias}</dd>
             </div>
           ) : null}
           {candidate.transform ? (
             <div>
-              <dt>Transform</dt>
+              <dt>{t('Transform')}</dt>
               <dd>{candidate.transform}</dd>
             </div>
           ) : null}
@@ -86,7 +90,7 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
       ) : null}
 
       <div className="mapping-preview__compatibility">
-        <h3>Compatibility</h3>
+        <h3>{t('Compatibility')}</h3>
         <ul>
           {compatibility.map((item) => (
             <li key={`${item.state}:${item.label}`} data-state={item.state}>
@@ -99,7 +103,7 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
                       ? '⚠'
                       : '•'}
               </span>
-              {item.label}
+              {localize(item.label)}
             </li>
           ))}
         </ul>
@@ -107,10 +111,10 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
 
       {'schemaWarnings' in candidate && candidate.schemaWarnings.length > 0 ? (
         <section className="mapping-preview__warnings" aria-labelledby="mapping-warning-title">
-          <h3 id="mapping-warning-title">Schema warnings</h3>
+          <h3 id="mapping-warning-title">{t('Schema warnings')}</h3>
           <ul>
             {candidate.schemaWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning}>{localize(warning)}</li>
             ))}
           </ul>
         </section>
@@ -118,8 +122,12 @@ export function MappingPreview({ candidate }: MappingPreviewProps) {
 
       <p className="mapping-preview__notice">
         {candidate.state === 'edited'
-          ? 'This manual mapping is accepted in the current draft. Original inference evidence is retained.'
-          : 'This is an inference candidate, not an authoritative workflow relationship, until it is reviewed.'}
+          ? t(
+              'This manual mapping is accepted in the current draft. Original inference evidence is retained.',
+            )
+          : t(
+              'This is an inference candidate, not an authoritative workflow relationship, until it is reviewed.',
+            )}
       </p>
     </section>
   )

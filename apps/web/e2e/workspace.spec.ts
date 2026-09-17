@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { test } from './review-helpers'
 
 test('explores the Reservation topology and equivalent outline', async ({ page }) => {
   await page.goto('/')
@@ -18,6 +19,17 @@ test('explores the Reservation topology and equivalent outline', async ({ page }
   )
   await page.getByRole('button', { name: /Outline/i }).click()
   await expect(page.getByRole('table', { name: 'Accepted data mappings' })).toBeVisible()
+  const outline = await page.locator('.outline-view').boundingBox()
+  const firstOperation = await page
+    .getByRole('table', { name: 'API operations' })
+    .locator('tbody tr')
+    .first()
+    .boundingBox()
+  expect(outline?.height ?? 0).toBeGreaterThan(500)
+  expect(firstOperation?.y ?? 0).toBeGreaterThan(outline?.y ?? 0)
+  expect((firstOperation?.y ?? 0) + (firstOperation?.height ?? 0)).toBeLessThan(
+    (outline?.y ?? 0) + (outline?.height ?? 0),
+  )
 })
 
 test('keeps primary regions usable at the minimum desktop viewport', async ({ page }) => {

@@ -4,6 +4,8 @@ import type { PositionedFlowGraph } from '@api-schema-flow/layout'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
 import type { CanvasLayoutState } from '../project/workspace-layout'
 import { FlowCanvas } from '../graph/flow-canvas'
+import { MAX_CANVAS_OPERATIONS } from '../graph/canvas-limits'
+import { useI18n } from '../i18n'
 
 type ReviewGraph = WorkspaceSnapshot['acceptedGraph']
 
@@ -25,6 +27,7 @@ export function DraftGraphPreview({
   readonly direction?: 'right' | 'down'
   readonly layoutRevision?: number
 }) {
+  const { t } = useI18n()
   const [positioned, setPositioned] = useState<{
     graph: ReviewGraph
     direction: 'right' | 'down'
@@ -35,6 +38,7 @@ export function DraftGraphPreview({
   const draftSnapshot = useMemo(() => ({ ...snapshot, acceptedGraph: graph }), [snapshot, graph])
 
   useEffect(() => {
+    if (graph.nodes.length > MAX_CANVAS_OPERATIONS) return
     let cancelled = false
     import('@api-schema-flow/layout')
       .then(({ createElkFlowLayoutEngine }) =>
@@ -71,25 +75,38 @@ export function DraftGraphPreview({
 
   return (
     <div className="draft-graph-preview">
-      <section aria-label="Draft graph summary" className="draft-graph-summary">
-        <strong>Review graph preview</strong>
+      <section aria-label={t('Draft graph summary')} className="draft-graph-summary">
+        <strong>{t('Review graph preview')}</strong>
         <ul>
           <li>
-            {graph.edges.filter((edge) => edge.provenance === 'declared').length} declared accepted
+            {t('{{count}} declared accepted', {
+              count: graph.edges.filter((edge) => edge.provenance === 'declared').length,
+            })}
           </li>
           <li>
-            {graph.edges.filter((edge) => edge.provenance === 'inferred').length} inferred accepted
+            {t('{{count}} inferred accepted', {
+              count: graph.edges.filter((edge) => edge.provenance === 'inferred').length,
+            })}
           </li>
           <li>
-            {graph.edges.filter((edge) => edge.provenance === 'manual').length} manual accepted
+            {t('{{count}} manual accepted', {
+              count: graph.edges.filter((edge) => edge.provenance === 'manual').length,
+            })}
           </li>
-          <li>{pendingCount} pending candidates outside the graph</li>
+          <li>{t('{{count}} pending candidates outside the graph', { count: pendingCount })}</li>
         </ul>
       </section>
-      {positioned?.graph === graph && positioned.direction === direction ? (
+      {graph.nodes.length > MAX_CANVAS_OPERATIONS ? (
+        <p>
+          {t(
+            'Large workspace: use Mapping preview and Review Summary to inspect decisions. The draft canvas is limited to {{limit}} operations.',
+            { limit: MAX_CANVAS_OPERATIONS },
+          )}
+        </p>
+      ) : positioned?.graph === graph && positioned.direction === direction ? (
         <>
           {positioned.fallback ? (
-            <p>Automatic layout is unavailable. Showing a simple linear preview.</p>
+            <p>{t('Automatic layout is unavailable. Showing a simple linear preview.')}</p>
           ) : null}
           <FlowCanvas
             key={`review-${direction}-${layoutRevision}`}
@@ -99,11 +116,11 @@ export function DraftGraphPreview({
             positioned={positioned.layout}
             selected={selected}
             onSelect={setSelected}
-            ariaLabel="Review graph preview"
+            ariaLabel={t('Review graph preview')}
           />
         </>
       ) : (
-        <p>Arranging draft topology…</p>
+        <p>{t('Arranging draft topology…')}</p>
       )}
     </div>
   )

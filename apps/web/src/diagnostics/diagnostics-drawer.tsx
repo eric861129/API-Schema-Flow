@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import { localizeRawMessage } from '../i18n'
 import type { WorkspaceSnapshot } from '../data/types'
 
 export function DiagnosticsDrawer({
@@ -9,22 +11,29 @@ export function DiagnosticsDrawer({
   readonly open: boolean
   readonly onToggle: () => void
 }) {
+  const { t } = useTranslation()
   const blocking = snapshot.diagnostics.filter((item) => item.severity === 'error').length
   return (
     <section
       className={'diagnostics-drawer' + (open ? ' is-open' : '')}
-      aria-label="Workspace diagnostics"
+      aria-label={t('Workspace diagnostics')}
     >
       <button className="diagnostics-summary" onClick={onToggle} aria-expanded={open}>
         <span className="ready-dot" aria-hidden="true" />
-        Ready · {snapshot.apiDocument.operations.length} operations ·{' '}
-        {snapshot.acceptedGraph.edges.length} accepted relationships · {blocking} blocking errors
+        {t(
+          'Ready · {{operations}} operations · {{relationships}} accepted relationships · {{blocking}} blocking errors',
+          {
+            operations: snapshot.apiDocument.operations.length,
+            relationships: snapshot.acceptedGraph.edges.length,
+            blocking,
+          },
+        )}
         <span aria-hidden="true">{open ? '⌄' : '⌃'}</span>
       </button>
       {open ? (
         <div className="diagnostics-content">
           {snapshot.diagnostics.length === 0 ? (
-            <p>No diagnostics were reported for this workspace.</p>
+            <p>{t('No diagnostics were reported for this workspace.')}</p>
           ) : (
             snapshot.diagnostics
               .toSorted(
@@ -35,9 +44,9 @@ export function DiagnosticsDrawer({
               .map((item) => (
                 <article key={item.code + item.message}>
                   <strong>
-                    {item.severity.toUpperCase()} · {item.code}
+                    {t(item.severity.toUpperCase())} · {item.code}
                   </strong>
-                  <p>{item.message}</p>
+                  <p>{localizeRawMessage(item.message, t)}</p>
                   {item.source ? (
                     <code>
                       {item.source.uri}

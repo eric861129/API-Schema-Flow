@@ -1,4 +1,5 @@
 import type { ProjectedReviewCandidateDetail } from './review-workspace-adapter'
+import { useI18n } from '../i18n'
 
 /** 所選候選的審核操作，決策語意由 Review core 判定。 */
 export function ReviewActions({
@@ -10,10 +11,11 @@ export function ReviewActions({
   readonly onAccept: () => void
   readonly onReject: () => void
 }) {
+  const { localize, locale, status, t } = useI18n()
   if (!candidate)
     return (
       <p className="review-empty-copy">
-        Review actions become available after a candidate is selected.
+        {t('Review actions become available after a candidate is selected.')}
       </p>
     )
 
@@ -21,12 +23,16 @@ export function ReviewActions({
     candidate.blockerCount > 0 || !['pending', 'rejected'].includes(candidate.state)
   return (
     <div className="review-decision-controls">
-      <p className="review-decision-state">Review state: {candidate.state}</p>
-      {candidate.outcomeReason ? <p>{candidate.outcomeReason}</p> : null}
+      <p className="review-decision-state">
+        {t('Review state: {{state}}', {
+          state: locale === 'en' ? candidate.state : status(candidate.state),
+        })}
+      </p>
+      {candidate.outcomeReason ? <p>{localize(candidate.outcomeReason)}</p> : null}
       {candidate.state !== 'edited' && candidate.blockers.length > 0 ? (
         <ul>
           {candidate.blockers.map((blocker, index) => (
-            <li key={`${blocker.code}:${index}`}>{blocker.summary}</li>
+            <li key={`${blocker.code}:${index}`}>{localize(blocker.summary)}</li>
           ))}
         </ul>
       ) : null}
@@ -37,7 +43,7 @@ export function ReviewActions({
           disabled={acceptUnavailable}
           onClick={onAccept}
         >
-          Accept
+          {t('Accept')}
         </button>
         <button
           type="button"
@@ -45,7 +51,7 @@ export function ReviewActions({
           disabled={candidate.state === 'rejected'}
           onClick={onReject}
         >
-          Reject
+          {t('Reject')}
         </button>
       </div>
     </div>

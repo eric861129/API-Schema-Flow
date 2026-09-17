@@ -43,21 +43,22 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
 export async function loadWorkspaceSnapshot(
   url = '/fixtures/reservation-workspace.json',
   fetcher: typeof fetch = fetch,
+  request?: RequestInit,
 ): Promise<WorkspaceSnapshot> {
   let response: Response
   try {
-    response = await fetcher(url)
+    response = await fetcher(url, request)
   } catch {
     throw new WorkspaceLoadError(
       'network',
-      'The Reservation workspace could not be loaded. Check the local server and retry.',
+      'The API workspace could not be loaded. Check the local server and retry.',
     )
   }
 
   if (!response.ok) {
     throw new WorkspaceLoadError(
       'network',
-      'The Reservation workspace returned HTTP ' + response.status + '.',
+      'The API workspace returned HTTP ' + response.status + '.',
     )
   }
 

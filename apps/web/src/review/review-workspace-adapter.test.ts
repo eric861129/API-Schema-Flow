@@ -84,6 +84,33 @@ const stateDecisionSet = {
 }
 
 describe('review workspace Domain adapter', () => {
+  test('indexes a document once per projection even with many candidates', async () => {
+    const snapshot = await canonicalSnapshot()
+    const components = snapshot.apiDocument.componentSchemas
+    let reads = 0
+    const document = {
+      ...snapshot.apiDocument,
+      get componentSchemas() {
+        reads += 1
+        return components
+      },
+    }
+    const large = {
+      ...snapshot,
+      apiDocument: document,
+      inferenceCandidates: Array.from({ length: 50 }, (_, index) => ({
+        ...snapshot.inferenceCandidates[0]!,
+        id: `candidate:synthetic:${index}`,
+      })),
+    }
+    const materialization = baselineMaterialization(snapshot)
+    const first = projectReviewWorkspace(large, materialization)
+    expect(first.rows).toHaveLength(50)
+    expect(reads).toBe(1)
+    // 下一次投影重新建索引，避免依物件身分快取而讀到過期 Schema。
+    expect(projectReviewWorkspace(large, materialization)).toEqual(first)
+    expect(reads).toBe(2)
+  })
   test('projects Domain candidates into the existing row and detail view models', async () => {
     const snapshot = await canonicalSnapshot()
     const projection = projectReviewWorkspace(snapshot, baselineMaterialization(snapshot))

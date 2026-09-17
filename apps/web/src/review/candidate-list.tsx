@@ -1,6 +1,7 @@
 import { useMemo, useRef, type KeyboardEvent } from 'react'
 
 import type { ReviewCandidateRow } from './review-selectors'
+import { useI18n } from '../i18n'
 
 export interface CandidateListProps {
   readonly candidates: readonly ReviewCandidateRow[]
@@ -9,37 +10,34 @@ export interface CandidateListProps {
   readonly emptyMessage?: string
 }
 
-const STATE_LABELS: Readonly<Record<ReviewCandidateRow['state'], string>> = {
-  pending: 'Pending',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  edited: 'Manual accepted',
-  stale: 'Stale',
-  orphaned: 'Orphaned',
-  superseded: 'Superseded',
-  conflict: 'Conflict',
-  invalid: 'Invalid',
-}
-
-function confidenceLabel(candidate: ReviewCandidateRow): string {
-  return `${candidate.band[0]?.toUpperCase()}${candidate.band.slice(1)} · ${Math.round(candidate.confidence * 100)}%`
-}
-
-function candidateAccessibleLabel(candidate: ReviewCandidateRow): string {
-  const blockers =
-    candidate.blockerCount > 0
-      ? `; ${candidate.blockerCount} blocker${candidate.blockerCount === 1 ? '' : 's'}`
-      : ''
-
-  return `Source ${candidate.sourceLabel} ${candidate.sourceSelector}; target ${candidate.targetLabel} ${candidate.targetDescriptor}; ${confidenceLabel(candidate)}; ${STATE_LABELS[candidate.state]}; ${candidate.evidenceCount} evidence${blockers}`
-}
-
 export function CandidateList({
   candidates,
   selectedCandidateId,
   onSelect,
   emptyMessage = 'No candidates match the current review filters.',
 }: CandidateListProps) {
+  const { status, t } = useI18n()
+  const confidenceLabel = (candidate: ReviewCandidateRow) =>
+    `${status(candidate.band)} · ${Math.round(candidate.confidence * 100)}%`
+  const candidateAccessibleLabel = (candidate: ReviewCandidateRow) =>
+    t(
+      'Source {{source}} {{sourceSelector}}; target {{target}} {{targetDescriptor}}; {{confidence}}; {{state}}; {{evidence}} evidence; {{blockers}}',
+      {
+        source: candidate.sourceLabel,
+        sourceSelector: candidate.sourceSelector,
+        target: candidate.targetLabel,
+        targetDescriptor: candidate.targetDescriptor,
+        confidence: confidenceLabel(candidate),
+        state: status(candidate.state),
+        evidence: String(candidate.evidenceCount),
+        blockers:
+          candidate.blockerCount > 0
+            ? t(candidate.blockerCount === 1 ? '{{count}} blocker' : '{{count}} blockers', {
+                count: candidate.blockerCount,
+              })
+            : '',
+      },
+    )
   const buttonRefs = useRef(new Map<string, HTMLButtonElement>())
   const candidateIds = useMemo(() => candidates.map(({ id }) => id), [candidates])
 
@@ -81,8 +79,8 @@ export function CandidateList({
   if (candidates.length === 0) {
     return (
       <div className="review-empty-state" role="status">
-        <strong>No review candidates</strong>
-        <span>{emptyMessage}</span>
+        <strong>{t('No review candidates')}</strong>
+        <span>{t(emptyMessage)}</span>
       </div>
     )
   }
@@ -91,7 +89,7 @@ export function CandidateList({
     <div
       className="candidate-list"
       role="listbox"
-      aria-label={`Inference candidates, ${candidates.length} visible`}
+      aria-label={t('Inference candidates, {{count}} visible', { count: candidates.length })}
     >
       {candidates.map((candidate, index) => {
         const selected = candidate.id === selectedCandidateId
@@ -125,11 +123,13 @@ export function CandidateList({
                 {confidenceLabel(candidate)}
               </span>
               <span className="review-state-badge" data-state={candidate.state}>
-                {STATE_LABELS[candidate.state]}
+                {status(candidate.state)}
               </span>
-              <span>{candidate.evidenceCount} evidence</span>
+              <span>{t('{{count}} evidence', { count: candidate.evidenceCount })}</span>
               {candidate.blockerCount > 0 ? (
-                <span className="blocker-count">⚠ {candidate.blockerCount} blockers</span>
+                <span className="blocker-count">
+                  ⚠ {t('{{count}} blockers', { count: candidate.blockerCount })}
+                </span>
               ) : null}
             </span>
           </button>

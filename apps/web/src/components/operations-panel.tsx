@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { KeyboardEvent } from 'react'
 
 import type { HttpMethod } from '@api-schema-flow/domain'
@@ -30,6 +31,7 @@ export function MethodBadge({ method }: { readonly method: HttpMethod }) {
 }
 
 export function OperationsPanel(props: OperationsPanelProps) {
+  const { t } = useTranslation()
   const visible = filterOperationViewModels(props.models, {
     query: props.query,
     methods: props.activeMethods,
@@ -59,30 +61,30 @@ export function OperationsPanel(props: OperationsPanelProps) {
   }
 
   return (
-    <aside className="operations-panel" aria-label="API operations">
+    <aside className="operations-panel" aria-label={t('API operations')}>
       <header className="panel-heading">
         <div>
-          <span className="eyebrow">OPERATIONS</span>
-          <strong>{visible.length} visible</strong>
+          <span className="eyebrow">{t('OPERATIONS')}</span>
+          <strong>{t('{{total}} visible', { total: visible.length })}</strong>
         </div>
         <button
           className="icon-button"
           onClick={props.onCollapse}
-          aria-label="Collapse operations panel"
+          aria-label={t('Collapse operations panel')}
         >
           ‹
         </button>
       </header>
       <label className="search-field">
-        <span className="sr-only">Search operations</span>
+        <span className="sr-only">{t('Search operations')}</span>
         <span aria-hidden="true">⌕</span>
         <input
           value={props.query}
           onChange={(event) => props.onQueryChange(event.target.value)}
-          placeholder="Search path or operation ID"
+          placeholder={t('Search path or operation ID')}
         />
       </label>
-      <div className="method-filters" aria-label="Filter by HTTP method">
+      <div className="method-filters" aria-label={t('Filter by HTTP method')}>
         {methods.map((method) => (
           <button
             key={method}
@@ -96,15 +98,15 @@ export function OperationsPanel(props: OperationsPanelProps) {
       <div className="operation-list" onKeyDown={handleKeyDown}>
         {visible.length === 0 ? (
           <div className="empty-filter">
-            <strong>No matching operations</strong>
-            <p>Clear the search or method filters to restore the topology.</p>
+            <strong>{t('No matching operations')}</strong>
+            <p>{t('Clear the search or method filters to restore the topology.')}</p>
             <button
               onClick={() => {
                 props.onQueryChange('')
                 props.onMethodsChange([])
               }}
             >
-              Clear filters
+              {t('Clear filters')}
             </button>
           </div>
         ) : null}
@@ -126,9 +128,10 @@ export function OperationsPanel(props: OperationsPanelProps) {
                 </span>
                 <span
                   className="connection-count"
-                  aria-label={
-                    model.incoming + ' incoming and ' + model.outgoing + ' outgoing relationships'
-                  }
+                  aria-label={t('{{incoming}} incoming and {{outgoing}} outgoing relationships', {
+                    incoming: model.incoming,
+                    outgoing: model.outgoing,
+                  })}
                 >
                   {model.incoming}↓ {model.outgoing}↑
                 </span>

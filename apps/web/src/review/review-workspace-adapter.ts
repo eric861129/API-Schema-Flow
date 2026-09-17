@@ -293,12 +293,11 @@ function matchingParameter(
 }
 
 function resolveSourceSchema(
-  document: NormalizedApiDocument,
+  resolver: ReturnType<typeof createSchemaResolver>,
   operation: NormalizedOperation | undefined,
   selector: FlowValueSelector,
 ): SchemaResolution {
   if (!operation) return { descriptor: {}, warnings: ['Source operation is missing.'] }
-  const resolver = createSchemaResolver(document)
 
   switch (selector.kind) {
     case 'response-body': {
@@ -368,12 +367,11 @@ function resolveSourceSchema(
 }
 
 function resolveTargetSchema(
-  document: NormalizedApiDocument,
+  resolver: ReturnType<typeof createSchemaResolver>,
   operation: NormalizedOperation | undefined,
   target: FlowValueTarget,
 ): SchemaResolution {
   if (!operation) return { descriptor: {}, warnings: ['Target operation is missing.'] }
-  const resolver = createSchemaResolver(document)
 
   if (target.kind === 'request-body') {
     const matches = (operation.requestBody?.content ?? []).flatMap((media) =>
@@ -551,6 +549,8 @@ export function projectReviewWorkspace(
     snapshot.apiDocument.operations.map((operation) => [operation.id, operation]),
   )
   const details = new Map<string, ProjectedReviewCandidateDetail>()
+  // 同一批候選共用索引，避免每個來源與目標都重掃整份大型規格。
+  const resolver = createSchemaResolver(snapshot.apiDocument)
 
   for (const candidate of [...snapshot.inferenceCandidates].sort((left, right) =>
     left.id.localeCompare(right.id),
@@ -558,8 +558,8 @@ export function projectReviewWorkspace(
     const mapping = effectiveCandidateMapping(candidate, materialization)
     const sourceOperation = operations.get(candidate.sourceOperationKey)
     const targetOperation = operations.get(candidate.targetOperationKey)
-    const sourceSchema = resolveSourceSchema(snapshot.apiDocument, sourceOperation, mapping.source)
-    const targetSchema = resolveTargetSchema(snapshot.apiDocument, targetOperation, mapping.target)
+    const sourceSchema = resolveSourceSchema(resolver, sourceOperation, mapping.source)
+    const targetSchema = resolveTargetSchema(resolver, targetOperation, mapping.target)
     const state = resolveReviewCandidateState(
       candidate.id,
       materialization.decisionSet,

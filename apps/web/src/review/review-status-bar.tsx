@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useI18n } from '../i18n'
 
 /** 儲存狀態以交易完成為準，操作結果另以即時區域播報。 */
 export function ReviewStatusBar({
@@ -20,14 +21,20 @@ export function ReviewStatusBar({
   readonly storageError?: boolean
   readonly children?: ReactNode
 }) {
-  const relationshipLabel = `${edgeCount} accepted relationship${edgeCount === 1 ? '' : 's'}`
+  const { localize, t } = useI18n()
+  const relationshipLabel = t(
+    edgeCount === 1 ? '{{count}} accepted relationship' : '{{count}} accepted relationships',
+    { count: edgeCount },
+  )
 
   return (
-    <footer className="review-status-bar" role="region" aria-label="Review status">
+    <section className="review-status-bar" aria-label={t('Review status')}>
       <strong>
         {draftCount === 0
-          ? 'No draft changes'
-          : `${draftCount} review change${draftCount === 1 ? '' : 's'}`}
+          ? t('No draft changes')
+          : t(draftCount === 1 ? '{{count}} review change' : '{{count}} review changes', {
+              count: draftCount,
+            })}
       </strong>
       <button
         type="button"
@@ -35,29 +42,29 @@ export function ReviewStatusBar({
         disabled={draftCount === 0}
         onClick={onUndo}
       >
-        Undo latest change
+        {t('Undo latest change')}
       </button>
       <span>{relationshipLabel}</span>
       {children}
       <span className="sr-only">
-        {selectedId ? `Selected ${selectedId}` : 'No candidate selected'}
+        {selectedId ? t('Selected {{id}}', { id: selectedId }) : t('No candidate selected')}
       </span>
       <p
         className="review-status-warning"
         role={storageError ? 'alert' : 'status'}
-        aria-label="Local storage status"
+        aria-label={t('Local storage status')}
       >
-        {storageStatus}
+        {localize(storageStatus)}
       </p>
       <p
         className="sr-only"
         role="status"
-        aria-label="Review announcement"
+        aria-label={t('Review announcement')}
         aria-live="polite"
         aria-atomic="true"
       >
         {announcement}
       </p>
-    </footer>
+    </section>
   )
 }

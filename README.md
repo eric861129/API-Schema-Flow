@@ -31,6 +31,8 @@ The current implementation provides:
 
 ## Try the browser review workspace
 
+The interface defaults to Traditional Chinese. Select English from the language menu in the top bar; the browser remembers your preference. Switching languages preserves decisions and layout. API paths, field names, source content, and exported data keep their original values. The instructions below use the English labels.
+
 **Decisions auto-save to IndexedDB. Wait for Saved locally before closing. Import/export uses the same Decision Set JSON format as the CLI.**
 
 After installing dependencies and building the workspace packages:
@@ -41,7 +43,7 @@ pnpm build
 pnpm dev:web
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`. This build loads the bundled Reservation snapshot; arbitrary spec import and `schema-flow open` are not implemented.
+Open the local URL printed by Vite, normally `http://localhost:5173`. This build loads the bundled Reservation snapshot; use the local import command below to open your own specification.
 
 1. Select **Inference Review** in the left navigation. Use search, confidence, and review-state filters to find a candidate.
 2. Set **Review state → All** to include the snapshot's existing decisions. Select the candidate from `POST /auth/login` to `GET /spaces/available`.
@@ -60,9 +62,9 @@ Local persistence is scoped to the project fingerprint and source revision. Sema
 
 Storage errors leave the current session usable for export. **Back up stored data** downloads the original record; **Reset saved data** requires confirmation and affects only the current project/source key. **Reload saved data** replaces the current local session with the saved version, so export unsaved decisions first. Concurrent tabs use generation checks and cannot silently overwrite one another. Stored records include schema and tool versions. Storage payload version 2 includes layout; version 1 records remain readable with default layout and are rewritten only on the next user change. The IndexedDB store remains database version 1; unknown versions or changed baselines are preserved for recovery, not automatically migrated or overwritten.
 
-On the Project Save/Load development branch, **Project → Save Project** downloads a deterministic `schema-flow-project.json` containing the current source fingerprint/revision, decisions, Undo history, and separate topology/review layout data. This file is distinct from the CLI configuration and Decision Set formats. It references the currently loaded source and does not embed source documents or load URLs.
+**Project → Save Project** downloads a deterministic `schema-flow-project.json` containing the current source fingerprint/revision, decisions, Undo history, and separate topology/review layout data. This file is distinct from the CLI configuration and Decision Set formats. It references the currently loaded source and does not embed source documents or load URLs.
 
-**Load Project** validates the complete file, then previews replacement. **Apply project** replaces decisions and both layouts together; **Cancel load** leaves the current project unchanged. Save a backup before replacing the current session. Different source fingerprints/revisions, changed baselines, unknown versions, invalid node IDs/coordinates, and files over 5 MB are rejected without modifying the workspace. Only the currently supported Reservation source is available; arbitrary specification import remains future work.
+**Load Project** validates the complete file, then previews replacement. **Apply project** replaces decisions and both layouts together; **Cancel load** leaves the current project unchanged. Save a backup before replacing the current session. Different source fingerprints/revisions, changed baselines, unknown versions, invalid node IDs/coordinates, and files over 5 MB are rejected without modifying the workspace. Open the same local source with the same content before loading its project file.
 
 Drag nodes or pan/zoom either canvas to save its positions and viewport locally. Horizontal/Vertical changes rearrange both canvases; selecting the current direction keeps manual layout. **Project → Reset layout** restores automatic layout without changing decisions. **Save Project** works with autosave disabled; loading a project keeps the existing autosave preference. Versioned layout contains stable IDs and finite coordinates only, never React Flow or ELK objects. Windows and Linux visual baselines cover both desktop sizes; ordinary PR CI verifies the committed baselines before merge.
 
@@ -204,9 +206,9 @@ API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 | OpenAPI normalization | Stable IDs, source pointers, schemas, security, servers, Link Objects, compatibility and ambiguity diagnostics | Continue feeding normalized fields into flow and inference layers |
 | Arazzo core | Arazzo 1.1.x parse/preserve, semantic validation, Runtime Expression AST, DAG analysis, URI and abstract operation resolution, support profile | Visual editing and supported-subset execution |
 | Declared flow graph | OpenAPI Links and Arazzo step order, `dependsOn`, and Runtime Expression mappings become versioned declared/accepted graphs | Shared input for inference, review UI, export, execution, and change impact |
-| Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject/Edit drafts | Project-file persistence |
-| CLI | `validate`, `infer`, `review`, and `export-arazzo` are implemented | `open`, `mock`, `run`, Mermaid export, and report export planned |
-| Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Arbitrary source import and workflow authoring |
+| Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject/Edit drafts | Cross-source project migration |
+| CLI | `validate`, `infer`, `review`, `export-arazzo`, and local-file `open` are implemented | `mock`, `run`, Mermaid export, and report export planned |
+| Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Workflow authoring |
 | Dependency discovery | Evidence, Accept/Reject, Undo, draft topology, and M3-B2 mapping editing; candidates are never auto-accepted | Additional workflow authoring |
 | Stateful mocking | Not implemented | In-memory CRUD lifecycle, deterministic seed, session isolation, reset, and snapshot |
 | Workflow execution | Not implemented | Synchronous OpenAPI steps, mappings, outputs, criteria, timeout, and bounded retry |
@@ -365,3 +367,20 @@ The project is local-first and sends no telemetry by default. Remote OpenAPI sou
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
+
+## Open a local OpenAPI workspace
+
+After `pnpm install --frozen-lockfile` and `pnpm build`, run from the repository root:
+
+```bash
+node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
+```
+
+Open the complete printed URL in Chrome or Edge, including its `#workspace=…` fragment. Keep the process running. This source-checkout command accepts local JSON/YAML and local references beneath the source directory. It does not call business APIs or fetch remote references. The read-only server binds only to `127.0.0.1`; its private snapshot requires a per-launch token. Do not share that URL. Normalized examples/defaults are omitted, but schema descriptions and source paths can still be private: keep specifications and exports outside public repositories.
+
+1. In **Inference Review**, inspect evidence and use **Edit Mapping** or Accept/Reject. Candidate scores do not prove business correctness; nullable/required/type checks can block an edit.
+2. Wait for **Saved locally**, then use **Project → Save Project** for a portable backup of decisions, Undo history, and layout. The source itself is not embedded; keep the original specification.
+3. Reload, or stop with Ctrl+C and rerun the command with the same file and port. Use the new printed token URL. The same browser profile/origin restores IndexedDB state; use **Project → Load Project → Apply project** to restore a backup in another profile.
+4. **Export Decision Set** downloads the CLI-compatible decisions. This is distinct from exporting an executable Arazzo workflow, which still requires an explicit workflow plan through `export-arazzo`.
+
+Source acquisition retains the default 5 MiB per-document and 20 MiB aggregate limits; normalized workspace responses are capped at 64 MiB. Inference retains bounded pair/depth budgets and displays diagnostics, so candidates may be incomplete. Time-truncated inference is rejected to keep saved sessions reproducible. Specifications above 200 operations open in Outline; filter to at most 200 endpoints before using Topology. The review draft canvas is disabled above that limit; mapping and summary remain available. This is a local import preview, not workflow execution or a production-readiness claim.

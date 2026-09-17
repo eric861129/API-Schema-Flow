@@ -42,7 +42,7 @@ describe('loadWorkspaceSnapshot', () => {
     await expectLoadError(
       loadWorkspaceSnapshot('/fixture.json', fetcher),
       'network',
-      'The Reservation workspace could not be loaded. Check the local server and retry.',
+      'The API workspace could not be loaded. Check the local server and retry.',
     )
   })
 
@@ -50,7 +50,7 @@ describe('loadWorkspaceSnapshot', () => {
     await expectLoadError(
       loadWorkspaceSnapshot('/fixture.json', jsonResponse({}, 503)),
       'network',
-      'The Reservation workspace returned HTTP 503.',
+      'The API workspace returned HTTP 503.',
     )
   })
 

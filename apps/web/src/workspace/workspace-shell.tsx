@@ -8,12 +8,15 @@ import { OperationsPanel } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
 import { DiagnosticsDrawer } from '../diagnostics/diagnostics-drawer'
 import { FlowCanvas } from '../graph/flow-canvas'
+import { MAX_CANVAS_OPERATIONS } from '../graph/canvas-limits'
 import { InspectorPanel } from '../inspector/inspector-panel'
 import { OutlineView } from '../outline/outline-view'
 import { DEFAULT_WORKSPACE_LAYOUT } from '../project/workspace-layout'
 import { ProjectControls } from '../project/project-controls'
 import { ReviewSessionProvider, useReviewSession } from '../review/review-session-context'
 import { ReviewWorkspace } from '../review/review-workspace'
+import { LanguageSwitcher } from '../language-switcher'
+import { useI18n } from '../i18n'
 import { buildOperationViewModels, filterOperationViewModels } from './operation-view-model'
 import { WorkspaceNavigation, type WorkspaceDestination } from './workspace-navigation'
 
@@ -35,6 +38,7 @@ export function WorkspaceShell({ snapshot }: { readonly snapshot: WorkspaceSnaps
 
 function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }) {
   const { state, dispatch } = useReviewSession()
+  const { t } = useI18n()
   const workspaceLayout = state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT
   const direction = workspaceLayout.direction
   const setDirection = (value: FlowLayoutDirection) => {
@@ -46,7 +50,9 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
     })
   }
   const [selected, setSelected] = useState<SelectedElement>(null)
-  const [destination, setDestination] = useState<WorkspaceDestination>('topology')
+  const [destination, setDestination] = useState<WorkspaceDestination>(
+    snapshot.acceptedGraph.nodes.length > MAX_CANVAS_OPERATIONS ? 'outline' : 'topology',
+  )
   const [query, setQuery] = useState('')
   const [methods, setMethods] = useState<readonly HttpMethod[]>([])
   const [operationsOpen, setOperationsOpen] = useState(true)
@@ -54,27 +60,49 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
   const [layoutDirection, setLayoutDirection] = useState<FlowLayoutDirection | null>(null)
   const [layout, setLayout] = useState<PositionedFlowGraph>(emptyLayout)
+  const [layoutInput, setLayoutInput] = useState<WorkspaceSnapshot['acceptedGraph'] | null>(null)
+  const models = useMemo(() => buildOperationViewModels(snapshot), [snapshot])
+  const visibleModels = useMemo(
+    () => filterOperationViewModels(models, { query, methods }),
+    [methods, models, query],
+  )
+  const visibleGraph = useMemo(() => {
+    const graph = snapshot.acceptedGraph
+    const ids = new Set(visibleModels.map((model) => model.nodeId))
+    return {
+      ...graph,
+      nodes: graph.nodes.filter((node) => ids.has(node.id)),
+      edges: graph.edges.filter((edge) => ids.has(edge.sourceNodeId) && ids.has(edge.targetNodeId)),
+    }
+  }, [snapshot, visibleModels])
+  const layoutGraph =
+    snapshot.acceptedGraph.nodes.length <= MAX_CANVAS_OPERATIONS
+      ? snapshot.acceptedGraph
+      : visibleGraph
 
   useEffect(() => {
+    if (layoutGraph.nodes.length > MAX_CANVAS_OPERATIONS) return
     let cancelled = false
     import('@api-schema-flow/layout')
       .then(({ createElkFlowLayoutEngine }) =>
-        createElkFlowLayoutEngine().layout(snapshot.acceptedGraph, { direction }),
+        createElkFlowLayoutEngine().layout(layoutGraph, { direction }),
       )
       .then((result) => {
         if (!cancelled) {
           setLayout(result)
+          setLayoutInput(layoutGraph)
           setLayoutDirection(direction)
         }
       })
       .catch(() => {
         if (!cancelled) {
+          setLayoutInput(layoutGraph)
           setLayoutDirection(direction)
           setLayout({
-            graphId: snapshot.acceptedGraph.id,
+            graphId: layoutGraph.id,
             width: 0,
             height: 0,
-            nodes: snapshot.acceptedGraph.nodes.map((node, index) => ({
+            nodes: layoutGraph.nodes.map((node, index) => ({
               id: node.id,
               x: index * 330,
               y: 120,
@@ -88,13 +116,7 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
     return () => {
       cancelled = true
     }
-  }, [direction, snapshot])
-
-  const models = useMemo(() => buildOperationViewModels(snapshot), [snapshot])
-  const visibleModels = useMemo(
-    () => filterOperationViewModels(models, { query, methods }),
-    [methods, models, query],
-  )
+  }, [direction, layoutGraph])
   const reviewActive = destination === 'inference-review'
 
   function select(value: SelectedElement) {
@@ -105,7 +127,7 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
   return (
     <>
       <main
-        aria-label="API Schema Flow workspace"
+        aria-label={t('API Schema Flow workspace')}
         className={
           'workspace' +
           (reviewActive ? ' review-active' : '') +
@@ -120,7 +142,9 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
             </div>
             <div>
               <strong>API Schema Flow</strong>
-              <small>{reviewActive ? 'Inference review workspace' : 'Read-only workspace'}</small>
+              <small>
+                {t(reviewActive ? 'Inference review workspace' : 'Read-only workspace')}
+              </small>
             </div>
           </div>
           <div className="project-context">
@@ -129,20 +153,21 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
             <span className="version-chip">OpenAPI {snapshot.project.openapiVersion}</span>
           </div>
           <ProjectControls />
-          <div className="view-actions" aria-label="Topology direction">
+          <LanguageSwitcher />
+          <div className="view-actions" aria-label={t('Topology direction')}>
             <button
               type="button"
               aria-pressed={direction === 'right'}
               onClick={() => setDirection('right')}
             >
-              Horizontal
+              {t('Horizontal')}
             </button>
             <button
               type="button"
               aria-pressed={direction === 'down'}
               onClick={() => setDirection('down')}
             >
-              Vertical
+              {t('Vertical')}
             </button>
           </div>
         </header>
@@ -152,9 +177,7 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
           diagnosticsOpen={diagnosticsOpen}
           onDestinationChange={setDestination}
           onToggleDiagnostics={() => setDiagnosticsOpen((open) => !open)}
-          onShowAbout={() =>
-            window.alert('API Schema Flow M3-B1 · Review-ready Reservation workspace')
-          }
+          onShowAbout={() => window.alert(t('API Schema Flow · Local API review workspace'))}
         />
 
         {!reviewActive ? (
@@ -174,42 +197,48 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
               type="button"
               className="reopen-operations"
               onClick={() => setOperationsOpen(true)}
-              aria-label="Open operations panel"
+              aria-label={t('Open operations panel')}
             >
               ›
             </button>
           )
         ) : null}
 
-        <div className={'main-region' + (reviewActive ? ' review-main-region' : '')}>
+        <div
+          className={
+            'main-region' +
+            (reviewActive ? ' review-main-region' : '') +
+            (destination === 'outline' ? ' outline-main-region' : '')
+          }
+        >
           {reviewActive ? (
             <ReviewWorkspace />
           ) : destination === 'topology' ? (
             <>
               <div className="canvas-header">
                 <div>
-                  <span className="eyebrow">ACCEPTED TOPOLOGY</span>
+                  <span className="eyebrow">{t('ACCEPTED TOPOLOGY')}</span>
                   <strong>
-                    {visibleModels.length} of {models.length} endpoints
+                    {t('{{visible}} of {{total}} endpoints', {
+                      visible: visibleModels.length,
+                      total: models.length,
+                    })}
                   </strong>
                 </div>
-                <p>Explore confirmed data movement without changing the specification.</p>
+                <p>{t('Explore confirmed data movement without changing the specification.')}</p>
               </div>
-              {layout.graphId === snapshot.acceptedGraph.id && layoutDirection === direction ? (
+              {layoutGraph.nodes.length > MAX_CANVAS_OPERATIONS ? (
+                <p role="status">
+                  {t(
+                    'Large workspace: filter to {{limit}} or fewer endpoints for the canvas, or use Outline to inspect all operations.',
+                    { limit: MAX_CANVAS_OPERATIONS },
+                  )}
+                </p>
+              ) : layoutInput === layoutGraph && layoutDirection === direction ? (
                 <FlowCanvas
                   snapshot={{
                     ...snapshot,
-                    acceptedGraph: {
-                      ...snapshot.acceptedGraph,
-                      nodes: snapshot.acceptedGraph.nodes.filter((node) =>
-                        visibleModels.some((model) => model.nodeId === node.id),
-                      ),
-                      edges: snapshot.acceptedGraph.edges.filter(
-                        (edge) =>
-                          visibleModels.some((model) => model.nodeId === edge.sourceNodeId) &&
-                          visibleModels.some((model) => model.nodeId === edge.targetNodeId),
-                      ),
-                    },
+                    acceptedGraph: visibleGraph,
                   }}
                   key={`topology-${direction}-${state.layoutRevision ?? 0}`}
                   canvasLayout={workspaceLayout.topology}
@@ -224,7 +253,7 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
                   onSelect={select}
                 />
               ) : (
-                <p role="status">Arranging topology…</p>
+                <p role="status">{t('Arranging topology…')}</p>
               )}
             </>
           ) : (
@@ -241,7 +270,7 @@ function WorkspaceContent({ snapshot }: { readonly snapshot: WorkspaceSnapshot }
           />
         ) : !reviewActive && selected ? (
           <button type="button" className="reopen-inspector" onClick={() => setInspectorOpen(true)}>
-            Open inspector
+            {t('Open inspector')}
           </button>
         ) : null}
 

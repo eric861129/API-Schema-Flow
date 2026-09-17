@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useMemo, useRef } from 'react'
 import {
   Background,
@@ -32,6 +33,7 @@ interface EndpointData extends Record<string, unknown> {
 }
 
 function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
+  const { t } = useTranslation()
   return (
     <article
       className={'endpoint-node' + (data.selected ? ' is-selected' : '')}
@@ -44,9 +46,12 @@ function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
       </div>
       <p>{data.operation.summary ?? data.operation.operationId}</p>
       <footer>
-        <span>{data.operation.tags[0] ?? 'Untagged'}</span>
+        <span>{data.operation.tags[0] ?? t('Untagged')}</span>
         <span>
-          {data.incoming} in · {data.outgoing} out
+          {t('{{incoming}} in · {{outgoing}} out', {
+            incoming: data.incoming,
+            outgoing: data.outgoing,
+          })}
         </span>
       </footer>
       <Handle type="source" position={Position.Right} isConnectable={false} />
@@ -122,6 +127,7 @@ export function FlowCanvas({
   onSelect,
   ariaLabel = 'Accepted API topology',
 }: FlowCanvasProps) {
+  const { t } = useTranslation()
   const interacted = useRef(false)
   const editable = Boolean(onCanvasLayoutChange)
   const operationById = useMemo(
@@ -184,7 +190,7 @@ export function FlowCanvas({
   return (
     <section
       className="canvas-region"
-      aria-label={ariaLabel}
+      aria-label={t(ariaLabel)}
       onPointerDown={() => {
         interacted.current = true
       }}
@@ -193,6 +199,23 @@ export function FlowCanvas({
       }}
     >
       <ReactFlow
+        ariaLabelConfig={{
+          'controls.zoomIn.ariaLabel': t('Zoom In'),
+          'controls.zoomOut.ariaLabel': t('Zoom Out'),
+          'controls.fitView.ariaLabel': t('Fit View'),
+          'node.a11yDescription.default': t(
+            'Press enter or space to select a node. Press escape to cancel.',
+          ),
+          'node.a11yDescription.keyboardDisabled': t(
+            'Press enter or space to select a node. Use arrow keys to move it. Press escape to cancel.',
+          ),
+          'node.a11yDescription.ariaLiveMessage': ({ x, y }) =>
+            t('Node moved to {{x}}, {{y}}.', { x, y }),
+          'edge.a11yDescription.default': t(
+            'Press enter or space to select a relationship. Press escape to cancel.',
+          ),
+          'handle.ariaLabel': t('Graph connection point'),
+        }}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -236,7 +259,7 @@ export function FlowCanvas({
         onEdgeClick={(_, edge) => onSelect({ kind: 'edge', id: edge.id })}
       >
         <Background gap={22} size={1} color="#18314a" />
-        <Controls showInteractive={false} />
+        <Controls showInteractive={false} aria-label={t('Graph controls')} />
       </ReactFlow>
     </section>
   )

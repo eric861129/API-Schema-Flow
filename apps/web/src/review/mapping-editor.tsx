@@ -8,6 +8,7 @@ import {
   type MappingField,
 } from './mapping-editor-model'
 import { selectorLabel, targetLabel } from './review-workspace-adapter'
+import { useI18n } from '../i18n'
 import './mapping-editor.css'
 
 function FieldPicker<T>({
@@ -25,6 +26,7 @@ function FieldPicker<T>({
   readonly onSelect: (id: string) => void
   readonly onIndex: (index: number, value: string) => void
 }) {
+  const { localize, t } = useI18n()
   const id = useId()
   const field = fields.find((item) => item.id === selected)
   return (
@@ -32,7 +34,7 @@ function FieldPicker<T>({
       <legend>{title}</legend>
       <div className="mapping-field-tree">
         {fields.length === 0 ? (
-          <p>No supported fields in this schema.</p>
+          <p>{t('No supported fields in this schema.')}</p>
         ) : (
           fields.map((item) => (
             <label key={item.id}>
@@ -47,8 +49,8 @@ function FieldPicker<T>({
                 <code>{item.label}</code>
                 <small>
                   {item.schema.types.join(' | ') || 'unknown'} ·{' '}
-                  {item.required ? 'required' : 'optional'}
-                  {item.unavailable ? ` · ${item.unavailable}` : ''}
+                  {item.required ? t('required') : t('optional')}
+                  {item.unavailable ? ` · ${localize(item.unavailable)}` : ''}
                 </small>
               </span>
             </label>
@@ -57,11 +59,11 @@ function FieldPicker<T>({
       </div>
       {field?.arraySlots.map((slot, index) => (
         <label className="mapping-index" key={slot}>
-          {title} array index {index + 1}
+          {t('{{title}} array index {{index}}', { title, index: index + 1 })}
           <input
             inputMode="numeric"
             value={indices[index] ?? ''}
-            placeholder="Choose index, e.g. 0"
+            placeholder={t('Choose index, e.g. 0')}
             onChange={(event) => onIndex(index, event.currentTarget.value)}
           />
         </label>
@@ -84,6 +86,7 @@ export function MappingEditor({
   readonly onCancel: () => void
   readonly onApply: (mapping: FlowDataMapping) => void
 }) {
+  const { localize, t } = useI18n()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const catalog = useMemo(() => createMappingCatalog(snapshot, candidate), [snapshot, candidate])
@@ -116,9 +119,9 @@ export function MappingEditor({
   const example = sourceField?.schema.example ?? sourceField?.schema.defaultValue
   const exampleText =
     example === undefined
-      ? 'No schema example available.'
+      ? t('No schema example available.')
       : /token|password|secret/i.test(sourceField?.label ?? '')
-        ? 'Sensitive example redacted.'
+        ? t('Sensitive example redacted.')
         : template
           ? template.replace('{$value}', String(example))
           : JSON.stringify(example)
@@ -165,12 +168,12 @@ export function MappingEditor({
         }}
       >
         <header>
-          <h2 id={titleId}>Edit Mapping</h2>
-          <p>Select fields for this candidate. Applying creates a manual mapping.</p>
+          <h2 id={titleId}>{t('Edit Mapping')}</h2>
+          <p>{t('Select fields for this candidate. Applying creates a manual mapping.')}</p>
         </header>
         <div className="mapping-editor-columns">
           <FieldPicker
-            title="Source response"
+            title={t('Source response')}
             fields={catalog.sources}
             selected={source.id}
             indices={source.indices}
@@ -186,7 +189,7 @@ export function MappingEditor({
             }
           />
           <FieldPicker
-            title="Target request"
+            title={t('Target request')}
             fields={catalog.targets}
             selected={target.id}
             indices={target.indices}
@@ -203,24 +206,30 @@ export function MappingEditor({
           />
         </div>
         <label className="mapping-transform">
-          Transform template (optional)
+          {t('Transform template (optional)')}
           <input
             value={template}
-            placeholder="Bearer {$value}"
+            placeholder={t('Bearer {$value}')}
             onChange={(event) => setTemplate(event.currentTarget.value)}
           />
-          <small>Use one {'{$value}'} placeholder. No scripts or expressions are executed.</small>
+          <small>
+            {t('Use one {$value} placeholder. No scripts or expressions are executed.')}
+          </small>
         </label>
-        <section className="mapping-validation" aria-label="Mapping validation" aria-live="polite">
+        <section
+          className="mapping-validation"
+          aria-label={t('Mapping validation')}
+          aria-live="polite"
+        >
           {validation.errors.length ? (
             <ul>
               {validation.errors.map((error) => (
-                <li key={error}>{error}</li>
+                <li key={error}>{localize(error)}</li>
               ))}
             </ul>
           ) : (
             <>
-              <p>Mapping is compatible.</p>
+              <p>{t('Mapping is compatible.')}</p>
               <code>
                 {selectorLabel(validation.mapping!.source)} →{' '}
                 {targetLabel(validation.mapping!.target)}
@@ -229,29 +238,31 @@ export function MappingEditor({
           )}
           {validation.mapping ? (
             <p>
-              Runtime expression preview:{' '}
+              {t('Runtime expression preview:')}{' '}
               <code>
                 {validation.mapping.transform?.raw ?? selectorLabel(validation.mapping.source)}
               </code>
             </p>
           ) : null}
-          <p>Example preview: {exampleText}</p>
+          <p>{t('Example preview: {{example}}', { example: exampleText })}</p>
           <p>
-            Arazzo:{' '}
+            {t('Arazzo:')}{' '}
             {validation.mapping
               ? validation.mapping.target.kind === 'request-body' &&
                 /\/(?:0|[1-9]\d*)(?:\/|$)/.test(validation.mapping.target.pointer)
-                ? 'Array request-body targets are not supported by the current exporter.'
-                : 'Supported mapping shape; workflow binding and ordering still require export validation.'
-              : 'Unavailable until mapping validation passes.'}
+                ? t('Array request-body targets are not supported by the current exporter.')
+                : t(
+                    'Supported mapping shape; workflow binding and ordering still require export validation.',
+                  )
+              : t('Unavailable until mapping validation passes.')}
           </p>
         </section>
         <footer className="review-dialog-buttons">
           <button type="button" onClick={onCancel}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="submit" disabled={!validation.mapping}>
-            Apply mapping
+            {t('Apply mapping')}
           </button>
         </footer>
       </form>

@@ -11,6 +11,7 @@ import {
 } from 'react'
 
 import type { WorkspaceSnapshot } from '../data/types'
+import { useI18n } from '../i18n'
 import { deriveBaselineRevisions } from './decision-factory'
 import { useReviewPersistence } from './use-review-persistence'
 import { materializeReviewSession, type ReviewSessionMaterialization } from './review-engine'
@@ -59,6 +60,7 @@ function ReviewSessionProviderInstance({
   readonly snapshot: WorkspaceSnapshot
   readonly children: ReactNode
 }) {
+  const { t } = useI18n()
   const [state, dispatch] = useReducer(reviewSessionReducer, snapshot, initializeReviewSession)
   const persistence = useReviewPersistence(snapshot, state, dispatch)
   // 還原期間保留已掛載的工作區與導覽狀態，暫停操作而不重建整個畫面。
@@ -138,7 +140,7 @@ function ReviewSessionProviderInstance({
           {children}
         </div>
       ) : (
-        <p role="status">Loading saved decisions…</p>
+        <p role="status">{t('Loading saved decisions…')}</p>
       )}
     </ReviewSessionContext.Provider>
   )

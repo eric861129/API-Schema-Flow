@@ -6,6 +6,7 @@ import type {
   ReviewConfidenceBand,
   ReviewSessionFilters,
 } from './review-session'
+import { useI18n } from '../i18n'
 
 export interface ReviewFiltersProps {
   readonly filters: ReviewSessionFilters
@@ -46,53 +47,58 @@ export function ReviewFilters({
   onSortChange,
   onReset,
 }: ReviewFiltersProps) {
+  const { status, t } = useI18n()
+  const reviewStateLabel = (state: ReviewCandidateStateFilter) =>
+    status(
+      state === 'needs-attention' ? 'Needs attention' : state[0]?.toUpperCase() + state.slice(1),
+    )
   return (
-    <div className="review-filters" aria-label="Review candidate filters">
+    <div className="review-filters" aria-label={t('Review candidate filters')}>
       <label className="review-search-field">
-        <span>Search</span>
+        <span>{t('Search')}</span>
         <input
           ref={searchInputRef}
           type="search"
           value={filters.query}
-          aria-label="Search review candidates"
-          placeholder="Path, operation, selector…"
+          aria-label={t('Search review candidates')}
+          placeholder={t('Path, operation, selector…')}
           onChange={(event) => onQueryChange(event.currentTarget.value)}
         />
       </label>
 
-      <div className="review-filter-group" aria-label="Confidence filters">
-        <span className="review-filter-group__label">Confidence</span>
+      <div className="review-filter-group" aria-label={t('Confidence filters')}>
+        <span className="review-filter-group__label">{t('Confidence')}</span>
         <div className="review-filter-pills">
           {CONFIDENCE_OPTIONS.map(({ band, label }) => (
             <button
               key={band}
               type="button"
               className="review-filter-pill"
-              aria-label={`${label} confidence`}
+              aria-label={t(`${label} confidence`)}
               aria-pressed={filters.confidenceBands.includes(band)}
               onClick={() => onToggleConfidence(band)}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
       </div>
 
       <label className="review-select-field">
-        <span>Review state</span>
+        <span>{t('Review state')}</span>
         <select
-          aria-label="Review state"
+          aria-label={t('Review state')}
           value={filters.reviewState}
           onChange={(event) =>
             onReviewStateChange(event.currentTarget.value as ReviewCandidateStateFilter)
           }
         >
-          <option value="pending">Pending</option>
-          <option value="accepted">Accepted</option>
-          <option value="rejected">Rejected</option>
-          <option value="edited">Edited</option>
-          <option value="needs-attention">Needs attention</option>
-          <option value="all">All</option>
+          <option value="pending">{reviewStateLabel('pending')}</option>
+          <option value="accepted">{reviewStateLabel('accepted')}</option>
+          <option value="rejected">{reviewStateLabel('rejected')}</option>
+          <option value="edited">{reviewStateLabel('edited')}</option>
+          <option value="needs-attention">{reviewStateLabel('needs-attention')}</option>
+          <option value="all">{reviewStateLabel('all')}</option>
         </select>
       </label>
 
@@ -100,45 +106,45 @@ export function ReviewFilters({
         <input
           type="checkbox"
           checked={filters.hasBlockersOnly}
-          aria-label="Has blockers only"
+          aria-label={t('Has blockers only')}
           onChange={(event) => onBlockersOnlyChange(event.currentTarget.checked)}
         />
-        <span>Has blockers only</span>
+        <span>{t('Has blockers only')}</span>
       </label>
 
       <label className="review-select-field">
-        <span>Sort</span>
+        <span>{t('Sort')}</span>
         <select
-          aria-label="Sort candidates"
+          aria-label={t('Sort candidates')}
           value={sort}
           onChange={(event) => onSortChange(event.currentTarget.value as ReviewCandidateSort)}
         >
-          <option value="confidence-desc">Confidence</option>
-          <option value="source-endpoint">Source endpoint</option>
-          <option value="target-endpoint">Target endpoint</option>
-          <option value="review-state">Review state</option>
+          <option value="confidence-desc">{t('Confidence')}</option>
+          <option value="source-endpoint">{t('Source endpoint')}</option>
+          <option value="target-endpoint">{t('Target endpoint')}</option>
+          <option value="review-state">{t('Review state')}</option>
         </select>
       </label>
 
       <div className="review-filter-status">
         <span>
-          {visibleCount} of {totalCount} candidates
+          {t('{{visible}} of {{total}} candidates', { visible: visibleCount, total: totalCount })}
         </span>
         <button type="button" className="text-button" onClick={onReset}>
-          Reset filters
+          {t('Reset filters')}
         </button>
       </div>
 
       {empty && totalCount > 0 ? (
         <div className="review-filter-empty" role="status">
-          <span>No candidates match the current review filters.</span>
+          <span>{t('No candidates match the current review filters.')}</span>
           <button
             type="button"
             className="secondary-button"
             onClick={onReset}
-            aria-label="Reset review filters"
+            aria-label={t('Reset review filters')}
           >
-            Reset review filters
+            {t('Reset review filters')}
           </button>
         </div>
       ) : null}

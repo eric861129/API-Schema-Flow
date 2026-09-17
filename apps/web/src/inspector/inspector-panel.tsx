@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import type {
   EndpointFlowNode,
   FlowEdge,
@@ -10,12 +12,13 @@ import type {
 import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
 
-function schemaText(schema: NormalizedSchema | undefined): string {
-  if (!schema) return 'No schema declared'
-  if (schema.types.includes('array')) return 'array of ' + schemaText(schema.items)
+function schemaText(schema: NormalizedSchema | undefined, t: TFunction): string {
+  if (!schema) return t('No schema declared')
+  if (schema.types.includes('array'))
+    return t('array of {{schema}}', { schema: schemaText(schema.items, t) })
 
   const properties = Object.keys(schema.properties)
-  const type = schema.types.join(' | ') || 'unknown'
+  const type = schema.types.join(' | ') || t('unknown')
   return properties.length > 0
     ? type + ' · ' + properties.join(', ')
     : schema.format
@@ -61,6 +64,7 @@ function NodeInspector({
   readonly snapshot: WorkspaceSnapshot
   readonly onSelect: (selected: SelectedElement) => void
 }) {
+  const { t } = useTranslation()
   const node = snapshot.acceptedGraph.nodes
     .filter(isEndpointNode)
     .find((item) => item.operationKey === operation.id)
@@ -75,22 +79,22 @@ function NodeInspector({
       </div>
       <p className="inspector-summary">{operation.summary ?? operation.operationId}</p>
       <section>
-        <h3>Overview</h3>
+        <h3>{t('Overview')}</h3>
         <dl>
           <div>
-            <dt>Operation ID</dt>
-            <dd>{operation.operationId ?? 'Not declared'}</dd>
+            <dt>{t('Operation ID')}</dt>
+            <dd>{operation.operationId ?? t('Not declared')}</dd>
           </div>
           <div>
-            <dt>Tags</dt>
-            <dd>{operation.tags.join(', ') || 'Untagged'}</dd>
+            <dt>{t('Tags')}</dt>
+            <dd>{operation.tags.join(', ') || t('Untagged')}</dd>
           </div>
           <div>
-            <dt>Security</dt>
-            <dd>{operation.security.length > 0 ? 'Required' : 'Public'}</dd>
+            <dt>{t('Security')}</dt>
+            <dd>{operation.security.length > 0 ? t('Authentication required') : t('Public')}</dd>
           </div>
           <div>
-            <dt>Source</dt>
+            <dt>{t('Source')}</dt>
             <dd>
               <code>{operation.source.pointer}</code>
             </dd>
@@ -98,39 +102,41 @@ function NodeInspector({
         </dl>
       </section>
       <section>
-        <h3>Request</h3>
+        <h3>{t('Request')}</h3>
         {operation.parameters.length === 0 && !operation.requestBody ? (
-          <p className="muted">No request payload.</p>
+          <p className="muted">{t('No request payload.')}</p>
         ) : null}
         {operation.parameters.map((parameter) => (
           <div className="schema-line" key={parameter.location + parameter.name}>
             <strong>
               {parameter.location}.{parameter.name}
             </strong>
-            <span>{schemaText(parameter.schema)}</span>
+            <span>{schemaText(parameter.schema, t)}</span>
           </div>
         ))}
         {operation.requestBody?.content.map((media) => (
           <div className="schema-line" key={media.mediaType}>
             <strong>{media.mediaType}</strong>
-            <span>{schemaText(media.schema)}</span>
+            <span>{schemaText(media.schema, t)}</span>
           </div>
         ))}
       </section>
       <section>
-        <h3>Responses</h3>
+        <h3>{t('Responses')}</h3>
         {operation.responses.map((response) => (
           <div className="response-line" key={response.statusCode}>
             <strong>{response.statusCode}</strong>
             <span>{response.description}</span>
-            <small>{response.content.map((media) => schemaText(media.schema)).join(' · ')}</small>
+            <small>
+              {response.content.map((media) => schemaText(media.schema, t)).join(' · ')}
+            </small>
           </div>
         ))}
       </section>
       <section>
-        <h3>Connections</h3>
+        <h3>{t('Connections')}</h3>
         {connections.length === 0 ? (
-          <p className="muted">No accepted relationships.</p>
+          <p className="muted">{t('No accepted relationships.')}</p>
         ) : (
           connections.map((edge) => (
             <button
@@ -138,7 +144,7 @@ function NodeInspector({
               key={edge.id}
               onClick={() => onSelect({ kind: 'edge', id: edge.id })}
             >
-              <span>{edge.sourceNodeId === node?.id ? 'Outgoing' : 'Incoming'}</span>
+              <span>{edge.sourceNodeId === node?.id ? t('Outgoing') : t('Incoming')}</span>
               <strong>
                 {edge.mappings[0]
                   ? selectorText(edge.mappings[0].source) +
@@ -146,7 +152,7 @@ function NodeInspector({
                     selectorText(edge.mappings[0].target)
                   : edge.kind}
               </strong>
-              <small>{edge.provenance}</small>
+              <small>{t(edge.provenance)}</small>
             </button>
           ))
         )}
@@ -162,6 +168,7 @@ function EdgeInspector({
   readonly edge: FlowEdge
   readonly snapshot: WorkspaceSnapshot
 }) {
+  const { t } = useTranslation()
   const operationByNode = new Map(
     snapshot.acceptedGraph.nodes
       .filter(isEndpointNode)
@@ -179,49 +186,49 @@ function EdgeInspector({
       <div className="edge-heading">
         <span className={'provenance-token provenance-' + edge.provenance}>
           {edge.provenance === 'inferred'
-            ? 'Accepted inferred'
+            ? t('Accepted inferred')
             : edge.provenance === 'manual'
-              ? 'Manual'
-              : 'Declared'}
+              ? t('Manual')
+              : t('Declared')}
         </span>
-        <span className="accepted-token">Accepted</span>
+        <span className="accepted-token">{t('Accepted')}</span>
       </div>
       <section>
-        <h3>Source</h3>
+        <h3>{t('Source')}</h3>
         <strong>
           {source?.method.toUpperCase()} {source?.path}
         </strong>
         <code className="block-code">
-          {edge.mappings[0] ? selectorText(edge.mappings[0].source) : 'No mapping'}
+          {edge.mappings[0] ? selectorText(edge.mappings[0].source) : t('No mapping')}
         </code>
       </section>
       <section>
-        <h3>Target</h3>
+        <h3>{t('Target')}</h3>
         <strong>
           {target?.method.toUpperCase()} {target?.path}
         </strong>
         <code className="block-code">
-          {edge.mappings[0] ? selectorText(edge.mappings[0].target) : 'No mapping'}
+          {edge.mappings[0] ? selectorText(edge.mappings[0].target) : t('No mapping')}
         </code>
       </section>
       <section>
-        <h3>Review evidence</h3>
+        <h3>{t('Review evidence')}</h3>
         {edge.review ? (
           <>
             <dl>
               <div>
-                <dt>Action</dt>
-                <dd>{action}</dd>
+                <dt>{t('Action')}</dt>
+                <dd>{t(action)}</dd>
               </div>
               <div>
-                <dt>Decision</dt>
+                <dt>{t('Decision')}</dt>
                 <dd>
                   <code>{edge.review.decisionId}</code>
                 </dd>
               </div>
               {edge.review.candidateId ? (
                 <div>
-                  <dt>Candidate</dt>
+                  <dt>{t('Candidate')}</dt>
                   <dd>
                     <code>{edge.review.candidateId}</code>
                   </dd>
@@ -235,11 +242,11 @@ function EdgeInspector({
             </ul>
           </>
         ) : (
-          <p className="muted">Declared by the source specification.</p>
+          <p className="muted">{t('Declared by the source specification.')}</p>
         )}
       </section>
       <section>
-        <h3>Relationship ID</h3>
+        <h3>{t('Relationship ID')}</h3>
         <code className="block-code">{edge.id}</code>
       </section>
     </>
@@ -257,6 +264,7 @@ export function InspectorPanel({
   readonly onClose: () => void
   readonly onSelect: (selected: SelectedElement) => void
 }) {
+  const { t } = useTranslation()
   const node =
     selected.kind === 'node'
       ? snapshot.acceptedGraph.nodes.filter(isEndpointNode).find((item) => item.id === selected.id)
@@ -271,14 +279,14 @@ export function InspectorPanel({
   return (
     <aside
       className="inspector-panel"
-      aria-label={selected.kind === 'node' ? 'Endpoint inspector' : 'Relationship inspector'}
+      aria-label={selected.kind === 'node' ? t('Endpoint inspector') : t('Relationship inspector')}
     >
       <header className="panel-heading">
         <div>
-          <span className="eyebrow">INSPECTOR</span>
-          <strong>{selected.kind === 'node' ? 'Endpoint' : 'Relationship'}</strong>
+          <span className="eyebrow">{t('INSPECTOR')}</span>
+          <strong>{selected.kind === 'node' ? t('Endpoint') : t('Relationship')}</strong>
         </div>
-        <button className="icon-button" onClick={onClose} aria-label="Close inspector">
+        <button className="icon-button" onClick={onClose} aria-label={t('Close inspector')}>
           ×
         </button>
       </header>
@@ -288,7 +296,7 @@ export function InspectorPanel({
         ) : edge ? (
           <EdgeInspector edge={edge} snapshot={snapshot} />
         ) : (
-          <p>Selection is no longer available.</p>
+          <p>{t('Selection is no longer available.')}</p>
         )}
       </div>
     </aside>

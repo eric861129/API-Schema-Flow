@@ -21,6 +21,7 @@ import { executeReviewCommand } from './review-command.js'
 import { parseReviewArguments, REVIEW_USAGE } from './review-options.js'
 import { executeValidateCommand } from './validate-command.js'
 import { parseValidateArguments, VALIDATE_USAGE } from './validate-options.js'
+import { executeOpenCommand, OPEN_USAGE } from './open-command.js'
 
 export interface CliIo {
   readonly stdout: (message: string) => void
@@ -73,6 +74,8 @@ export async function runCli(
   try {
     const [command, ...arguments_] = argv
 
+    if (command === 'open') return await executeOpenCommand(arguments_, io)
+
     if (command === 'validate') {
       const parsed = parseValidateArguments(arguments_)
       if ('error' in parsed) {
@@ -112,7 +115,9 @@ export async function runCli(
       return await executeExportArazzoCommand(parsed.options, dependencies, io)
     }
 
-    io.stderr(`${VALIDATE_USAGE}\n${INFER_USAGE}\n${REVIEW_USAGE}\n${EXPORT_ARAZZO_USAGE}\n`)
+    io.stderr(
+      `${VALIDATE_USAGE}\n${INFER_USAGE}\n${REVIEW_USAGE}\n${EXPORT_ARAZZO_USAGE}\n${OPEN_USAGE}\n`,
+    )
     return 2
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

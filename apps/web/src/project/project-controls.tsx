@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 import { useReviewSession } from '../review/review-session-context'
 import type { ReviewSessionState } from '../review/review-session'
 import { MAX_DECISION_FILE_BYTES } from '../review/review-transfer'
@@ -6,6 +7,7 @@ import { DEFAULT_WORKSPACE_LAYOUT } from './workspace-layout'
 import { parseProject, serializeProject } from './project-file'
 
 function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
+  const { localize, t } = useI18n()
   const { snapshot, state, dispatch, persistence } = useReviewSession()
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -30,7 +32,7 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
         throw new Error('Project file exceeds the 5 MB limit.')
       setIncoming(parseProject(await file.text(), snapshot))
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Cannot load project.')
+      setError(localize(reason instanceof Error ? reason.message : 'Cannot load project.'))
     } finally {
       setBusy(false)
     }
@@ -49,7 +51,7 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
     <dialog
       ref={dialog}
       className="mapping-editor project-dialog"
-      aria-label="Project Save and Load"
+      aria-label={t('Project Save and Load')}
       onCancel={(event) => {
         event.preventDefault()
         onClose()
@@ -65,26 +67,27 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
         buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length]?.focus()
       }}
     >
-      <h2>Project Save / Load</h2>
+      <h2>{t('Project Save / Load')}</h2>
       <p>
-        Save review decisions, Undo history, node positions and canvas views for this source
-        version. Source documents are referenced, not embedded.
+        {t(
+          'Save review decisions, Undo history, node positions and canvas views for this source version. Source documents are referenced, not embedded.',
+        )}
       </p>
-      <p role={persistence.error ? 'alert' : 'status'} aria-label="Project storage status">
-        {persistence.status}
+      <p role={persistence.error ? 'alert' : 'status'} aria-label={t('Project storage status')}>
+        {localize(persistence.status)}
       </p>
       <button type="button" onClick={save}>
-        Save Project
+        {t('Save Project')}
       </button>
       <button type="button" disabled={busy} onClick={() => input.current?.click()}>
-        Load Project
+        {t('Load Project')}
       </button>
       <input
         ref={input}
         type="file"
         hidden
         accept="application/json,.json"
-        aria-label="Project file"
+        aria-label={t('Project file')}
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ''
@@ -92,19 +95,27 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
         }}
       />
       {incoming ? (
-        <section aria-label="Project load preview">
-          <h3>Replace current project state?</h3>
+        <section aria-label={t('Project load preview')}>
+          <h3>{t('Replace current project state?')}</h3>
           <p>
-            {incoming.draftIntents.length} review changes;{' '}
-            {incoming.importedDecisionSet?.decisions.length ?? 0} imported decisions. Layout:{' '}
-            {incoming.workspaceLayout?.direction}.
+            {t(
+              '{{changes}} review changes; {{decisions}} imported decisions. Layout: {{layout}}.',
+              {
+                changes: incoming.draftIntents.length,
+                decisions: incoming.importedDecisionSet?.decisions.length ?? 0,
+                layout: t(
+                  incoming.workspaceLayout?.direction === 'right' ? 'Horizontal' : 'Vertical',
+                ),
+              },
+            )}
           </p>
           <p>
-            This replaces current decisions and both canvas layouts. Save your current project first
-            if you need a backup. Autosave preference remains unchanged.
+            {t(
+              'This replaces current decisions and both canvas layouts. Save your current project first if you need a backup. Autosave preference remains unchanged.',
+            )}
           </p>
           <button type="button" onClick={() => setIncoming(null)}>
-            Cancel load
+            {t('Cancel load')}
           </button>
           <button
             type="button"
@@ -119,11 +130,11 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
               onClose()
             }}
           >
-            Apply project
+            {t('Apply project')}
           </button>
         </section>
       ) : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <p role="alert">{localize(error)}</p> : null}
       <button
         type="button"
         disabled={busy || Boolean(incoming)}
@@ -131,20 +142,21 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
           dispatch({ type: 'set-workspace-layout', layout: DEFAULT_WORKSPACE_LAYOUT, reset: true })
         }
       >
-        Reset layout
+        {t('Reset layout')}
       </button>
       <button type="button" onClick={onClose}>
-        Close project
+        {t('Close project')}
       </button>
     </dialog>
   )
 }
 export function ProjectControls() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   return (
     <>
       <button type="button" className="secondary-button" onClick={() => setOpen(true)}>
-        Project
+        {t('Project')}
       </button>
       {open ? <ProjectDialog onClose={() => setOpen(false)} /> : null}
     </>

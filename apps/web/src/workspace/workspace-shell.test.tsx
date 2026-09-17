@@ -2,7 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { createReviewWorkspaceFixture } from '../test/review-workspace-fixture'
+import {
+  createReviewWorkspaceFixture,
+  fixtureNode,
+  fixtureOperation,
+} from '../test/review-workspace-fixture'
 import { WorkspaceShell } from './workspace-shell'
 
 afterEach(() => {
@@ -10,6 +14,28 @@ afterEach(() => {
 })
 
 describe('WorkspaceShell', () => {
+  test('keeps large specifications in Outline and requires filtering before drawing', async () => {
+    const user = userEvent.setup()
+    const operations = Array.from({ length: 201 }, (_, index) => ({
+      ...fixtureOperation,
+      id: `operation:${index}`,
+      operationId: `operation${index}`,
+      path: `/items/${index}`,
+    }))
+    const nodes = operations.map((operation) => ({
+      ...fixtureNode,
+      id: `node:${operation.id}`,
+      operationKey: operation.id,
+      operationId: operation.operationId,
+      path: operation.path,
+    }))
+    render(<WorkspaceShell snapshot={createReviewWorkspaceFixture({ operations, nodes })} />)
+    expect(screen.getByRole('button', { name: 'Outline' })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: 'Topology' }))
+    expect(screen.getByText(/Large workspace: filter to 200/)).toBeVisible()
+    await user.type(screen.getByPlaceholderText('Search path or operation ID'), '/items/200')
+    expect(screen.queryByText(/Large workspace: filter to 200/)).not.toBeInTheDocument()
+  })
   test('hides M3-A side panels in Review and restores their preserved state in Topology', async () => {
     const user = userEvent.setup()
     vi.spyOn(window, 'alert').mockImplementation(() => undefined)
