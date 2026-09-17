@@ -6,7 +6,13 @@ import { MAX_DECISION_FILE_BYTES } from '../review/review-transfer'
 import { DEFAULT_WORKSPACE_LAYOUT } from './workspace-layout'
 import { parseProject, serializeProject } from './project-file'
 
-function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
+function ProjectDialog({
+  onClose,
+  initialProjectText,
+}: {
+  readonly onClose: () => void
+  readonly initialProjectText?: string
+}) {
   const { localize, t } = useI18n()
   const { snapshot, state, dispatch, persistence } = useReviewSession()
   const dialog = useRef<HTMLDialogElement>(null)
@@ -23,6 +29,14 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
       if (previous instanceof HTMLElement) previous.focus()
     }
   }, [])
+  useEffect(() => {
+    if (!initialProjectText) return
+    try {
+      setIncoming(parseProject(initialProjectText, snapshot))
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Cannot load project.')
+    }
+  }, [initialProjectText, snapshot])
   async function load(file: File) {
     setBusy(true)
     setError('')
@@ -70,7 +84,7 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
       <h2>{t('Project Save / Load')}</h2>
       <p>
         {t(
-          'Save review decisions, Undo history, node positions and canvas views for this source version. Source documents are referenced, not embedded.',
+          'Save review decisions, workflow draft, Undo history, node positions and canvas views for this source version. Source documents are referenced, not embedded.',
         )}
       </p>
       <p role={persistence.error ? 'alert' : 'status'} aria-label={t('Project storage status')}>
@@ -111,7 +125,14 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
           </p>
           <p>
             {t(
-              'This replaces current decisions and both canvas layouts. Save your current project first if you need a backup. Autosave preference remains unchanged.',
+              incoming.workflowDraft
+                ? 'Includes one workflow draft.'
+                : 'No workflow draft in this project.',
+            )}
+          </p>
+          <p>
+            {t(
+              'This replaces current decisions, workflow draft and both canvas layouts. Save your current project first if you need a backup. Autosave preference remains unchanged.',
             )}
           </p>
           <button type="button" onClick={() => setIncoming(null)}>
@@ -123,6 +144,7 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
               dispatch({
                 type: 'restore-decisions',
                 draftIntents: incoming.draftIntents,
+                workflowDraft: incoming.workflowDraft,
                 importedDecisionSet: incoming.importedDecisionSet,
                 baselineRevisions: incoming.baselineRevisions,
                 workspaceLayout: incoming.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,
@@ -150,15 +172,24 @@ function ProjectDialog({ onClose }: { readonly onClose: () => void }) {
     </dialog>
   )
 }
-export function ProjectControls() {
+export function ProjectControls({ initialProjectText }: { readonly initialProjectText?: string }) {
   const { t } = useI18n()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(Boolean(initialProjectText))
+  const [startupText, setStartupText] = useState(initialProjectText)
   return (
     <>
       <button type="button" className="secondary-button" onClick={() => setOpen(true)}>
         {t('Project')}
       </button>
-      {open ? <ProjectDialog onClose={() => setOpen(false)} /> : null}
+      {open ? (
+        <ProjectDialog
+          {...(startupText ? { initialProjectText: startupText } : {})}
+          onClose={() => {
+            setOpen(false)
+            setStartupText(undefined)
+          }}
+        />
+      ) : null}
     </>
   )
 }

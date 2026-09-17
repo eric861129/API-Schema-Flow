@@ -24,6 +24,17 @@ afterEach(() => {
 })
 
 describe('App composition boundary', () => {
+  test('starts with a clear sample, source and reopen choice', async () => {
+    stubWorkspace()
+    const user = userEvent.setup()
+    render(<App />)
+    expect(screen.getByRole('heading', { name: 'Understand an API through a task' })).toBeVisible()
+    expect(screen.getByText(/--project/)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Explore sample workspace' }))
+    expect(await screen.findByRole('main', { name: 'API Schema Flow workspace' })).toBeVisible()
+    expect(window.location.search).toBe('?sample=1')
+  })
+
   test('loads the private local snapshot using the fragment token', async () => {
     window.history.replaceState(null, '', '/#workspace=local-token')
     const fetcher = stubWorkspace()
@@ -43,8 +54,29 @@ describe('App composition boundary', () => {
     await screen.findByRole('heading', { name: 'Workspace unavailable' })
     expect(fetcher).toHaveBeenCalledTimes(1)
     expect(screen.queryByText('Reservation System')).not.toBeInTheDocument()
+    expect(screen.getByText(/local link expires/)).toBeVisible()
+  })
+  test('does not show the workspace when a requested backup cannot be retrieved', async () => {
+    window.history.replaceState(null, '', '/#workspace=local-token&project=1')
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(createReviewWorkspaceFixture()))
+      .mockResolvedValueOnce(new Response('Missing', { status: 404 }))
+    vi.stubGlobal('fetch', fetcher)
+    render(<App />)
+    expect(
+      await screen.findByText('The saved project could not be loaded (HTTP 404).'),
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('main', { name: 'API Schema Flow workspace' }),
+    ).not.toBeInTheDocument()
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/project', {
+      headers: { Authorization: 'Bearer local-token' },
+      cache: 'no-store',
+    })
   })
   test('keeps loading and no-operation states outside the workspace shell', async () => {
+    window.history.replaceState(null, '', '/?sample=1')
     stubWorkspace(createReviewWorkspaceFixture({ operations: [], nodes: [] }))
 
     render(<App />)
@@ -59,6 +91,7 @@ describe('App composition boundary', () => {
   })
 
   test('keeps error and retry behavior in App before rendering the workspace shell', async () => {
+    window.history.replaceState(null, '', '/?sample=1')
     const user = userEvent.setup()
     const snapshot = createReviewWorkspaceFixture()
     const fetcher = vi
@@ -83,6 +116,7 @@ describe('App composition boundary', () => {
   })
 
   test('renders WorkspaceShell for a valid non-empty review snapshot', async () => {
+    window.history.replaceState(null, '', '/?sample=1')
     const snapshot = createReviewWorkspaceFixture()
     stubWorkspace(snapshot)
 

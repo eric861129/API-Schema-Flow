@@ -65,6 +65,7 @@ export function useReviewPersistence(
         dispatch({
           type: 'restore-decisions',
           draftIntents: restored.draftIntents,
+          workflowDraft: restored.workflowDraft,
           importedDecisionSet: restored.importedDecisionSet,
           baselineRevisions: restored.baselineRevisions,
           workspaceLayout: restored.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,

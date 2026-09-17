@@ -13,6 +13,11 @@
       "types": "./dist/node-source-acquirer.d.ts",
       "import": "./dist/node-source-acquirer.js",
       "default": "./dist/node-source-acquirer.js"
+    },
+    "./document": {
+      "types": "./dist/source-document.d.ts",
+      "import": "./dist/source-document.js",
+      "default": "./dist/source-document.js"
     }
   },
   "files": [

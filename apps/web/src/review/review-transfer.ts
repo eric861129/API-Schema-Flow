@@ -15,6 +15,7 @@ import {
   parseWorkspaceLayout,
   type WorkspaceLayoutState,
 } from '../project/workspace-layout'
+import { parseWorkflowDraft, type WorkflowDraft } from '../workflow/workflow-draft'
 
 export const MAX_DECISION_FILE_BYTES = 5 * 1024 * 1024
 
@@ -137,6 +138,7 @@ export interface StoredReview {
   readonly schemaVersion: '2.0'
   readonly toolVersion: string
   readonly workspaceLayout: WorkspaceLayoutState
+  readonly workflowDraft?: WorkflowDraft | undefined
   readonly baseline: string
   readonly draftIntents: readonly ReviewIntent[]
   readonly importedDecisionSet?: ReviewDecisionSet | undefined
@@ -151,6 +153,7 @@ export function encodeStoredReview(
     schemaVersion: '2.0',
     toolVersion,
     workspaceLayout: state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,
+    ...(state.workflowDraft ? { workflowDraft: state.workflowDraft } : {}),
     baseline: serializeDecisionSet(snapshot.reviewDecisionSet),
     draftIntents: state.draftIntents,
     ...(state.importedDecisionSet ? { importedDecisionSet: state.importedDecisionSet } : {}),
@@ -243,6 +246,9 @@ export function decodeStoredReview(
   state = {
     ...state,
     draftIntents: record.draftIntents,
+    ...(record.workflowDraft
+      ? { workflowDraft: parseWorkflowDraft(record.workflowDraft, snapshot) }
+      : {}),
     workspaceLayout: record.workspaceLayout
       ? parseWorkspaceLayout(
           record.workspaceLayout,

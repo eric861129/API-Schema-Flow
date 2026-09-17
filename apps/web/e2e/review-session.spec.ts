@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { expectGraph, loginCandidate, openReview, tabTo, test } from './review-helpers'
 
 test('reproduces the README journey against the unchanged bundled snapshot', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/?sample=1')
   await openReview(page)
   await page.getByRole('combobox', { name: 'Review state' }).selectOption('all')
   await loginCandidate(page).click()

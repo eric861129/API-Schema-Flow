@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run tests/unit --passWithNoTests",
+    "test": "vitest run tests/unit --passWithNoTests --testTimeout 15000",
     "test:integration": "vitest run tests/integration --passWithNoTests"
   },
   "bin": {

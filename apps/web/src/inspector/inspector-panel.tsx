@@ -1,4 +1,4 @@
-import type { TFunction } from 'i18next'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   EndpointFlowNode,
@@ -6,25 +6,12 @@ import type {
   FlowValueSelector,
   FlowValueTarget,
   NormalizedOperation,
-  NormalizedSchema,
 } from '@api-schema-flow/domain'
 
 import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
-
-function schemaText(schema: NormalizedSchema | undefined, t: TFunction): string {
-  if (!schema) return t('No schema declared')
-  if (schema.types.includes('array'))
-    return t('array of {{schema}}', { schema: schemaText(schema.items, t) })
-
-  const properties = Object.keys(schema.properties)
-  const type = schema.types.join(' | ') || t('unknown')
-  return properties.length > 0
-    ? type + ' · ' + properties.join(', ')
-    : schema.format
-      ? type + ' · ' + schema.format
-      : type
-}
+import { createSchemaResolver } from '../review/review-workspace-adapter'
+import { SchemaTree } from './schema-tree'
 
 function selectorText(value: FlowValueSelector | FlowValueTarget): string {
   switch (value.kind) {
@@ -65,6 +52,10 @@ function NodeInspector({
   readonly onSelect: (selected: SelectedElement) => void
 }) {
   const { t } = useTranslation()
+  const resolveSchema = useMemo(
+    () => createSchemaResolver(snapshot.apiDocument),
+    [snapshot.apiDocument],
+  )
   const node = snapshot.acceptedGraph.nodes
     .filter(isEndpointNode)
     .find((item) => item.operationKey === operation.id)
@@ -78,6 +69,9 @@ function NodeInspector({
         <code>{operation.path}</code>
       </div>
       <p className="inspector-summary">{operation.summary ?? operation.operationId}</p>
+      {operation.description ? (
+        <p className="inspector-description">{operation.description}</p>
+      ) : null}
       <section>
         <h3>{t('Overview')}</h3>
         <dl>
@@ -93,6 +87,12 @@ function NodeInspector({
             <dt>{t('Security')}</dt>
             <dd>{operation.security.length > 0 ? t('Authentication required') : t('Public')}</dd>
           </div>
+          {operation.deprecated ? (
+            <div>
+              <dt>{t('Status')}</dt>
+              <dd>{t('Deprecated')}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>{t('Source')}</dt>
             <dd>
@@ -110,28 +110,60 @@ function NodeInspector({
           <div className="schema-line" key={parameter.location + parameter.name}>
             <strong>
               {parameter.location}.{parameter.name}
+              {parameter.required ? <small> · {t('Required')}</small> : null}
             </strong>
-            <span>{schemaText(parameter.schema, t)}</span>
+            {parameter.description ? <span>{parameter.description}</span> : null}
+            <SchemaTree schema={parameter.schema} resolve={resolveSchema} />
           </div>
         ))}
         {operation.requestBody?.content.map((media) => (
           <div className="schema-line" key={media.mediaType}>
-            <strong>{media.mediaType}</strong>
-            <span>{schemaText(media.schema, t)}</span>
+            <strong>
+              {media.mediaType}
+              {operation.requestBody?.required ? <small> · {t('Required')}</small> : null}
+            </strong>
+            <SchemaTree schema={media.schema} resolve={resolveSchema} />
           </div>
         ))}
       </section>
       <section>
         <h3>{t('Responses')}</h3>
         {operation.responses.map((response) => (
-          <div className="response-line" key={response.statusCode}>
-            <strong>{response.statusCode}</strong>
-            <span>{response.description}</span>
-            <small>
-              {response.content.map((media) => schemaText(media.schema, t)).join(' · ')}
-            </small>
-          </div>
+          <details
+            className="response-line"
+            key={response.statusCode}
+            open={response.statusCode.startsWith('2')}
+          >
+            <summary>
+              <strong>{response.statusCode}</strong>
+              <span>{response.description}</span>
+            </summary>
+            {response.content.length === 0 ? (
+              <p className="muted">{t('No schema declared')}</p>
+            ) : null}
+            {response.content.map((media) => (
+              <div key={media.mediaType} className="schema-line">
+                <strong>{media.mediaType}</strong>
+                <SchemaTree schema={media.schema} resolve={resolveSchema} />
+              </div>
+            ))}
+          </details>
         ))}
+      </section>
+      <section>
+        <h3>{t('Security')}</h3>
+        {operation.security.length === 0 ? (
+          <p className="muted">{t('Public')}</p>
+        ) : (
+          <ul className="security-list">
+            {operation.security.map((requirement) => (
+              <li key={`${requirement.requirementIndex}:${requirement.scheme}`}>
+                <strong>{requirement.scheme}</strong>
+                {requirement.scopes.length ? <span>{requirement.scopes.join(', ')}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <section>
         <h3>{t('Connections')}</h3>

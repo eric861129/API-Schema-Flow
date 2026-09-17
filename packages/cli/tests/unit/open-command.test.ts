@@ -14,6 +14,10 @@ describe('open command failure boundaries', () => {
     ['file.json', '--port'],
     ['file.json', '--unknown'],
     ['file.json', '--port', '123', 'extra'],
+    ['file.json', '--project'],
+    ['file.json', '--project', 'https://example.invalid/project.json'],
+    ['file.json', '--project', 'backup.json', '--project', 'another.json'],
+    ['file.json', '--port', '4318', '--port', '4319'],
   ])('rejects invalid arguments %j', async (...args) => {
     const stderr = vi.fn()
     expect(await runCli(['open', ...args], {}, { stdout: vi.fn(), stderr })).toBe(2)

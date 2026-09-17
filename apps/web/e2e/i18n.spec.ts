@@ -12,7 +12,7 @@ async function exportDecisions(page: Page, label: string) {
 base(
   'defaults to Traditional Chinese and remembers the selected interface language',
   async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?sample=1')
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-TW')
     const language = page.getByRole('combobox', { name: '介面語言' })
     await expect(language).toHaveValue('zh-TW')

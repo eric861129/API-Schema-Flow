@@ -4,7 +4,7 @@
 
 API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長期產品會匯入 OpenAPI 規格、以互動式拓撲呈現 API 依賴、協助使用者審核有證據的流程推導、輸出標準 Arazzo 工作流，並透過具備狀態的 Mock Runtime 執行整段流程。
 
-> 專案狀態：**Pre-alpha**。目前已有 M0～M2、M3-A 唯讀 Reservation 工作區，以及 M3-B1 記憶體內審查功能。CLI 提供 `validate`、`infer`、`review` 與 `export-arazzo`。瀏覽器支援 Accept、Reject、Undo、證據檢視與草稿拓樸；M3-B3 會自動儲存決策並於重新整理後還原。交付證據見[驗證紀錄](docs/reports/m3b1-review-session-verification.md)。M3-B2 欄位映射編輯已合併；M3-B3 加入持久化與 Decision Set 匯入／匯出，交付檢查狀態見 ROADMAP.md。Stateful Mock、Workflow Execution 與 Live Trace 仍在規劃中，尚未發布 npm 套件。
+> 專案狀態：**Pre-alpha**。M0～M2，以及 M3 的瀏覽器審查、欄位映射編輯、IndexedDB 持久化、Project Save/Load 與 CLI 本機檔案 `open` 已實作。此工作目錄新增以任務為中心的探索、單一工作流程編輯與 Arazzo YAML／JSON 匯出，以及本機 Mock 的 POST→GET 執行和 Trace。候選關係仍須人工審查，並在工作流程中明確選取。完整的工作流程輸入、成功條件、Timeout／Retry、Mermaid 預覽、通用 CRUD Mock、正式 HTTP 執行及報告匯出尚未完成。尚未發布 npm 套件；交付界線見 [ROADMAP.md](ROADMAP.md)。
 
 ## 現在已經能做什麼？
 
@@ -27,13 +27,13 @@ API Schema Flow 是一套開源、Local-first 的 API Workflow Workbench。長�
 - Structured Diagnostic、Stable Source Pointer、敏感資料遮罩與穩定 Exit Code；
 - 由正式 Parser 驗證的 OpenAPI、Arazzo、Declared Flow、Inference、Review 與 Export Fixture，以及 Unit、Integration、Conformance、Security、Performance、Benchmark、Golden 與 Boundary Test；
 - 使用 Frozen Lockfile 的 GitHub Actions 驗證流程。
-- Reservation 快照工作區，提供拓樸、清單、候選篩選、證據、Accept／Reject、Undo 與記憶體內草稿預覽；交付狀態見 [M3-B1 驗證紀錄](docs/reports/m3b1-review-session-verification.md)。
+- 以任務為中心的瀏覽器工作區，提供 API 摘要、待審建議分組、搜尋與標籤篩選、端點鄰近焦點、Schema 解析檢視、審查決策與專案持久化。
 
 ## 操作瀏覽器審查工作區
 
 介面預設為繁體中文，可從頂端語言選單切換為 English；瀏覽器會記住語言偏好。切換語言會保留目前的審查決策與版面，API 路徑、欄位名稱、來源內容及匯出格式維持原值。下方操作說明沿用英文按鈕名稱，方便對照 English 介面。
 
-**M3-B3 會自動將決策存入 IndexedDB。關閉前請等候 Saved locally；匯入／匯出使用與 CLI 相同的 Decision Set JSON。**
+**決策會自動存入 IndexedDB。關閉前請等候 Saved locally；匯入／匯出使用與 CLI 相同的 Decision Set JSON。**
 
 安裝依賴並建置工作區套件後啟動：
 
@@ -43,7 +43,9 @@ pnpm build
 pnpm dev:web
 ```
 
-開啟 Vite 顯示的本機網址，預設為 `http://localhost:5173`。此入口載入內建 Reservation 快照；自己的規格請使用下方本機匯入指令。
+開啟 Vite 顯示的本機網址，預設為 `http://localhost:5173`。歡迎頁可選擇內建 Reservation 範例；自己的規格請使用下方本機匯入指令。
+
+先在 **Topology** 或 **Outline** 查看 API 摘要。選取來源到目標的建議資料傳遞，可進入 **Inference Review** 查看證據；也可按 **Review all suggestions**。琥珀色虛線將同一對端點的待審映射分組，已確認關係則另以不同樣式及計數顯示。利用標籤篩選與搜尋縮小清單，選取端點後查看請求、回應、安全性與解析後的 Schema 欄位，再聚焦相鄰端點。候選預覽不會自動接受關係，也不會更動匯出的 Decision Set。
 
 1. 在左側選擇 **Inference Review**，利用搜尋、信心程度與審查狀態篩選候選。
 2. 將 **Review state** 設為 **All**，包含快照既有的決策。選取 `POST /auth/login` 到 `GET /spaces/available` 的候選。
@@ -55,6 +57,8 @@ pnpm dev:web
 M3-B2 編輯操作：將 **Review state** 設為 **All**，選取 `GET /spaces/available → POST /reservations`，按 **Edit Mapping**。選擇來源 `Response #/*/id`、目標 `Body #/spaceId`，並明確輸入陣列索引，例如 `0`。**Apply mapping** 會建立手動接受的連線；**Cancel** 不修改草稿，**Undo latest change** 可還原。再次開啟編輯器會帶入目前有效的映射。
 
 編輯器提供雙欄 Schema 欄位清單、型別／必填／format／enum／nullable 驗證、單一 `{$value}` 的文字模板、範例與 Runtime Expression 預覽。範例不執行腳本；敏感欄位的範例會遮罩。Response body、Path／Query／Header 及 Request body 支援已解析的純量欄位，陣列逐層指定索引。聯集、無法解析的 Schema、唯讀目標與不相容映射會阻擋套用；不提供 JSONPath、任意轉換程式或跨候選更換端點。Arazzo 提示只說明映射形狀，完整工作流仍須由 CLI 驗證順序與綁定。
+
+本機 Mock 操作：在 **Workflows** 建立單一工作流程，依序加入 `POST /reservations`、`GET /reservations/{id}`，選取已接受的「回應 `id` → 路徑 `id`」映射。按 **Fill sample request** 後按 **Run in Local Mock**，Trace 應依序顯示 201 建立、200 查回及同一個產生的 `id`。**Reset Mock session** 清除記憶體資料。執行只支援明確的 POST 集合端點與 GET `{id}` 兩步流程；其他流程會顯示阻擋原因。請求本文、Mock 資料與 Trace 不寫入 Project／IndexedDB，也不會傳送到真實 API；重新整理後 Mock 工作階段會清空。此切片只模擬 Schema 與資料狀態，不模擬驗證或商業規則。
 
 本機儲存按專案 fingerprint 與來源 revision 隔離，保留決策與 Undo 歷程，不儲存篩選或選取狀態。**Import Decision Set** 先驗證檔案並顯示合併後摘要，按 **Apply import** 才套用；Cancel 不改動目前資料。**Export Decision Set** 下載不含瀏覽器狀態的確定性 JSON。重複匯入不新增相同決策，過期 fingerprint 與衝突 revision 保留並由 Review core 判定。
 
@@ -206,13 +210,14 @@ API Schema Flow 不取代 OpenAPI，而是在它之上補上「可執行工作�
 | OpenAPI Normalization | Stable ID、Source Pointer、Schema、Security、Server、Link Object、Compatibility 與 Ambiguity Diagnostic | 持續提供正規化欄位給 Flow 與 Inference Layer |
 | Arazzo Core | Arazzo 1.1.x Parse／Preserve、Semantic Validation、Runtime Expression AST、DAG Analysis、URI 與抽象 Operation Resolution、Support Profile | 視覺編輯與支援子集合執行 |
 | Declared Flow Graph | OpenAPI Link 與 Arazzo Step Order、`dependsOn`、Runtime Expression Mapping 已轉成版本化 `declared + accepted` Graph | 作為 Inference、Review UI、Export、Execution 與 Change Impact 的共同輸入 |
-| Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器支援 Accept／Reject／Edit 草稿 | 專案檔持久化 |
-| CLI | 已有 `validate`、`infer`、`review` 與 `export-arazzo` | 預計增加 `open`、`mock`、`run`、Mermaid Export 與 Report Export |
-| 視覺拓撲 | 內建 Reservation 快照的 React Flow／ELK 拓樸與等價清單 | 工作流程編輯 |
+| Evidence-based Inference | 決定性候選與核心 Accept／Reject／Edit 決策；瀏覽器支援草稿與專案檔持久化 | 跨來源專案遷移 |
+| CLI | 已有 `validate`、`infer`、`review`、`export-arazzo` 與本機檔案 `open` | 預計增加 `mock`、`run`、Mermaid Export 與 Report Export |
+| 視覺拓撲 | React Flow／ELK 拓樸與等價清單、待審關係分組、搜尋／標籤／焦點及 Schema 解析檢視 | 更完整的工作流程視覺化與 Mermaid 預覽 |
 | 依賴推導 | 支援證據、Accept／Reject、Undo、草稿拓樸與 M3-B2 欄位映射編輯；候選不會自動接受 | 後續工作流程編輯 |
-| Stateful Mock | 尚未實作 | In-memory CRUD、固定 Seed、Session 隔離、Reset 與 Snapshot |
-| Workflow Execution | 尚未實作 | 同步 OpenAPI Step、Mapping、Output、Criteria、Timeout 與有限 Retry |
-| Live Trace 與 Export | 已實作決定性、可由 Parser 驗證的 Arazzo 1.1 YAML／JSON Export | Live Trace、Mermaid、Project JSON 與執行報告 |
+| 瀏覽器工作流程編輯器 | 可排列端點步驟、選取已接受映射、驗證預覽並下載 Arazzo YAML／JSON；草稿可隨 Project 與 IndexedDB 還原 | 工作流程輸入、成功條件、Timeout／Retry、多工作流程 |
+| Stateful Mock | 已有記憶體中的 POST 建立、GET 單筆讀取、Session 隔離與重設 | 通用 CRUD、固定 Seed、Snapshot 與 HTTP Adapter |
+| Workflow Execution | 已有已接受 `id` 映射的兩步 POST→GET 本機執行與請求 Schema 檢查 | 通用 Mapping、Criteria、Timeout、有限 Retry 與正式 HTTP 執行 |
+| Live Trace 與 Export | 已有逐步本機 Trace、Arazzo 1.1 YAML／JSON Export 與 Project JSON 儲存／載入 | 即時串流 Trace、Mermaid 與執行報告 |
 | 變更影響 | Post-MVP | Flow-aware OpenAPI Diff 與 GitHub 整合 |
 
 ## 目標使用體驗
@@ -356,7 +361,7 @@ English: [README.md](README.md)
 
 ## 匯入本機 OpenAPI 工作區
 
-完成 `pnpm install --frozen-lockfile` 與 `pnpm build` 後，從儲存庫根目錄執行：
+第一次開啟網頁根目錄會顯示歡迎頁，可以選擇標示為「範例」的 Reservation 工作區，或依下列指令匯入自己的規格。npm 套件尚未發布；完成 `pnpm install --frozen-lockfile` 與 `pnpm build` 後，從儲存庫根目錄執行：
 
 ```bash
 node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
@@ -365,8 +370,15 @@ node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 43
 以 Chrome 或 Edge 開啟印出的完整網址，包含 `#workspace=…`，並保留執行中的程序。此指令從原始碼工作目錄執行，接受本機 JSON／YAML 與來源目錄內的本機參照，不呼叫業務 API 或取得遠端參照。唯讀服務僅綁定 `127.0.0.1`，私人快照須使用每次啟動產生的 token；請勿分享網址。正規化模型會移除範例與預設值，但描述與來源路徑仍可能屬於內部資訊，規格和匯出檔請放在公開儲存庫之外。
 
 1. 到 **Inference Review** 檢視證據，使用 **Edit Mapping** 或 Accept／Reject。信心分數不等於業務正確性，nullable／必填／型別檢查仍可能阻擋編輯。
-2. 等候 **Saved locally**，再用 **Project → Save Project** 備份決策、Undo 與布局。專案檔不包含來源文件，請保留原始規格。
-3. 重新整理，或 Ctrl+C 停止後，以相同檔案與連接埠重新執行，開啟新印出的 token 網址。同一瀏覽器設定檔及 origin 會還原 IndexedDB；換瀏覽器時可用 **Project → Load Project → Apply project** 還原備份。
-4. **Export Decision Set** 下載 CLI 相容的決策檔。這與可執行的 Arazzo 工作流程不同，後者仍須透過 `export-arazzo` 提供明確的 workflow plan。
+2. 到 **Workflows** 建立草稿、依序加入端點，明確勾選步驟間已接受的映射。設定 OpenAPI 來源網址或相對檔案路徑後，用 **Validate and preview → Download Arazzo** 預覽並下載文件；此操作不會呼叫 API。
+3. 等候 **Saved locally**，再用 **Project → Save Project** 備份決策、Undo、布局和工作流程草稿。專案檔不包含來源文件，請保留原始規格。
+4. 重新整理會還原同一瀏覽器的 IndexedDB。Ctrl+C 停止後，舊的 token 網址會失效；以相同檔案與連接埠重新執行 `open`，再開啟新印出的網址。若要從 Project JSON 備份重開，請同時指定相同來源版本與備份檔：
 
-來源沿用單份 5 MiB、總量 20 MiB 限制，正規化工作區回應上限為 64 MiB。推論沿用配對數／深度預算並保留診斷，候選可能不完整；時間截斷時拒絕開啟，避免同來源的保存結果無法重現。超過 200 個操作時預設開啟 Outline，Topology 須先篩選至 200 個以下；大型審查草稿停用畫布，映射與摘要仍可使用。此範圍是本機匯入預覽，尚不代表工作流程執行或正式上線驗收完成。
+   ```bash
+   node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --project /absolute/path/schema-flow-project.json --port 4318
+   ```
+
+   網頁會先顯示預覽，按 **Apply project** 後才取代目前狀態。若有同源 IndexedDB 草稿，先儲存備份再套用。
+5. **Export Decision Set** 另外下載 CLI 相容的審查決策。**Local Mock** 僅在支援的 POST→GET 兩步流程中於記憶體執行，Trace 不保存於 Project，也不呼叫業務 API。
+
+來源沿用單份 5 MiB、總量 20 MiB 限制，Project JSON 上限 5 MiB，正規化工作區回應上限為 64 MiB。推論沿用配對數／深度預算並保留診斷，候選可能不完整；時間截斷時拒絕開啟，避免同來源的保存結果無法重現。超過 200 個操作時預設開啟 Outline；左側可依群組數量挑選範圍，選到 200 個以下會進入 Topology。大型清單先載入左側 80 列、Outline 100 列，可按「載入更多」逐批顯示；這只限制畫面列數，不會改變搜尋、篩選與畫布所用的資料範圍。選取端點後可聚焦直接相鄰的已確認及待審端點，清除焦點會恢復原篩選。Topology 仍以 200 個端點為上限，大型審查草稿停用畫布，映射與摘要仍可使用；目前尚未達成 500 節點畫布效能目標。此範圍是本機匯入與受限 Mock 預覽，尚不代表正式 HTTP 執行或上線驗收完成。

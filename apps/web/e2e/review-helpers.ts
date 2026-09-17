@@ -33,9 +33,9 @@ export const test = base.extend<{ reviewPage: Page }>({
         },
       })
     })
-    await page.goto('/')
+    await page.goto('/?sample=1')
     await expect(page).toHaveTitle('API Schema Flow')
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/?sample=1')
     await expect(page.getByText('Reservation System')).toBeVisible()
     await use(page)
     await expect(page.locator('vite-error-overlay')).toHaveCount(0)

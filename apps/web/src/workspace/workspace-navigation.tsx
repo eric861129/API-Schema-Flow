@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-export type WorkspaceDestination = 'topology' | 'outline' | 'inference-review'
+export type WorkspaceDestination = 'topology' | 'outline' | 'inference-review' | 'workflows'
 
 interface WorkspaceNavigationProps {
   readonly activeDestination: WorkspaceDestination
@@ -17,6 +17,7 @@ const destinations: readonly {
   { id: 'topology', label: 'Topology', icon: '⌘' },
   { id: 'outline', label: 'Outline', icon: '☷' },
   { id: 'inference-review', label: 'Inference Review', icon: '◎' },
+  { id: 'workflows', label: 'Workflows', icon: '⇄' },
 ]
 
 export function WorkspaceNavigation({

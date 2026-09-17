@@ -4,7 +4,7 @@
 
 API Schema Flow is an open-source, local-first workbench for understanding how HTTP APIs work together. The long-term product imports OpenAPI descriptions, renders API dependencies as an interactive topology, helps users review evidence-based flow suggestions, exports standard Arazzo workflows, and runs those workflows against a stateful mock runtime.
 
-> Project status: **pre-alpha**. The repository contains M0–M2, the M3-A read-only Reservation workspace, and M3-B1 in-memory review. The CLI provides `validate`, `infer`, `review`, and `export-arazzo`. Browser review supports Accept, Reject, Undo, evidence inspection, and draft topology; M3-B3 auto-saves decisions locally and restores them on reload. See the [verification record](docs/reports/m3b1-review-session-verification.md) for delivery evidence. M3-B2 mapping editing is merged. M3-B3 adds persistence and Decision Set transfer; delivery checks are tracked in ROADMAP.md. Stateful mocking, workflow execution, and Live Trace remain planned. No npm package is published yet.
+> Project status: **pre-alpha**. M0–M2 and the M3 browser review, mapping editor, IndexedDB persistence, Project Save/Load, and local-file `open` CLI are implemented. This checkout adds task-focused exploration, a single-workflow Arazzo editor/exporter, and a narrow browser-local POST→GET Mock run with a redacted step Trace. Suggestions remain unaccepted until reviewed and explicitly selected. General workflow inputs, success criteria, timeout/retry, Mermaid preview, general CRUD mocking, real HTTP execution, and report export remain planned. No npm package is published yet; see [ROADMAP.md](ROADMAP.md) for delivery boundaries.
 
 ## What works today
 
@@ -27,7 +27,7 @@ The current implementation provides:
 - structured diagnostics, stable source pointers, secret-safe output, and stable exit codes;
 - parser-backed OpenAPI, Arazzo, declared-flow, inference, review, and export fixtures with unit, integration, conformance, security, performance, benchmark, Golden, and boundary tests;
 - frozen-lockfile GitHub Actions verification.
-- a Reservation snapshot workspace with topology, outline, candidate filters, evidence, Accept/Reject, Undo, and an in-memory accepted-graph preview; see the [M3-B1 verification record](docs/reports/m3b1-review-session-verification.md) for delivery status.
+- a task-focused browser workspace with an API overview, grouped pending suggestions, search and tag filters, a focused endpoint neighborhood, resolved schema inspection, review decisions, and project persistence.
 
 ## Try the browser review workspace
 
@@ -43,7 +43,9 @@ pnpm build
 pnpm dev:web
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`. This build loads the bundled Reservation snapshot; use the local import command below to open your own specification.
+Open the local URL printed by Vite, normally `http://localhost:5173`. The welcome screen offers the bundled Reservation sample; use the local import command below to open your own specification.
+
+Start in **Topology** or **Outline** to see the API overview. Select a suggested source-to-target handoff to inspect its evidence in **Inference Review**, or choose **Review all suggestions**. Dashed amber lines group pending mappings between endpoints; confirmed relationships use their own style and counts. Use the tag filter and search to narrow the list, select an endpoint to inspect its requests, responses, security, and resolved schema fields, then focus its direct neighbors. Candidate previews never accept a relationship or change the exported Decision Set.
 
 1. Select **Inference Review** in the left navigation. Use search, confidence, and review-state filters to find a candidate.
 2. Set **Review state → All** to include the snapshot's existing decisions. Select the candidate from `POST /auth/login` to `GET /spaces/available`.
@@ -208,11 +210,12 @@ API Schema Flow adds an executable workflow layer without replacing OpenAPI.
 | Declared flow graph | OpenAPI Links and Arazzo step order, `dependsOn`, and Runtime Expression mappings become versioned declared/accepted graphs | Shared input for inference, review UI, export, execution, and change impact |
 | Evidence-based inference | Deterministic candidates and core accept/reject/edit decisions; the browser creates Accept/Reject/Edit drafts | Cross-source project migration |
 | CLI | `validate`, `infer`, `review`, `export-arazzo`, and local-file `open` are implemented | `mock`, `run`, Mermaid export, and report export planned |
-| Visual topology | React Flow/ELK topology and equivalent outline over the bundled Reservation snapshot | Workflow authoring |
+| Visual topology | React Flow/ELK topology and outline with grouped pending handoffs, search/tag/focus, and resolved schema inspection | Larger workflow visualization and Mermaid preview |
 | Dependency discovery | Evidence, Accept/Reject, Undo, draft topology, and M3-B2 mapping editing; candidates are never auto-accepted | Additional workflow authoring |
-| Stateful mocking | Not implemented | In-memory CRUD lifecycle, deterministic seed, session isolation, reset, and snapshot |
-| Workflow execution | Not implemented | Synchronous OpenAPI steps, mappings, outputs, criteria, timeout, and bounded retry |
-| Live trace and export | Deterministic parser-validated Arazzo 1.1 YAML/JSON export is implemented | Live Trace, Mermaid, project JSON, and execution reports |
+| Browser workflow editor | Ordered endpoint steps, selected accepted data bindings, parser-validated Arazzo YAML/JSON preview and download; draft survives Project save/load and IndexedDB reload | Workflow inputs, success criteria, timeout/retry, and multiple workflows |
+| Stateful mocking | Browser-local POST collection creation, GET-by-id lookup, session isolation, and reset | General CRUD, deterministic seed, snapshot, and HTTP adapter |
+| Workflow execution | Two-step local POST→GET run using an accepted `id` binding and request schema checks | General mappings, criteria, timeout, bounded retry, and real HTTP execution |
+| Live trace and export | Step-by-step local Trace, deterministic Arazzo 1.1 YAML/JSON export, and browser Project JSON save/load | Streaming Trace, Mermaid, and execution reports |
 | Change impact | Post-MVP | Flow-aware OpenAPI diff and GitHub integration |
 
 ## Target experience
@@ -370,7 +373,7 @@ Licensed under the [Apache License 2.0](LICENSE).
 
 ## Open a local OpenAPI workspace
 
-After `pnpm install --frozen-lockfile` and `pnpm build`, run from the repository root:
+The first visit to the web root offers a clearly labeled Reservation sample and instructions for opening your own specification. The npm package is not published yet. After `pnpm install --frozen-lockfile` and `pnpm build`, run from the repository root:
 
 ```bash
 node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
@@ -379,8 +382,15 @@ node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 43
 Open the complete printed URL in Chrome or Edge, including its `#workspace=…` fragment. Keep the process running. This source-checkout command accepts local JSON/YAML and local references beneath the source directory. It does not call business APIs or fetch remote references. The read-only server binds only to `127.0.0.1`; its private snapshot requires a per-launch token. Do not share that URL. Normalized examples/defaults are omitted, but schema descriptions and source paths can still be private: keep specifications and exports outside public repositories.
 
 1. In **Inference Review**, inspect evidence and use **Edit Mapping** or Accept/Reject. Candidate scores do not prove business correctness; nullable/required/type checks can block an edit.
-2. Wait for **Saved locally**, then use **Project → Save Project** for a portable backup of decisions, Undo history, and layout. The source itself is not embedded; keep the original specification.
-3. Reload, or stop with Ctrl+C and rerun the command with the same file and port. Use the new printed token URL. The same browser profile/origin restores IndexedDB state; use **Project → Load Project → Apply project** to restore a backup in another profile.
-4. **Export Decision Set** downloads the CLI-compatible decisions. This is distinct from exporting an executable Arazzo workflow, which still requires an explicit workflow plan through `export-arazzo`.
+2. In **Workflows**, create a draft, add the API operations in order, and explicitly select accepted mappings between those steps. Set the OpenAPI source URL or a relative file path, then **Validate and preview → Download Arazzo**. This exports a document; it does not invoke the API.
+3. Wait for **Saved locally**, then use **Project → Save Project** for a portable backup of decisions, Undo history, layout, and the workflow draft. The source itself is not embedded; keep the original specification.
+4. Reload to restore IndexedDB state in the same browser. After stopping the CLI, the old token URL expires; rerun `open` with the same source and port and use the new URL. To reopen a Project JSON backup, pass the same source version and the backup together:
 
-Source acquisition retains the default 5 MiB per-document and 20 MiB aggregate limits; normalized workspace responses are capped at 64 MiB. Inference retains bounded pair/depth budgets and displays diagnostics, so candidates may be incomplete. Time-truncated inference is rejected to keep saved sessions reproducible. Specifications above 200 operations open in Outline; filter to at most 200 endpoints before using Topology. The review draft canvas is disabled above that limit; mapping and summary remain available. This is a local import preview, not workflow execution or a production-readiness claim.
+   ```bash
+   node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --project /absolute/path/schema-flow-project.json --port 4318
+   ```
+
+   The browser previews the project and replaces current state only after **Apply project**. Save a backup first if you already have a local draft for that source.
+5. **Export Decision Set** downloads CLI-compatible review decisions separately. **Local Mock** executes only the supported two-step POST→GET flow in memory; its Trace is not saved in the Project and no business API is called.
+
+Source acquisition retains the default 5 MiB per-document and 20 MiB aggregate limits; Project JSON is limited to 5 MiB and normalized workspace responses to 64 MiB. Inference retains bounded pair/depth budgets and displays diagnostics, so candidates may be incomplete. Time-truncated inference is rejected to keep saved sessions reproducible. Specifications above 200 operations open in Outline. The group browser narrows to a meaningful scope and switches to Topology when that group has at most 200 endpoints. Large lists initially render 80 sidebar rows and 100 Outline rows, with explicit Load more controls; this changes only the rendered rows, not the search/filter data scope. Focusing a selected endpoint shows its direct confirmed and pending neighbors and clearing focus restores the previous filters. Topology is still limited to 200 endpoints, and the 500-node canvas performance target remains unmet. The review draft canvas is disabled above the limit; mapping and summary remain available. This is local import and limited Mock execution, not live HTTP execution or a production-readiness claim.

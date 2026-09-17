@@ -13,6 +13,9 @@ import { materializeReviewedOperationGraph, parseReviewDecisionSet } from '@api-
 const fixtureRoot = path.resolve(import.meta.dirname, '../../../..', 'fixtures/review/reservation')
 const sourceUri = 'memory://review/reservation/openapi.yaml'
 
+// Git for Windows 可能將工作目錄的 Golden Fixture 轉成 CRLF；輸出文件固定使用 LF。
+const canonicalFixture = (contents: string) => contents.replaceAll('\r\n', '\n')
+
 async function loadPipeline() {
   const contents = await fs.readFile(path.join(fixtureRoot, 'openapi.yaml'), 'utf8')
   const processed = await processOpenApi({
@@ -57,7 +60,7 @@ describe('M2-D reservation Golden Fixtures', () => {
       'utf8',
     )
 
-    expect(`${JSON.stringify(reviewed, null, 2)}\n`).toBe(expected)
+    expect(`${JSON.stringify(reviewed, null, 2)}\n`).toBe(canonicalFixture(expected))
     expect(reviewed.metrics).toEqual({
       appliedCount: 3,
       rejectedCount: 1,
@@ -87,7 +90,7 @@ describe('M2-D reservation Golden Fixtures', () => {
 
     expect(artifact.diagnostics).toEqual([])
     expect(artifact.document).toBeDefined()
-    expect(artifact.contents).toBe(expected)
+    expect(artifact.contents).toBe(canonicalFixture(expected))
     expect(expected).not.toContain('synthetic-password')
     expect(expected).not.toContain('synthetic-jwt-token')
   })

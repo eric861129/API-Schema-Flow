@@ -1,8 +1,6 @@
-import { createHash } from 'node:crypto'
-
 import { processArazzoSource } from '@api-schema-flow/arazzo'
 import { hasDiagnosticErrors, sortDiagnostics, type Diagnostic } from '@api-schema-flow/diagnostics'
-import { createSourceDocument } from '@api-schema-flow/source-loader'
+import { createSourceDocument } from '@api-schema-flow/source-loader/document'
 
 import { bindWorkflowPlanOperations } from './operation-binding.js'
 import { projectAcceptedMappings } from './mapping-projector.js'
@@ -71,6 +69,11 @@ function likelySecret(contents: string): boolean {
     /\bBearer\s+(?!\{?\$)[A-Za-z0-9._~+/-]{12,}\b/giu,
   ]
   return patterns.some((pattern) => pattern.test(contents))
+}
+
+async function sha256(contents: string): Promise<string> {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(contents))
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 export async function exportArazzo(input: ExportArazzoInput): Promise<ArazzoExportArtifact> {
@@ -145,7 +148,7 @@ export async function exportArazzo(input: ExportArazzoInput): Promise<ArazzoExpo
     fileName: fileName(input),
     mediaType: mediaType(input.format),
     contents,
-    contentHash: createHash('sha256').update(contents, 'utf8').digest('hex'),
+    contentHash: await sha256(contents),
     document: processed.document,
     diagnostics: sortDiagnostics(validationDiagnostics),
   }

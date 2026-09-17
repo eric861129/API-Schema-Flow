@@ -76,10 +76,12 @@ describe('review and Arazzo export CLI integration', () => {
         {},
         output.io,
       )
-      const expected = await fs.readFile(
-        path.join(fixtureRoot, `expected-workflow.arazzo.${format === 'yaml' ? 'yaml' : 'json'}`),
-        'utf8',
-      )
+      const expected = (
+        await fs.readFile(
+          path.join(fixtureRoot, `expected-workflow.arazzo.${format === 'yaml' ? 'yaml' : 'json'}`),
+          'utf8',
+        )
+      ).replaceAll('\r\n', '\n')
 
       expect(exitCode).toBe(0)
       const warnings = output.stderr.join('')
@@ -133,10 +135,9 @@ describe('review and Arazzo export CLI integration', () => {
       {},
       forced.io,
     )
-    const expected = await fs.readFile(
-      path.join(fixtureRoot, 'expected-workflow.arazzo.yaml'),
-      'utf8',
-    )
+    const expected = (
+      await fs.readFile(path.join(fixtureRoot, 'expected-workflow.arazzo.yaml'), 'utf8')
+    ).replaceAll('\r\n', '\n')
     expect(forcedExit).toBe(0)
     expect(await fs.readFile(outputPath, 'utf8')).toBe(expected)
     expect(JSON.parse(forced.stdout.join(''))).toMatchObject({

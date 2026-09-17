@@ -21,15 +21,16 @@ function NavigationHarness({ onShowAbout }: { readonly onShowAbout: () => void }
 }
 
 describe('WorkspaceNavigation', () => {
-  test('offers only the three implemented workspace destinations', () => {
+  test('offers the implemented workspace destinations', () => {
     render(<NavigationHarness onShowAbout={() => undefined} />)
 
     expect(screen.getByRole('navigation', { name: 'Workspace views' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Topology' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('button', { name: 'Outline' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Inference Review' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Workflows' })).toBeVisible()
 
-    for (const name of ['Workflows', 'Mock', 'Run', 'Save', 'Import', 'Export']) {
+    for (const name of ['Mock', 'Run', 'Save', 'Import', 'Export']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
   })

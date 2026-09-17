@@ -1,5 +1,6 @@
 import type { FlowDataMapping, ReviewDecisionSet } from '@api-schema-flow/domain'
 import type { WorkspaceLayoutState } from '../project/workspace-layout'
+import type { WorkflowDraft } from '../workflow/workflow-draft'
 
 export const REVIEW_SESSION_SCHEMA_VERSION = '1.0' as const
 
@@ -48,6 +49,7 @@ export interface ReviewSessionFilters {
 
 export interface ReviewSessionState {
   readonly workspaceLayout?: WorkspaceLayoutState
+  readonly workflowDraft?: WorkflowDraft | undefined
   readonly layoutRevision?: number
   readonly importedDecisionSet?: ReviewDecisionSet | undefined
   readonly schemaVersion: typeof REVIEW_SESSION_SCHEMA_VERSION
@@ -77,10 +79,12 @@ export type ReviewSessionAction =
   | {
       readonly type: 'restore-decisions'
       readonly workspaceLayout?: WorkspaceLayoutState
+      readonly workflowDraft?: WorkflowDraft | undefined
       readonly draftIntents: readonly ReviewIntent[]
       readonly importedDecisionSet?: ReviewDecisionSet | undefined
       readonly baselineRevisions: Readonly<Record<string, number>>
     }
+  | { readonly type: 'set-workflow-draft'; readonly draft?: WorkflowDraft | undefined }
   | {
       readonly type: 'edit-candidate'
       readonly candidateId: string
@@ -177,6 +181,7 @@ export function reviewSessionReducer(
       return {
         ...state,
         draftIntents: action.draftIntents,
+        workflowDraft: action.workflowDraft,
         importedDecisionSet: action.importedDecisionSet,
         baselineRevisions: action.baselineRevisions,
         ...(action.workspaceLayout
@@ -186,6 +191,8 @@ export function reviewSessionReducer(
             }
           : {}),
       }
+    case 'set-workflow-draft':
+      return { ...state, workflowDraft: action.draft }
     case 'select-candidate':
       return { ...state, selectedCandidateId: action.candidateId }
 

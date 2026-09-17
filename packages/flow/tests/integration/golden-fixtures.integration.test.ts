@@ -43,7 +43,7 @@ describe('declared flow Golden Fixtures', () => {
     )
 
     expect(projection.diagnostics).toEqual([])
-    expect(serialize(projection.operationGraph)).toBe(expected)
+    expect(serialize(projection.operationGraph)).toBe(expected.replaceAll('\r\n', '\n'))
   })
 
   test('matches the Reservation OpenAPI plus Arazzo projection byte for byte', async () => {
@@ -92,7 +92,7 @@ describe('declared flow Golden Fixtures', () => {
     expect(projection.workflowGraphs[0]?.edges.filter(({ kind }) => kind === 'data')).toHaveLength(
       5,
     )
-    expect(serialize(projection)).toBe(expected)
+    expect(serialize(projection)).toBe(expected.replaceAll('\r\n', '\n'))
   })
 
   test('never serializes representative secret values into Golden Graphs', async () => {

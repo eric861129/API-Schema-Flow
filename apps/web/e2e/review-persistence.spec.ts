@@ -33,7 +33,7 @@ test('clears healthy storage, keeps autosave disabled after reload and blocks an
   await other.route('**/fixtures/reservation-workspace.json', (route) =>
     route.fulfill({ json: snapshot }),
   )
-  await other.goto('/')
+  await other.goto('/?sample=1')
   await openReview(other)
   await loginCandidate(page).click()
   await page.getByRole('button', { name: 'Accept', exact: true }).click()
@@ -243,7 +243,7 @@ test('does not overwrite another tab and offers reload after a generation confli
   await other.route('**/fixtures/reservation-workspace.json', (route) =>
     route.fulfill({ json: snapshot }),
   )
-  await other.goto('/')
+  await other.goto('/?sample=1')
   await openReview(other)
   await loginCandidate(page).click()
   await page.getByRole('button', { name: 'Accept', exact: true }).click()

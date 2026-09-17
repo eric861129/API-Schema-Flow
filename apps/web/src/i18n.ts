@@ -17,6 +17,10 @@ const appZhTw = {
   'The loaded workspace does not contain operations to visualize.':
     '載入的工作區沒有可視化的操作。',
   'The workspace could not be opened.': '無法開啟工作區。',
+  'The saved project could not be loaded (HTTP {{status}}).':
+    '無法載入已儲存的專案（HTTP {{status}}）。',
+  'This local link expires when the CLI stops. Run open with the same source again; add --project for a saved Project JSON, then use the new URL.':
+    'CLI 停止後，這個本機連結就會失效。請用相同來源重新執行 open；若有 Project JSON 備份，加上 --project，並開啟新的網址。',
   'The API workspace could not be loaded. Check the local server and retry.':
     '無法載入 API 工作區。請檢查本機伺服器後重試。',
   'The API workspace returned HTTP {{status}}.': 'API 工作區回傳 HTTP {{status}}。',

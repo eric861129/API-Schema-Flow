@@ -1,9 +1,4 @@
-import type {
-  EndpointFlowNode,
-  FlowEdge,
-  HttpMethod,
-  NormalizedOperation,
-} from '@api-schema-flow/domain'
+import type { EndpointFlowNode, HttpMethod, NormalizedOperation } from '@api-schema-flow/domain'
 
 import type { WorkspaceSnapshot } from '../data/types'
 
@@ -18,6 +13,8 @@ export interface OperationViewModel {
 export interface OperationFilters {
   readonly query: string
   readonly methods: readonly HttpMethod[]
+  readonly tag?: string
+  readonly focusNodeIds?: ReadonlySet<string>
 }
 
 function isEndpointNode(
@@ -29,10 +26,15 @@ function isEndpointNode(
 export function buildOperationViewModels(
   snapshot: WorkspaceSnapshot,
 ): readonly OperationViewModel[] {
-  const edges = snapshot.acceptedGraph.edges
   const nodeByOperation = new Map(
     snapshot.acceptedGraph.nodes.filter(isEndpointNode).map((node) => [node.operationKey, node.id]),
   )
+  const incoming = new Map<string, number>()
+  const outgoing = new Map<string, number>()
+  for (const edge of snapshot.acceptedGraph.edges) {
+    incoming.set(edge.targetNodeId, (incoming.get(edge.targetNodeId) ?? 0) + 1)
+    outgoing.set(edge.sourceNodeId, (outgoing.get(edge.sourceNodeId) ?? 0) + 1)
+  }
 
   return snapshot.apiDocument.operations
     .map((operation) => {
@@ -41,8 +43,8 @@ export function buildOperationViewModels(
         nodeId,
         operation,
         tag: operation.tags[0] ?? 'Untagged',
-        incoming: edges.filter((edge: FlowEdge) => edge.targetNodeId === nodeId).length,
-        outgoing: edges.filter((edge: FlowEdge) => edge.sourceNodeId === nodeId).length,
+        incoming: incoming.get(nodeId) ?? 0,
+        outgoing: outgoing.get(nodeId) ?? 0,
       }
     })
     .toSorted(
@@ -60,24 +62,54 @@ export function filterOperationViewModels(
   const query = filters.query.trim().toLocaleLowerCase()
   const methods = new Set(filters.methods)
   return models.filter((model) => {
-    const searchable = [
+    if (methods.size > 0 && !methods.has(model.operation.method)) return false
+    if (
+      filters.tag &&
+      !(filters.tag === 'Untagged' && model.operation.tags.length === 0) &&
+      !model.operation.tags.includes(filters.tag)
+    )
+      return false
+    if (filters.focusNodeIds && !filters.focusNodeIds.has(model.nodeId)) return false
+    if (query.length === 0) return true
+    return [
       model.operation.path,
       model.operation.operationId ?? '',
       model.operation.summary ?? '',
+      model.operation.description ?? '',
+      ...model.operation.tags,
     ]
       .join(' ')
       .toLocaleLowerCase()
-    return (
-      (query.length === 0 || searchable.includes(query)) &&
-      (methods.size === 0 || methods.has(model.operation.method))
-    )
+      .includes(query)
   })
+}
+
+/** 依目前可見的關係重新計算端點進出數，讓清單與畫布使用同一個範圍。 */
+export function scopeOperationViewModels(
+  models: readonly OperationViewModel[],
+  graph: WorkspaceSnapshot['acceptedGraph'],
+): readonly OperationViewModel[] {
+  const incoming = new Map<string, number>()
+  const outgoing = new Map<string, number>()
+  for (const edge of graph.edges) {
+    incoming.set(edge.targetNodeId, (incoming.get(edge.targetNodeId) ?? 0) + 1)
+    outgoing.set(edge.sourceNodeId, (outgoing.get(edge.sourceNodeId) ?? 0) + 1)
+  }
+  return models.map((model) => ({
+    ...model,
+    incoming: incoming.get(model.nodeId) ?? 0,
+    outgoing: outgoing.get(model.nodeId) ?? 0,
+  }))
 }
 
 export function groupOperationViewModels(
   models: readonly OperationViewModel[],
 ): ReadonlyMap<string, readonly OperationViewModel[]> {
   const groups = new Map<string, OperationViewModel[]>()
-  for (const model of models) groups.set(model.tag, [...(groups.get(model.tag) ?? []), model])
+  for (const model of models) {
+    const group = groups.get(model.tag)
+    if (group) group.push(model)
+    else groups.set(model.tag, [model])
+  }
   return new Map([...groups.entries()].sort(([left], [right]) => left.localeCompare(right)))
 }

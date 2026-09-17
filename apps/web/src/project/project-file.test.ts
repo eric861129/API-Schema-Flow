@@ -11,6 +11,7 @@ import {
 import { materializeReviewSession } from '../review/review-engine'
 import { parseProject, serializeProject } from './project-file'
 import { DEFAULT_WORKSPACE_LAYOUT, parseWorkspaceLayout } from './workspace-layout'
+import type { WorkflowDraft } from '../workflow/workflow-draft'
 
 const snapshot = raw as unknown as WorkspaceSnapshot
 const nodeId = snapshot.declaredGraph.nodes[0]!.id
@@ -135,4 +136,33 @@ test('v1 local storage restores with a default layout without mutating its origi
     schemaVersion: '2.0',
     workspaceLayout: DEFAULT_WORKSPACE_LAYOUT,
   })
+})
+
+test('round-trips an explicit workflow through Project JSON and local storage', () => {
+  const relation = snapshot.acceptedGraph.edges.find((edge) =>
+    edge.mappings.some((mapping) => mapping.target.kind === 'path-parameter'),
+  )!
+  const workflow: WorkflowDraft = {
+    schemaVersion: '1.0',
+    workflowId: 'createReservation',
+    summary: 'Create and read a reservation',
+    sourceUrl: './openapi.yaml',
+    steps: [
+      { stepId: 'create', operationNodeId: relation.sourceNodeId },
+      { stepId: 'read', operationNodeId: relation.targetNodeId },
+    ],
+    selectedMappings: [{ edgeId: relation.id, mappingId: relation.mappings[0]!.id }],
+  }
+  const withWorkflow = reviewSessionReducer(state, { type: 'set-workflow-draft', draft: workflow })
+  const text = serializeProject(snapshot, withWorkflow)
+  expect(JSON.parse(text).workflow).toEqual(workflow)
+  expect(parseProject(text, snapshot).workflowDraft).toEqual(workflow)
+  expect(
+    decodeStoredReview(snapshot, encodeStoredReview(snapshot, withWorkflow)).workflowDraft,
+  ).toEqual(workflow)
+  expect(serializeProject(snapshot, parseProject(text, snapshot))).toBe(text)
+
+  const invalid = JSON.parse(text)
+  invalid.workflow.steps[0].operationNodeId = 'missing'
+  expect(() => parseProject(JSON.stringify(invalid), snapshot)).toThrow(/unknown endpoint/)
 })

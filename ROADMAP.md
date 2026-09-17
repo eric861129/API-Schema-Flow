@@ -1,7 +1,7 @@
 # Roadmap
 
 > 狀態：規劃基準  
-> 最後更新：2026-09-16
+> 最後更新：2026-09-17
 > Roadmap 採成果導向，不承諾日期。
 
 ## 原則
@@ -90,10 +90,15 @@
 | M3-B2 | 欄位映射編輯、相容性驗證、手動草稿連線與 Undo | 已合併 [PR #17](https://github.com/eric861129/API-Schema-Flow/pull/17)，main CI 通過；操作見 README |
 | M3-B3 | IndexedDB 自動儲存、還原、Decision Set 匯入／匯出與復原 | 已合併 [PR #18](https://github.com/eric861129/API-Schema-Flow/pull/18)，main CI 通過 |
 | Project Save/Load 與 Layout Persistence | 同來源專案檔、決策／Undo、雙畫布位置與視角、版面重設 | 已合併 [PR #19](https://github.com/eric861129/API-Schema-Flow/pull/19)，main CI 通過 |
+| M3 任務探索切片 | API 摘要、待審資料傳遞分組與導向審查、標籤／搜尋／鄰近焦點、解析後 Schema 檢視 | Windows 本機功能與瀏覽器驗證通過；遠端驗證以 GitHub Actions 最新結果為準 |
+| M3 P1 Workflow 最小切片 | 單一工作流程的步驟排序、已接受映射選用、Arazzo YAML／JSON 驗證預覽與匯出、Project／IndexedDB 還原 | Windows 本機功能與視覺驗證通過；遠端驗證以 GitHub Actions 最新結果為準 |
+| M3 P1 本機 Mock／執行／Trace | 共用記憶體 Mock 工作階段、POST→GET 明確 id 映射執行、請求 Schema 檢查、重設與不含請求本文的逐步 Trace | Windows 本機建置、單元／整合與兩尺寸瀏覽器驗證通過；僅限支援的兩步流程，遠端驗證以 GitHub Actions 最新結果為準 |
+| M3 P2 首次上手與專案重開 | 歡迎頁明示範例／本機來源／備份重開；`open --project` 核對來源並由網頁預覽後套用，失效連結提供恢復指引 | Windows 本機建置、單元／整合、瀏覽器與視覺驗證通過；遠端驗證以 GitHub Actions 最新結果為準 |
+| M3 P2 大型規格分組／焦點／效能 | 群組瀏覽與自動縮小畫布範圍、清單分批呈現、聚焦後恢復篩選、端點關係計數單次掃描 | Windows 本機建置、單元、1,311 端點合成規格雙尺寸瀏覽器與完整 Web 回歸通過；遠端驗證以 GitHub Actions 最新結果為準。200 節點畫布上限與 500 節點目標仍分開追蹤 |
 
-`schema-flow open <file>` 已加入本機 OpenAPI 匯入，提供私人 loopback 工作區與大型規格清單／畫布限制；操作及限制見 README。本次變更尚未推送遠端，本機驗證與遠端 CI／交付狀態分開記錄。
+`schema-flow open <file>` 已加入本機 OpenAPI 匯入，提供私人 loopback 工作區與大型規格清單／畫布限制；操作及限制見 README。本機驗證與遠端 CI／交付狀態分開記錄。
 
-M3-B3 已加入本機儲存，尚未提供完整工作流程編輯、Mock 或執行。下列為整個 M3 的交付與離開條件，不能因審查工作區通過而宣告整個 M3 完成。
+M3-B3 已加入本機儲存；P1 可匯出單一工作流程，並在瀏覽器以本機 Mock 執行受支援的建立後查回流程、查看逐步 Trace。完整工作流程輸入、成功條件、Timeout／Retry、Mermaid 預覽、通用 CRUD Mock、正式 HTTP 執行及報告匯出仍未完成。下列為整個 M3 的交付與離開條件，不能因探索與審查工作區通過而宣告整個 M3 完成。
 
 **目標：** 讓使用者能在視覺工作台理解、審核並編輯 Workflow。
 

@@ -9,6 +9,7 @@ export async function startWorkspaceServer(
   snapshot: ReviewWorkspaceSnapshot,
   webRoot: string,
   port: number,
+  projectText?: string,
 ) {
   const root = await realpath(webRoot)
   const assets = new Map<string, string>()
@@ -53,13 +54,24 @@ export async function startWorkspaceServer(
       finish(400, 'Invalid request URL')
       return
     }
-    if (url.pathname === '/api/workspace') {
+    if (url.pathname === '/api/workspace' || url.pathname === '/api/project') {
       if (request.headers.authorization !== `Bearer ${token}`) {
         finish(403, 'Workspace token required')
         return
       }
+      if (url.pathname === '/api/project' && projectText === undefined) {
+        finish(404, 'No project was provided')
+        return
+      }
       response.setHeader('Content-Type', 'application/json; charset=utf-8')
-      finish(200, request.method === 'HEAD' ? '' : content)
+      finish(
+        200,
+        request.method === 'HEAD'
+          ? ''
+          : url.pathname === '/api/project'
+            ? (projectText ?? '')
+            : content,
+      )
       return
     }
     const file = assets.get(url.pathname === '/' ? '/index.html' : url.pathname)
@@ -97,5 +109,8 @@ export async function startWorkspaceServer(
       resolve()
     })
   })
-  return { server, url: `${origin}/#workspace=${token}` }
+  return {
+    server,
+    url: `${origin}/#workspace=${token}${projectText === undefined ? '' : '&project=1'}`,
+  }
 }

@@ -7,6 +7,7 @@ import {
   MAX_DECISION_FILE_BYTES,
 } from '../review/review-transfer'
 import { DEFAULT_WORKSPACE_LAYOUT, parseWorkspaceLayout } from './workspace-layout'
+import { parseWorkflowDraft } from '../workflow/workflow-draft'
 
 /** 可攜檔只參照已載入的來源，不包含原始規格、Parser AST 或瀏覽器控制物件。 */
 export function serializeProject(snapshot: WorkspaceSnapshot, state: ReviewSessionState): string {
@@ -28,6 +29,7 @@ export function serializeProject(snapshot: WorkspaceSnapshot, state: ReviewSessi
       sourceRevision: snapshot.reviewContext.sourceRevision,
     },
     review,
+    ...(state.workflowDraft ? { workflow: parseWorkflowDraft(state.workflowDraft, snapshot) } : {}),
     layout: parseWorkspaceLayout(
       state.workspaceLayout ?? DEFAULT_WORKSPACE_LAYOUT,
       new Set(snapshot.declaredGraph.nodes.map((node) => node.id)),
@@ -64,7 +66,15 @@ export function parseProject(text: string, snapshot: WorkspaceSnapshot): ReviewS
   if (
     Object.keys(root).some(
       (key) =>
-        !['kind', 'schemaVersion', 'toolVersion', 'source', 'review', 'layout'].includes(key),
+        ![
+          'kind',
+          'schemaVersion',
+          'toolVersion',
+          'source',
+          'review',
+          'layout',
+          'workflow',
+        ].includes(key),
     )
   )
     throw new Error('Unsupported project field.')
@@ -107,5 +117,11 @@ export function parseProject(text: string, snapshot: WorkspaceSnapshot): ReviewS
     !review.toolVersion.trim()
   )
     throw new Error('Unsupported project review version.')
-  return decodeStoredReview(snapshot, { ...review, workspaceLayout: layout })
+  return decodeStoredReview(snapshot, {
+    ...review,
+    workspaceLayout: layout,
+    ...(root.workflow === undefined
+      ? {}
+      : { workflowDraft: parseWorkflowDraft(root.workflow, snapshot) }),
+  })
 }

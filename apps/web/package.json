@@ -15,7 +15,10 @@
   "dependencies": {
     "@api-schema-flow/diagnostics": "workspace:*",
     "@api-schema-flow/domain": "workspace:*",
+    "@api-schema-flow/exporter-arazzo": "workspace:*",
+    "@api-schema-flow/execution": "workspace:*",
     "@api-schema-flow/layout": "workspace:*",
+    "@api-schema-flow/mock-runtime": "workspace:*",
     "@api-schema-flow/review": "workspace:*",
     "@xyflow/react": "catalog:",
     "i18next": "catalog:",

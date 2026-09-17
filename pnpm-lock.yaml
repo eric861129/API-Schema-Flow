@@ -101,9 +101,18 @@ importers:
       '@api-schema-flow/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@api-schema-flow/execution':
+        specifier: workspace:*
+        version: link:../../packages/execution
+      '@api-schema-flow/exporter-arazzo':
+        specifier: workspace:*
+        version: link:../../packages/exporter-arazzo
       '@api-schema-flow/layout':
         specifier: workspace:*
         version: link:../../packages/layout
+      '@api-schema-flow/mock-runtime':
+        specifier: workspace:*
+        version: link:../../packages/mock-runtime
       '@api-schema-flow/review':
         specifier: workspace:*
         version: link:../../packages/review
@@ -228,6 +237,18 @@ importers:
 
   packages/domain: {}
 
+  packages/execution:
+    dependencies:
+      '@api-schema-flow/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@api-schema-flow/exporter-arazzo':
+        specifier: workspace:*
+        version: link:../exporter-arazzo
+      '@api-schema-flow/mock-runtime':
+        specifier: workspace:*
+        version: link:../mock-runtime
+
   packages/exporter-arazzo:
     dependencies:
       '@api-schema-flow/arazzo':
@@ -294,6 +315,12 @@ importers:
       elkjs:
         specifier: 'catalog:'
         version: 0.12.0
+
+  packages/mock-runtime:
+    dependencies:
+      '@api-schema-flow/domain':
+        specifier: workspace:*
+        version: link:../domain
 
   packages/openapi:
     dependencies:

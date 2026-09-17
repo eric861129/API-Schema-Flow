@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { importWorkspace } from '../../src/workspace-import.js'
 import { startWorkspaceServer } from '../../src/workspace-server.js'
+import { readProjectForWorkspace } from '../../src/project-reopen.js'
 
 const fixture = fileURLToPath(
   new URL('../../../../examples/reservation/openapi.yaml', import.meta.url),
@@ -62,6 +63,54 @@ describe('local workspace import and server', () => {
       expect(result.status).toBe(200)
       expect(JSON.parse(result.body).reviewContext).toEqual(snapshot.reviewContext)
       expect((await get('/api/workspace', { authorization }, 'HEAD')).body).toBe('')
+      expect((await get('/api/project', { authorization })).status).toBe(404)
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      )
+    }
+  })
+
+  test('reopens only a matching Project JSON and serves it behind the workspace token', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'asf-project-'))
+    await writeFile(path.join(root, 'index.html'), '<title>Workspace</title>')
+    const snapshot = await importWorkspace(fixture)
+    const backup = path.join(root, 'project.json')
+    const project = JSON.stringify({
+      kind: 'api-schema-flow-project',
+      schemaVersion: '1.0',
+      source: snapshot.reviewContext,
+    })
+    await writeFile(backup, project)
+    expect(await readProjectForWorkspace(backup, snapshot)).toBe(project)
+    await writeFile(
+      backup,
+      JSON.stringify({
+        kind: 'api-schema-flow-project',
+        schemaVersion: '1.0',
+        source: { ...snapshot.reviewContext, sourceRevision: 'changed' },
+      }),
+    )
+    await expect(readProjectForWorkspace(backup, snapshot)).rejects.toThrow('does not match')
+    await writeFile(backup, project)
+    const { server, url } = await startWorkspaceServer(
+      snapshot,
+      root,
+      0,
+      await readProjectForWorkspace(backup, snapshot),
+    )
+    const address = new URL(url)
+    const token = new URLSearchParams(address.hash.slice(1)).get('workspace')
+    try {
+      expect(new URLSearchParams(address.hash.slice(1)).get('project')).toBe('1')
+      const unauthenticated = await fetch(`${address.origin}/api/project`)
+      expect(unauthenticated.status).toBe(403)
+      const authenticated = await fetch(`${address.origin}/api/project`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      expect(authenticated.status).toBe(200)
+      expect(await authenticated.text()).toBe(project)
+      expect(authenticated.headers.get('cache-control')).toBe('no-store')
     } finally {
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),

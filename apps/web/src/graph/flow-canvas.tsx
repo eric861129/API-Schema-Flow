@@ -24,12 +24,14 @@ import type { PositionedFlowGraph } from '@api-schema-flow/layout'
 import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
 import type { CanvasLayoutState } from '../project/workspace-layout'
+import type { CandidateConnection } from '../workspace/exploration-model'
 
 interface EndpointData extends Record<string, unknown> {
   readonly operation: NormalizedOperation
   readonly incoming: number
   readonly outgoing: number
   readonly selected: boolean
+  readonly candidateCount: number
 }
 
 function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
@@ -53,6 +55,11 @@ function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
             outgoing: data.outgoing,
           })}
         </span>
+        {data.candidateCount > 0 ? (
+          <span className="endpoint-candidates">
+            {t('{{count}} suggestions', { count: data.candidateCount })}
+          </span>
+        ) : null}
       </footer>
       <Handle type="source" position={Position.Right} isConnectable={false} />
     </article>
@@ -60,6 +67,7 @@ function EndpointNode({ data }: NodeProps<Node<EndpointData>>) {
 }
 
 const nodeTypes = { endpoint: EndpointNode }
+const noCandidateConnections: readonly CandidateConnection[] = []
 
 function selectorLabel(value: FlowValueSelector | FlowValueTarget): string {
   switch (value.kind) {
@@ -115,6 +123,9 @@ interface FlowCanvasProps {
   readonly positioned: PositionedFlowGraph
   readonly selected: SelectedElement
   readonly onSelect: (selected: SelectedElement) => void
+  readonly candidateConnections?: readonly CandidateConnection[]
+  readonly onCandidateSelect?: (id: string) => void
+  readonly fitToVisible?: boolean
   readonly ariaLabel?: string
 }
 
@@ -125,6 +136,9 @@ export function FlowCanvas({
   positioned,
   selected,
   onSelect,
+  candidateConnections = noCandidateConnections,
+  onCandidateSelect,
+  fitToVisible = false,
   ariaLabel = 'Accepted API topology',
 }: FlowCanvasProps) {
   const { t } = useTranslation()
@@ -162,16 +176,32 @@ export function FlowCanvas({
             outgoing: snapshot.acceptedGraph.edges.filter((edge) => edge.sourceNodeId === item.id)
               .length,
             selected: selected?.kind === 'node' && selected.id === item.id,
+            candidateCount: candidateConnections.reduce(
+              (count, candidate) =>
+                count +
+                (candidate.sourceNodeId === item.id || candidate.targetNodeId === item.id
+                  ? candidate.count
+                  : 0),
+              0,
+            ),
           },
           draggable: editable,
           selectable: true,
         }
       }),
-    [endpointNodes, operationById, positionById, selected, snapshot.acceptedGraph.edges, editable],
+    [
+      endpointNodes,
+      operationById,
+      positionById,
+      selected,
+      snapshot.acceptedGraph.edges,
+      editable,
+      candidateConnections,
+    ],
   )
   const edges = useMemo<Edge[]>(
-    () =>
-      snapshot.acceptedGraph.edges.map((item) => ({
+    () => [
+      ...snapshot.acceptedGraph.edges.map((item) => ({
         id: item.id,
         source: item.sourceNodeId,
         target: item.targetNodeId,
@@ -184,7 +214,19 @@ export function FlowCanvas({
         animated: false,
         selectable: true,
       })),
-    [selected, snapshot.acceptedGraph.edges],
+      ...candidateConnections.map((candidate) => ({
+        id: `suggestion:${candidate.id}`,
+        source: candidate.sourceNodeId,
+        target: candidate.targetNodeId,
+        label: t('{{count}} to review', { count: candidate.count }),
+        ariaLabel: t('{{count}} unreviewed suggestions', { count: candidate.count }),
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#e5a95b', strokeWidth: 2, strokeDasharray: '5 7', opacity: 0.85 },
+        className: 'candidate-edge',
+        selectable: Boolean(onCandidateSelect),
+      })),
+    ],
+    [selected, snapshot.acceptedGraph.edges, candidateConnections, onCandidateSelect, t],
   )
 
   return (
@@ -235,12 +277,15 @@ export function FlowCanvas({
             ),
           })
         }}
-        {...(canvasLayout?.viewport ? { defaultViewport: canvasLayout.viewport } : {})}
+        {...(canvasLayout?.viewport && !fitToVisible
+          ? { defaultViewport: canvasLayout.viewport }
+          : {})}
         onMoveEnd={(event, viewport) => {
           const changedByUser = event !== null || interacted.current
           interacted.current = false
           if (
             changedByUser &&
+            !fitToVisible &&
             onCanvasLayoutChange &&
             JSON.stringify(viewport) !== JSON.stringify(canvasLayout?.viewport)
           )
@@ -252,11 +297,17 @@ export function FlowCanvas({
         multiSelectionKeyCode={null}
         minZoom={0.3}
         maxZoom={1.8}
-        fitView={!canvasLayout?.viewport}
+        fitView={fitToVisible || !canvasLayout?.viewport}
         fitViewOptions={{ padding: 0.2 }}
         onPaneClick={() => onSelect(null)}
         onNodeClick={(_, node) => onSelect({ kind: 'node', id: node.id })}
-        onEdgeClick={(_, edge) => onSelect({ kind: 'edge', id: edge.id })}
+        onEdgeClick={(_, edge) => {
+          if (edge.id.startsWith('suggestion:')) {
+            onCandidateSelect?.(edge.id.slice('suggestion:'.length))
+            return
+          }
+          onSelect({ kind: 'edge', id: edge.id })
+        }}
       >
         <Background gap={22} size={1} color="#18314a" />
         <Controls showInteractive={false} aria-label={t('Graph controls')} />

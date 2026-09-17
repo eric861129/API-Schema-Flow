@@ -85,7 +85,7 @@ test('meets review core budgets in Chromium with 1,000 candidates and 500 nodes'
     }
     await route.fulfill({ response, json: fixture })
   })
-  await page.goto('/')
+  await page.goto('/?sample=1')
   await page.getByRole('button', { name: 'Inference Review', exact: true }).click()
   await expect(page.getByText('1000 of 1000 candidates', { exact: true })).toBeVisible()
 

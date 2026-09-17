@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EndpointFlowNode, FlowValueSelector, FlowValueTarget } from '@api-schema-flow/domain'
 
 import { MethodBadge } from '../components/operations-panel'
 import type { SelectedElement, WorkspaceSnapshot } from '../data/types'
+import { MAX_CANVAS_OPERATIONS } from '../graph/canvas-limits'
 import type { OperationViewModel } from '../workspace/operation-view-model'
 
 function short(value: FlowValueSelector | FlowValueTarget): string {
@@ -36,21 +38,35 @@ function isEndpointNode(
 
 export function OutlineView({
   snapshot,
+  graph,
   models,
   onSelect,
 }: {
   readonly snapshot: WorkspaceSnapshot
+  readonly graph: WorkspaceSnapshot['acceptedGraph']
   readonly models: readonly OperationViewModel[]
   readonly onSelect: (selected: SelectedElement) => void
 }) {
   const { t } = useTranslation()
+  const [operationLimit, setOperationLimit] = useState(100)
+  const [mappingLimit, setMappingLimit] = useState(100)
+  useEffect(() => setOperationLimit(100), [models])
+  useEffect(() => setMappingLimit(100), [graph.edges])
+  const visibleOperations = models.slice(
+    0,
+    models.length > MAX_CANVAS_OPERATIONS ? operationLimit : models.length,
+  )
+  const visibleMappings = graph.edges.slice(
+    0,
+    graph.edges.length > MAX_CANVAS_OPERATIONS ? mappingLimit : graph.edges.length,
+  )
+  const operationById = new Map(
+    snapshot.apiDocument.operations.map((operation) => [operation.id, operation]),
+  )
   const operationByNode = new Map(
-    snapshot.acceptedGraph.nodes
+    graph.nodes
       .filter(isEndpointNode)
-      .map((node) => [
-        node.id,
-        snapshot.apiDocument.operations.find((operation) => operation.id === node.operationKey),
-      ]),
+      .map((node) => [node.id, operationById.get(node.operationKey)]),
   )
   return (
     <section className="outline-view" aria-labelledby="outline-title">
@@ -72,7 +88,7 @@ export function OutlineView({
             </tr>
           </thead>
           <tbody>
-            {models.map((model) => (
+            {visibleOperations.map((model) => (
               <tr key={model.nodeId}>
                 <td>
                   <MethodBadge method={model.operation.method} />
@@ -93,6 +109,19 @@ export function OutlineView({
           </tbody>
         </table>
       </div>
+      {visibleOperations.length < models.length ? (
+        <div className="outline-more" role="status">
+          <span>
+            {t('Showing {{shown}} of {{total}} endpoints', {
+              shown: visibleOperations.length,
+              total: models.length,
+            })}
+          </span>
+          <button type="button" onClick={() => setOperationLimit((value) => value + 100)}>
+            {t('Load more outline endpoints')}
+          </button>
+        </div>
+      ) : null}
       <div className="table-shell">
         <table>
           <caption>{t('Accepted data mappings')}</caption>
@@ -106,7 +135,7 @@ export function OutlineView({
             </tr>
           </thead>
           <tbody>
-            {snapshot.acceptedGraph.edges.map((edge) => (
+            {visibleMappings.map((edge) => (
               <tr key={edge.id}>
                 <td>{operationByNode.get(edge.sourceNodeId)?.path}</td>
                 <td>
@@ -131,6 +160,19 @@ export function OutlineView({
           </tbody>
         </table>
       </div>
+      {visibleMappings.length < graph.edges.length ? (
+        <div className="outline-more" role="status">
+          <span>
+            {t('Showing {{shown}} of {{total}} mappings', {
+              shown: visibleMappings.length,
+              total: graph.edges.length,
+            })}
+          </span>
+          <button type="button" onClick={() => setMappingLimit((value) => value + 100)}>
+            {t('Load more mappings')}
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }
