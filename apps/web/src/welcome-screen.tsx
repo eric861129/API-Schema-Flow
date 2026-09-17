@@ -40,11 +40,13 @@ export function WelcomeScreen({ onExploreSample }: { readonly onExploreSample: (
             <h2>{t('Open a local OpenAPI file')}</h2>
             <p>
               {t(
-                'From the repository root, build once, then run the local CLI. It prints a private URL for this browser.',
+                'Build once, then import the fictional Commerce API. Replace its path with your own local file when ready; the CLI prints a private URL.',
               )}
             </p>
             <code>pnpm build</code>
-            <code>node packages/cli/bin/schema-flow.mjs open ./path/to/openapi.yaml</code>
+            <code>
+              node packages/cli/bin/schema-flow.mjs open examples/demo-commerce/openapi.yaml
+            </code>
           </section>
           <section className="welcome-card">
             <span className="eyebrow">{t('CONTINUE LATER')}</span>

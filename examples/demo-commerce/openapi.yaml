@@ -1,0 +1,387 @@
+openapi: 3.1.0
+info:
+  title: Example Commerce API
+  version: 1.0.0
+  description: >-
+    Entirely fictional storefront API for public demonstrations of API Schema Flow.
+    Names, records, and endpoints in this document do not describe a real system.
+servers:
+  - url: https://api.example.test
+    description: Reserved example domain; no live service exists.
+tags:
+  - name: Catalog
+  - name: Customers
+  - name: Carts
+  - name: Orders
+  - name: Delivery
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      tags: [Catalog]
+      summary: Browse fictional products
+      responses:
+        '200':
+          description: Products available in the demo catalog.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      tags: [Catalog]
+      summary: Inspect one product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /customers:
+    post:
+      operationId: createCustomer
+      tags: [Customers]
+      summary: Create a demo customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+      responses:
+        '201':
+          description: Customer created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          links:
+            GetCustomer:
+              operationId: getCustomer
+              parameters:
+                customerId: $response.body#/id
+  /customers/{customerId}:
+    get:
+      operationId: getCustomer
+      tags: [Customers]
+      summary: Inspect a demo customer
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Customer details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /carts:
+    post:
+      operationId: createCart
+      tags: [Carts]
+      summary: Start a shopping cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartRequest'
+      responses:
+        '201':
+          description: Cart created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          links:
+            GetCart:
+              operationId: getCart
+              parameters:
+                id: $response.body#/id
+  /carts/{id}:
+    get:
+      operationId: getCart
+      tags: [Carts]
+      summary: Inspect a shopping cart
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /carts/{id}/items:
+    post:
+      operationId: addCartItem
+      tags: [Carts]
+      summary: Add a product to a cart
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItem'
+      responses:
+        '200':
+          description: Updated cart.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [Orders]
+      summary: Find orders for a customer
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching demo orders.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      operationId: createOrder
+      tags: [Orders]
+      summary: Place an order from a cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Order created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          links:
+            GetOrder:
+              operationId: getOrder
+              parameters:
+                id: $response.body#/id
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [Orders]
+      summary: Retrieve the order just created
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/{id}/cancel:
+    post:
+      operationId: cancelOrder
+      tags: [Orders]
+      summary: Cancel an order before delivery
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Cancelled order.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /deliveries:
+    get:
+      operationId: listDeliveries
+      tags: [Delivery]
+      summary: Find deliveries for an order
+      parameters:
+        - name: orderId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching deliveries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Delivery'
+  /deliveries/{id}:
+    get:
+      operationId: getDelivery
+      tags: [Delivery]
+      summary: Inspect one delivery
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Delivery status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    NotFound:
+      description: Demo record not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    Product:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+          enum: [USD]
+    CustomerRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+    Customer:
+      allOf:
+        - $ref: '#/components/schemas/CustomerRequest'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+    CartRequest:
+      type: object
+      required: [customerId]
+      properties:
+        customerId:
+          type: string
+    Cart:
+      type: object
+      required: [id, customerId, items]
+      properties:
+        id:
+          type: string
+        customerId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+    CartItem:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    OrderRequest:
+      type: object
+      required: [cartId]
+      properties:
+        cartId:
+          type: string
+        note:
+          type: string
+    Order:
+      type: object
+      required: [id, cartId, status]
+      properties:
+        id:
+          type: string
+        cartId:
+          type: string
+        status:
+          type: string
+          enum: [placed, cancelled, shipped]
+        deliveryId:
+          type: string
+    Delivery:
+      type: object
+      required: [id, orderId, status]
+      properties:
+        id:
+          type: string
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [preparing, in_transit, delivered]
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

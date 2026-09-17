@@ -11,8 +11,34 @@ import { readProjectForWorkspace } from '../../src/project-reopen.js'
 const fixture = fileURLToPath(
   new URL('../../../../examples/reservation/openapi.yaml', import.meta.url),
 )
+const demoFixture = fileURLToPath(
+  new URL('../../../../examples/demo-commerce/openapi.yaml', import.meta.url),
+)
 
 describe('local workspace import and server', () => {
+  test('imports the fictional Commerce API with distinct groups and declared handoffs', async () => {
+    const snapshot = await importWorkspace(demoFixture)
+    expect(snapshot.project.name).toBe('Example Commerce API')
+    expect(snapshot.apiDocument.operations).toHaveLength(13)
+    expect(
+      new Set(snapshot.apiDocument.operations.flatMap((operation) => operation.tags)).size,
+    ).toBe(5)
+    expect(snapshot.declaredGraph.edges.length).toBeGreaterThanOrEqual(3)
+    const createOrder = snapshot.declaredGraph.nodes.find(
+      (node) => node.kind === 'endpoint' && node.operationKey === 'operation:post:/orders',
+    )
+    const getOrder = snapshot.declaredGraph.nodes.find(
+      (node) => node.kind === 'endpoint' && node.operationKey === 'operation:get:/orders/{id}',
+    )
+    expect(
+      snapshot.declaredGraph.edges.some(
+        (edge) => edge.sourceNodeId === createOrder?.id && edge.targetNodeId === getOrder?.id,
+      ),
+    ).toBe(true)
+    expect(snapshot.reviewDecisionSet.decisions).toEqual([])
+    expect(JSON.stringify(snapshot)).not.toMatch(/kcislk|kanchiao|academic-records/i)
+  })
+
   test('reimports stable source and candidates without accepting suggestions', async () => {
     const first = await importWorkspace(fixture)
     const second = await importWorkspace(fixture)

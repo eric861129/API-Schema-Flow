@@ -361,13 +361,13 @@ English: [README.md](README.md)
 
 ## 匯入本機 OpenAPI 工作區
 
-第一次開啟網頁根目錄會顯示歡迎頁，可以選擇標示為「範例」的 Reservation 工作區，或依下列指令匯入自己的規格。npm 套件尚未發布；完成 `pnpm install --frozen-lockfile` 與 `pnpm build` 後，從儲存庫根目錄執行：
+第一次開啟網頁根目錄會顯示歡迎頁，可以選擇標示為「範例」的 Reservation 工作區。若要示範實際匯入流程，儲存庫也提供完全虛構的 [Example Commerce OpenAPI 規格](examples/demo-commerce/openapi.yaml)；儲存庫沒有附上工作專案的規格。npm 套件尚未發布；完成 `pnpm install --frozen-lockfile` 與 `pnpm build` 後，從儲存庫根目錄執行：
 
 ```bash
-node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
+node packages/cli/bin/schema-flow.mjs open examples/demo-commerce/openapi.yaml --port 4318
 ```
 
-以 Chrome 或 Edge 開啟印出的完整網址，包含 `#workspace=…`，並保留執行中的程序。此指令從原始碼工作目錄執行，接受本機 JSON／YAML 與來源目錄內的本機參照，不呼叫業務 API 或取得遠端參照。唯讀服務僅綁定 `127.0.0.1`，私人快照須使用每次啟動產生的 token；請勿分享網址。正規化模型會移除範例與預設值，但描述與來源路徑仍可能屬於內部資訊，規格和匯出檔請放在公開儲存庫之外。
+以 Chrome 或 Edge 開啟印出的完整網址，包含 `#workspace=…`，並保留執行中的程序。要檢視其他 API 時，將範例路徑換成自己的本機 OpenAPI 檔案。此指令從原始碼工作目錄執行，接受本機 JSON／YAML 與來源目錄內的本機參照，不呼叫業務 API 或取得遠端參照。唯讀服務僅綁定 `127.0.0.1`，私人快照須使用每次啟動產生的 token；請勿分享網址。正規化模型會移除範例與預設值，但描述與來源路徑仍可能屬於內部資訊，私人規格和匯出檔請放在公開儲存庫之外。
 
 1. 到 **Inference Review** 檢視證據，使用 **Edit Mapping** 或 Accept／Reject。信心分數不等於業務正確性，nullable／必填／型別檢查仍可能阻擋編輯。
 2. 到 **Workflows** 建立草稿、依序加入端點，明確勾選步驟間已接受的映射。設定 OpenAPI 來源網址或相對檔案路徑後，用 **Validate and preview → Download Arazzo** 預覽並下載文件；此操作不會呼叫 API。

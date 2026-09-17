@@ -94,8 +94,8 @@ export const workspaceZhTw: Record<string, string> = {
   'Explore sample workspace': '開啟範例工作區',
   'YOUR API': '你的 API',
   'Open a local OpenAPI file': '開啟本機 OpenAPI 檔案',
-  'From the repository root, build once, then run the local CLI. It prints a private URL for this browser.':
-    '在專案根目錄先建置，再執行本機 CLI；它會輸出供瀏覽器開啟的私有網址。',
+  'Build once, then import the fictional Commerce API. Replace its path with your own local file when ready; the CLI prints a private URL.':
+    '先建置並匯入虛構的 Commerce API；需要匯入自己的規格時，再換成本機檔案路徑。CLI 會輸出私有網址。',
   'CONTINUE LATER': '稍後繼續',
   'Reopen a saved project': '重開已儲存的專案',
   'A Project JSON does not contain the OpenAPI source. Pass the same source file and your backup; inspect the preview before applying it.':

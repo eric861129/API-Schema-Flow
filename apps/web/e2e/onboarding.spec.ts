@@ -7,9 +7,11 @@ test('shows a real first-use choice before opening the labeled sample', async ({
   await expect(
     page.getByRole('heading', { name: 'Understand an API through a task' }),
   ).toBeVisible()
+  await expect(page.getByText(/open examples\/demo-commerce\/openapi.yaml/)).toBeVisible()
   await expect(page.getByText(/--project/)).toBeVisible()
   await page.getByRole('combobox', { name: 'Interface language' }).selectOption('zh-TW')
   await expect(page.getByRole('heading', { name: '從任務看懂 API' })).toBeVisible()
+  await expect(page.getByText(/虛構的 Commerce API/)).toBeVisible()
   await page.getByRole('combobox', { name: '介面語言' }).selectOption('en')
   await page.getByRole('button', { name: 'Explore sample workspace' }).click()
   await expect(page.getByRole('main', { name: 'API Schema Flow workspace' })).toBeVisible()

@@ -373,13 +373,13 @@ Licensed under the [Apache License 2.0](LICENSE).
 
 ## Open a local OpenAPI workspace
 
-The first visit to the web root offers a clearly labeled Reservation sample and instructions for opening your own specification. The npm package is not published yet. After `pnpm install --frozen-lockfile` and `pnpm build`, run from the repository root:
+The first visit to the web root offers a clearly labeled Reservation sample. For a richer import demonstration, the repository also includes the entirely fictional [Example Commerce OpenAPI file](examples/demo-commerce/openapi.yaml). No work-project specification is bundled. The npm package is not published yet. After `pnpm install --frozen-lockfile` and `pnpm build`, run from the repository root:
 
 ```bash
-node packages/cli/bin/schema-flow.mjs open /absolute/path/openapi.json --port 4318
+node packages/cli/bin/schema-flow.mjs open examples/demo-commerce/openapi.yaml --port 4318
 ```
 
-Open the complete printed URL in Chrome or Edge, including its `#workspace=…` fragment. Keep the process running. This source-checkout command accepts local JSON/YAML and local references beneath the source directory. It does not call business APIs or fetch remote references. The read-only server binds only to `127.0.0.1`; its private snapshot requires a per-launch token. Do not share that URL. Normalized examples/defaults are omitted, but schema descriptions and source paths can still be private: keep specifications and exports outside public repositories.
+Open the complete printed URL in Chrome or Edge, including its `#workspace=…` fragment. Keep the process running. To inspect a different API, replace the demo file path with your own local OpenAPI file. This source-checkout command accepts local JSON/YAML and local references beneath the source directory. It does not call business APIs or fetch remote references. The read-only server binds only to `127.0.0.1`; its private snapshot requires a per-launch token. Do not share that URL. Normalized examples/defaults are omitted, but schema descriptions and source paths can still be private: keep private specifications and exports outside public repositories.
 
 1. In **Inference Review**, inspect evidence and use **Edit Mapping** or Accept/Reject. Candidate scores do not prove business correctness; nullable/required/type checks can block an edit.
 2. In **Workflows**, create a draft, add the API operations in order, and explicitly select accepted mappings between those steps. Set the OpenAPI source URL or a relative file path, then **Validate and preview → Download Arazzo**. This exports a document; it does not invoke the API.
